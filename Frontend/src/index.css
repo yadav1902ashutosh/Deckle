@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@theme {
+  --color-page: var(--bg-page);
+  --color-card: var(--bg-card);
+  --color-card-white: var(--bg-card-white);
+  --color-input: var(--bg-input);
+  --color-tag: var(--bg-tag);
+
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-text: var(--color-accent-text);
+
+  --color-border-subtle: var(--color-border);
+
+  /* Fonts */
+  --font-serif: "Newsreader", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+}
+
+/* ==========================================================================
+   THEMES (Parchment, Midnight, Soft Sage, Nocturne, Crisp Paper)
+   ========================================================================== */
+
+/* 1. Parchment (Warm Paper Default) */
+:root,
+[data-theme="parchment"] {
+  --bg-page: #fdf9f0;
+  --bg-card: #f1eee5;
+  --bg-card-white: #ffffff;
+  --bg-input: #f7f3ea;
+  --bg-tag: #ece8df;
+
+  --text-main: #1c1c16;
+  --text-muted: #675d52;
+
+  --color-accent: #7d4a21;
+  --color-accent-hover: #9a6237;
+  --color-accent-text: #ffffff;
+
+  --color-border: #d6c3b7;
+}
+
+/* 2. Midnight (OLED Night Sanctuary - Safe for reading in bed!) */
+[data-theme="midnight"] {
+  --bg-page: #0b0c0e;
+  --bg-card: #14161a;
+  --bg-card-white: #101215;
+  --bg-input: #191c22;
+  --bg-tag: #1f2228;
+
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+
+  --color-accent: #f59e0b;
+  --color-accent-hover: #d97706;
+  --color-accent-text: #1c1917;
+
+  --color-border: #282c34;
+}
+
+/* 3. Soft Sage (Restful Green) */
+[data-theme="soft-sage"] {
+  --bg-page: #ebf1ea;
+  --bg-card: #e0e9df;
+  --bg-card-white: #f4f8f3;
+  --bg-input: #e5ede4;
+  --bg-tag: #d3ddd2;
+
+  --text-main: #233527;
+  --text-muted: #526a57;
+
+  --color-accent: #2e7d32;
+  --color-accent-hover: #388e3c;
+  --color-accent-text: #ffffff;
+
+  --color-border: #b8c8b7;
+}
+
+/* 4. Nocturne (Twilight Slate) */
+[data-theme="nocturne"] {
+  --bg-page: #191e24;
+  --bg-card: #222932;
+  --bg-card-white: #1c222b;
+  --bg-input: #1e242c;
+  --bg-tag: #2b3542;
+
+  --text-main: #cbd5e1;
+  --text-muted: #8191a4;
+
+  --color-accent: #60a5fa;
+  --color-accent-hover: #3b82f6;
+  --color-accent-text: #0f172a;
+
+  --color-border: #2b3542;
+}
+
+/* 5. Crisp Paper (Daylight Clean) */
+[data-theme="crisp-paper"] {
+  --bg-page: #ffffff;
+  --bg-card: #f8fafc;
+  --bg-card-white: #ffffff;
+  --bg-input: #f1f5f9;
+  --bg-tag: #e2e8f0;
+
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-accent-text: #ffffff;
+
+  --color-border: #cbd5e1;
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  min-height: 100vh;
+}

@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"inverse-surface":"#31302b","secondary-fixed-dim":"#d2c4b7","tertiary-fixed":"#f0e0cd","surface-container-lowest":"#ffffff","surface-container":"#f1eee5","primary-fixed":"#ffdcc5","on-secondary-container":"#6b6156","on-secondary-fixed-variant":"#4f453b","on-error-container":"#93000a","tertiary-container":"#796d5e","on-primary-fixed":"#301400","tertiary":"#605547","inverse-primary":"#fdb785","error":"#ba1a1a","on-surface":"#1c1c16","on-tertiary":"#ffffff","on-secondary":"#ffffff","inverse-on-surface":"#f4f0e7","primary-fixed-dim":"#fdb785","surface-container-high":"#ece8df","surface-tint":"#865228","secondary-fixed":"#efe0d2","secondary":"#675d52","on-tertiary-fixed-variant":"#4f4538","on-primary":"#ffffff","secondary-container":"#ecddcf","outline-variant":"#d6c3b7","background":"#fdf9f0","surface-container-low":"#f7f3ea","surface-bright":"#fdf9f0","on-tertiary-container":"#fff1e2","on-primary-fixed-variant":"#6a3b13","outline":"#84746a","on-background":"#1c1c16","surface-container-highest":"#e6e2d9","on-error":"#ffffff","on-tertiary-fixed":"#221a0f","surface-dim":"#dddad1","tertiary-fixed-dim":"#d3c4b2","primary":"#7d4a21","error-container":"#ffdad6","surface-variant":"#e6e2d9","on-secondary-fixed":"#221a12","surface":"#fdf9f0","on-surface-variant":"#52443b","on-primary-container":"#fff1e9","primary-container":"#9a6237"},borderRadius:{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},spacing:{"margin-mobile":"1rem","gutter":"1rem","space-sm":"0.5rem","space-xs":"0.25rem","margin":"2rem","gutter-mobile":"0.75rem","space-md":"1rem","space-lg":"1.5rem","space-xl":"2rem"},fontFamily:{"headline-xl":["Newsreader"],"title-sm":["Plus Jakarta Sans"],"headline-lg":["Newsreader"],"label-sm":["Plus Jakarta Sans"],"body-reading-sm":["Newsreader"],"body-ui":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"body-reading-lg":["Newsreader"],"headline-xl-mobile":["Newsreader"],"headline-md":["Newsreader"],"body-reading-md":["Newsreader"],"body-ui-dense":["Plus Jakarta Sans"]},fontSize:{"headline-xl":["36px",{lineHeight:"44px",letterSpacing:"-0.02em",fontWeight:"600"}],"title-sm":["16px",{lineHeight:"22px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-lg":["24px",{lineHeight:"32px",letterSpacing:"-0.01em",fontWeight:"600"}],"label-sm":["11px",{lineHeight:"14px",letterSpacing:"0.03em",fontWeight:"500"}],"body-reading-sm":["16px",{lineHeight:"29px",fontWeight:"400"}],"body-ui":["14px",{lineHeight:"20px",fontWeight:"400"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.02em",fontWeight:"600"}],"body-reading-lg":["21px",{lineHeight:"38px",fontWeight:"400"}],"headline-xl-mobile":["28px",{lineHeight:"36px",letterSpacing:"-0.015em",fontWeight:"600"}],"headline-md":["20px",{lineHeight:"28px",fontWeight:"500"}],"body-reading-md":["18px",{lineHeight:"33px",fontWeight:"400"}],"body-ui-dense":["13px",{lineHeight:"18px",fontWeight:"400"}]}}}}</script></head><body class="bg-background font-body-ui text-on-surface antialiased"><header class="fixed top-0 left-0 w-full z-50 bg-surface/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 max-w-7xl mx-auto px-margin flex items-center justify-between gap-space-lg"><div class="flex items-center gap-space-xl"><a class="flex items-center gap-space-sm group" data-path="catalog" href="#"><img alt="A minimalist graphic logo mark for 'Deckle' web novel reader: an elegant open book forming clean geometric deckled paper edges or pages with subtle literary curves, minimalist vector icon, monochrome warm amber or dark slate tone, vector symbol only.. Design context: - Primary color: #9a6237
+- Font: newsreader
+- Mode: light
+- Roundness: rounded-sm
+. The logo should be visually consistent with these brand tokens." class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1XaFceH5Pb6dZbN9UHe6C9JmfYct0Fn44DenD6Vs-5orDusPJ-bFBBZOELdjcn8Pgf0YxeLVYoseaJZAVsMkeXeo1UnNVuR-zcZwZepvnRx25I3k_zY6QOWvFm5_pbVvf4x6Ht5crDOD2H56fe2xzeKodF0RIUI3t9-lb1hYb7_AZlCZt_fgpykFw9gEpFcCtGzEDAa-EhWZ1koYOcFLc5QTXn6ABDOiHL_et6s7Ea9lLsWlm2k7KpFTGc"/><span class="font-headline-lg text-headline-lg text-primary tracking-tight font-medium">Deckle</span></a><nav class="hidden xl:flex items-center gap-space-xs" data-active-classes="bg-secondary-container text-on-secondary-container font-semibold rounded"><a aria-current="page" class="px-space-md py-space-xs transition-colors bg-secondary-container text-on-secondary-container font-semibold rounded" data-path="catalog" href="#">Catalog</a><a class="px-space-md py-space-xs font-body-ui text-body-ui text-on-surface-variant hover:text-on-surface transition-colors rounded" data-path="library" href="#">Library</a><a class="px-space-md py-space-xs font-body-ui text-body-ui text-on-surface-variant hover:text-on-surface transition-colors rounded" data-path="rankings" href="#">Rankings</a><a class="px-space-md py-space-xs font-body-ui text-body-ui text-on-surface-variant hover:text-on-surface transition-colors rounded" data-path="community" href="#">Community</a><a class="px-space-md py-space-xs font-body-ui text-body-ui text-on-surface-variant hover:text-on-surface transition-colors rounded" data-path="author-studio" href="#">Author Studio</a></nav></div><div class="flex items-center gap-space-md"><div class="hidden md:flex items-center bg-surface-container px-space-md py-space-xs rounded gap-space-sm w-64 lg:w-80"><span class="material-symbols-outlined text-[18px] text-on-surface-variant">search</span><span class="font-body-ui text-body-ui text-on-surface-variant flex-1 select-none">Search novels, authors...</span><kbd class="font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded shadow-none select-none">⌘K</kbd></div><div class="hidden sm:flex items-center gap-1.5 px-space-xs py-1 rounded bg-surface-container-low"><button class="w-5 h-5 rounded-full bg-[#fdf9f0] border border-[#d6c3b7] ring-1 ring-primary" title="Parchment"></button><button class="w-5 h-5 rounded-full bg-[#ffffff] border border-[#d6c3b7]" title="Light"></button><button class="w-5 h-5 rounded-full bg-[#ecefe9] border border-[#cfd7cc]" title="Sage"></button><button class="w-5 h-5 rounded-full bg-[#272624] border border-[#44423c]" title="Nocturne"></button><button class="w-5 h-5 rounded-full bg-[#121212] border border-[#2b2b2b]" title="OLED Dark"></button></div><button aria-label="Notifications" class="p-space-xs rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors relative"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary"></span></button><div class="flex items-center gap-space-xs cursor-pointer group"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-on-surface transition-colors">arrow_drop_down</span></div></div></div></header><main class="w-full pt-16 bg-background min-h-screen"><div class="flex flex-col w-full">
+<!-- Editorial Spotlight / Featured Serial Hero -->
+<section class="relative w-full overflow-hidden bg-surface-container-low shadow-sm">
+<!-- Ambient artistic aura backdrop -->
+<div class="absolute -top-24 -right-20 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+<div class="absolute bottom-0 left-1/3 w-80 h-80 rounded-full bg-secondary-container/40 blur-2xl pointer-events-none"></div>
+<div class="max-w-7xl mx-auto px-margin py-space-xl relative z-10">
+<div class="flex flex-col lg:flex-row items-center gap-space-xl">
+<!-- Novel Cover Canvas with Tactile Edge -->
+<div class="relative flex-shrink-0 group">
+<div class="w-64 h-88 sm:w-72 sm:h-96 rounded-lg overflow-hidden shadow-xl bg-surface-container-highest relative transform transition-transform duration-300 group-hover:scale-[1.02]">
+<img class="w-full h-full object-cover" data-alt="Intricate digital painting of Heavenly Tribulation web novel cover: an immortal swordsman standing atop a jagged storm-wreathed mountain peak, pale jade robes billowing in thunderous atmospheric mist, golden celestial lightning tearing through stormy twilight clouds, ethereal ancient talismans glowing in warm amber and deep obsidian tones, high-fantasy Eastern Xianxia art style, tactile paper grain texture overlay." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMCoXg0A2-Yo0mTXKJJii1soqngrcK74BYMhb3W9Hupryd0v7ZDbOxVmKOIW_jA_Ac0Z5IgN0M3AIpZ4pllzzgthPHoVsFEetKEkJn4HRDenrnEvoi3zAMYXoCt550fGyqy23yP4c2VlVHiZ0py8Whk5RLMrCpiLF5KPIzA05z4bi5Ex8XbmLzPS-DCXEAvK1Vh0_7srfY8kv73m2wdknUCMCC9pQKg6-OTfX6XpkDKEmjoF576NTn"/>
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/80 via-transparent to-transparent opacity-60"></div>
+<span class="absolute top-space-sm left-space-sm bg-primary text-on-primary font-label-md text-label-md px-2.5 py-1 rounded shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+              Editor's Pinnacle Choice
+            </span>
+</div>
+<!-- Tactile spine/page shadow illusion underneath -->
+<div class="absolute -bottom-2 inset-x-4 h-4 bg-on-surface/10 blur-md rounded-full pointer-events-none"></div>
+</div>
+<!-- Novel Editorial Dossier -->
+<div class="flex-1 flex flex-col justify-between space-y-space-md">
+<div class="space-y-space-xs">
+<div class="flex flex-wrap items-center gap-space-xs text-on-surface-variant font-label-md text-label-md">
+<span class="uppercase tracking-widest text-primary font-semibold">Weekly Serial Crown</span>
+<span>•</span>
+<span>Updated 18 minutes ago</span>
+<span>•</span>
+<span class="bg-surface-container px-2 py-0.5 rounded text-on-surface font-medium">Chapter 2,418 Live</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight font-medium">
+              Heavenly Tribulation
+            </h1>
+<p class="font-title-sm text-title-sm text-secondary font-medium">
+              By <span class="text-on-surface underline decoration-outline-variant hover:text-primary cursor-pointer transition-colors">Fleeting Dreams (飘渺梦)</span>
+</p>
+</div>
+<!-- Key Metrics Cluster -->
+<div class="flex flex-wrap items-center gap-space-lg py-space-xs">
+<div class="flex items-center gap-space-xs bg-surface-container px-space-md py-space-xs rounded">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-title-sm text-title-sm text-on-surface font-bold">9.8</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/ 10 (14.2k reviews)</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">menu_book</span>
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">24.9M</span>
+<span class="font-body-ui-dense text-body-ui-dense">Words</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">group</span>
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">44.0K</span>
+<span class="font-body-ui-dense text-body-ui-dense">Active Readers</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+<span class="font-title-sm text-title-sm text-primary font-semibold">Rank #1</span>
+<span class="font-body-ui-dense text-body-ui-dense">Eastern Xianxia</span>
+</div>
+</div>
+<!-- Synopses Excerpt -->
+<p class="font-body-reading-sm text-body-reading-sm text-on-surface-variant max-w-3xl line-clamp-3">
+            Born without spiritual roots into an era of dying celestial courts, Shen Wuyue discovered the Nine Nether Furnace buried beneath his ancestral graveyard. When the heavens decree your doom before your first breath, true immortality is forged not in obedience to the cosmos, but by consuming the very tribulation lightning sent to obliterate your soul...
+          </p>
+<!-- Interactive Genre Tags -->
+<div class="flex flex-wrap items-center gap-space-xs pt-1">
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md px-3 py-1 rounded transition-colors">#GhostCultivation</button>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md px-3 py-1 rounded transition-colors">#Reincarnation</button>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md px-3 py-1 rounded transition-colors">#AncientArtifact</button>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md px-3 py-1 rounded transition-colors">#DecisiveMC</button>
+<span class="font-label-sm text-label-sm text-on-surface-variant ml-2">Tier 4 Immortal Canon</span>
+</div>
+<!-- CTA Controls -->
+<div class="flex flex-wrap items-center gap-space-md pt-space-xs">
+<a class="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary px-space-xl py-3 rounded-lg font-title-sm text-title-sm shadow-sm transition-all hover:shadow-md cursor-pointer" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>Start Reading Ch. 1</span>
+</a>
+<button class="inline-flex items-center justify-center gap-2 bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-space-lg py-3 rounded-lg font-title-sm text-title-sm transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px]">bookmark_add</span>
+<span>Add to Library</span>
+</button>
+<button class="p-3 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Share Novel">
+<span class="material-symbols-outlined text-[20px]">share</span>
+</button>
+<span class="text-on-surface-variant font-label-sm text-label-sm italic pl-2">Free reading tier available up to Chapter 120</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Discovery Grid Canvas & Multi-facet Filter System -->
+<div class="max-w-7xl mx-auto px-margin py-space-xl w-full">
+<!-- Primary Filter Bar: Refined Minimalist Architecture -->
+<div class="bg-surface-container-low rounded-xl p-space-lg shadow-sm space-y-space-md">
+<!-- Genre Navigation Pills -->
+<div class="flex items-center justify-between gap-space-md flex-wrap">
+<div class="flex items-center gap-space-xs overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+<button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded shadow-sm whitespace-nowrap">
+            All Genres (14,892)
+          </button>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md px-4 py-2 rounded transition-colors whitespace-nowrap">
+            Xuanhuan &amp; Eastern Fantasy
+          </button>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md px-4 py-2 rounded transition-colors whitespace-nowrap">
+            Xianxia &amp; Cultivation
+          </button>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md px-4 py-2 rounded transition-colors whitespace-nowrap">
+            Urban Supernatural
+          </button>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md px-4 py-2 rounded transition-colors whitespace-nowrap">
+            Historical Military
+          </button>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md px-4 py-2 rounded transition-colors whitespace-nowrap">
+            Sci-Fi &amp; Cyber Dao
+          </button>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+<span>Refined Mode</span>
+</div>
+</div>
+<!-- Secondary Refinement Controls Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md pt-space-xs">
+<!-- Status Filter -->
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Serial Status</label>
+<div class="flex items-center bg-surface-container rounded p-1 gap-1">
+<button class="flex-1 py-1 px-2 text-center rounded bg-surface-container-lowest text-on-surface font-label-md text-label-md font-semibold shadow-xs">Any</button>
+<button class="flex-1 py-1 px-2 text-center rounded text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Ongoing</button>
+<button class="flex-1 py-1 px-2 text-center rounded text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Completed</button>
+<button class="flex-1 py-1 px-2 text-center rounded text-on-surface-variant hover:text-on-surface font-label-md text-label-md">Fast Update</button>
+</div>
+</div>
+<!-- Sort By Dropdown -->
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Sort Canon By</label>
+<div class="relative">
+<select class="w-full bg-surface-container text-on-surface font-body-ui text-body-ui rounded px-space-md py-2 appearance-none cursor-pointer focus:outline-none focus:bg-surface-container-high transition-colors pr-8">
+<option selected="">Most Popular (Monthly Activity)</option>
+<option>Latest Updated Chapters</option>
+<option>Reader Editorial Rating (9.0+)</option>
+<option>Epic Scale (Words &gt; 5,000,000)</option>
+<option>New Releases (Past 30 Days)</option>
+</select>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant absolute right-2.5 top-2.5 pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Novel Length Selector -->
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Scope / Word Count</label>
+<div class="relative">
+<select class="w-full bg-surface-container text-on-surface font-body-ui text-body-ui rounded px-space-md py-2 appearance-none cursor-pointer focus:outline-none focus:bg-surface-container-high transition-colors pr-8">
+<option selected="">All Lengths</option>
+<option>&lt; 1,000,000 (Novella / Short Serial)</option>
+<option>1,000,000 - 3,000,000 (Medium Epoch)</option>
+<option>3,000,000 - 7,000,000 (Standard Saga)</option>
+<option>&gt; 7,000,000 Words (Titan Monolith)</option>
+</select>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant absolute right-2.5 top-2.5 pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Update Schedule Filter -->
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Release Frequency</label>
+<div class="relative">
+<select class="w-full bg-surface-container text-on-surface font-body-ui text-body-ui rounded px-space-md py-2 appearance-none cursor-pointer focus:outline-none focus:bg-surface-container-high transition-colors pr-8">
+<option selected="">All Release Rhythms</option>
+<option>Daily 2+ Chapters Guaranteed</option>
+<option>Daily 1 Chapter</option>
+<option>3-5 Chapters Weekly</option>
+<option>Author Hiatus Alert Filtered</option>
+</select>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant absolute right-2.5 top-2.5 pointer-events-none">schedule</span>
+</div>
+</div>
+</div>
+<!-- Quick Active Metadata Summary -->
+<div class="flex items-center justify-between pt-space-xs text-on-surface-variant font-label-sm text-label-sm">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span>Displaying <strong>1 - 8</strong> of <strong>1,420</strong> serialized literary works</span>
+</div>
+<button class="hover:text-primary transition-colors flex items-center gap-1 cursor-pointer">
+<span class="material-symbols-outlined text-[14px]">refresh</span>
+          Reset Filters
+        </button>
+</div>
+</div>
+<!-- Main Content Area: Asymmetric 12-Column Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl mt-space-xl">
+<!-- Left: Serials Catalog Grid (8 Columns) -->
+<div class="lg:col-span-8 space-y-space-lg">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-md text-headline-md text-on-surface font-medium">Curated Serial Works</span>
+<span class="font-label-md text-label-md bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">Catalog Feed</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded bg-surface-container-high text-on-surface" title="Grid View">
+<span class="material-symbols-outlined text-[18px]">grid_view</span>
+</button>
+<button class="p-1.5 rounded bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="List View">
+<span class="material-symbols-outlined text-[18px]">view_list</span>
+</button>
+</div>
+</div>
+<!-- 2-Column Catalog Cards Layout for Desktop -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-lg">
+<!-- Novel Card 1: Battle Through the Heavens -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
+<div>
+<div class="flex gap-space-md">
+<div class="w-24 h-32 flex-shrink-0 rounded overflow-hidden bg-surface-container shadow-xs relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Novel cover for Battle Through the Heavens: vibrant azure and lotus fire flames swirling around an ebony heavy ruler sword held by an adolescent martial artist, Eastern Xuanhuan classic cover art, parchment paper texture, refined ink shading." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxQ6JTnU9iddzuCaRDfCxeR33Kf5RBRnWnvKflDyE9r4SbpTKJs8_vOyxL7zPCVW4FbMolNyuTXmzP4t86GlIlAlllRLfeuZuWzhH8lCh5Sc78R712sJJHqJoRoKPqDrKRsSpe2UHJw0jOCR-aTBG7yE_OzSEtHChu5rTxiwZTMXhWj7lejEtKtD5GKHOO2nfJI64TuXE4h-miMPEpMG9x0UkmChbs-Pu1QvcUEdyXJ_O90Ty-Hj5i"/>
+<span class="absolute top-1 left-1 bg-surface-container-highest/90 backdrop-blur-xs font-label-sm text-label-sm text-on-surface px-1.5 py-0.5 rounded">Classic</span>
+</div>
+<div class="flex-1 min-w-0 space-y-1">
+<div class="flex items-start justify-between gap-1">
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors cursor-pointer">
+                      Battle Through the Heavens
+                    </h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Bookmark">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant truncate">Tiancan Tudou (天蚕土豆)</p>
+<div class="flex items-center gap-1.5 pt-1">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-title-sm text-title-sm text-on-surface font-bold text-xs">9.6</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(112k)</span>
+</div>
+<div class="flex flex-wrap items-center gap-1.5 pt-1">
+<span class="font-label-sm text-label-sm bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">7.1M words</span>
+<span class="font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed font-semibold px-2 py-0.5 rounded">Completed</span>
+</div>
+</div>
+</div>
+<p class="font-body-ui-dense text-body-ui-dense text-on-surface-variant line-clamp-2 mt-space-sm">
+                Here, there is no magic; only Dou Qi that has trained to its zenith! The fall of a genius into an outcast, until the ring upon his finger awakened...
+              </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between bg-surface-container-lowest/60 -mx-space-md -mb-space-md p-space-sm px-space-md rounded-b-xl">
+<a class="font-label-md text-label-md text-primary font-medium hover:underline truncate max-w-[200px] flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[14px]">auto_stories</span>
+                Ch. 1648: Flame Emperor (Final)
+              </a>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Archived</span>
+</div>
+</div>
+<!-- Novel Card 2: How Did I Become Invincible? -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
+<div>
+<div class="flex gap-space-md">
+<div class="w-24 h-32 flex-shrink-0 rounded overflow-hidden bg-surface-container shadow-xs relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Novel cover art for How Did I Become Invincible: humorous yet grand satirical Xianxia aesthetic, a relaxed martial youth sipping tea while immortal gods fall in chaos around him, golden celestial palace pillars, subtle paper wash and minimal warm palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdTstXXl9AgAbge-_Wiz_BLwjloKp6QcjdIYtpQQwFnvWo3erR_NfIy-9NW12IowsuT5GpvjGP9GG6zsyfM0id0EL5wfGm3kzVr-U3JEOLPVg-WShtMQUnT5ZxDNtTxc3hD7VBGcrd03Zp3fTq13ntDcVGqJkbafS1y2tkjLbuo6WDtzG0uVa1X4-1jw-ZWWzfylRo20qlwC9dxaQreM-LPZMooefhDLvzZceelBebtVwRYjk5h7qf"/>
+<span class="absolute top-1 left-1 bg-primary text-on-primary font-label-sm text-label-sm px-1.5 py-0.5 rounded">Hot</span>
+</div>
+<div class="flex-1 min-w-0 space-y-1">
+<div class="flex items-start justify-between gap-1">
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors cursor-pointer">
+                      How Did I Become Invincible?
+                    </h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Bookmark">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant truncate">Xinfeng (新丰)</p>
+<div class="flex items-center gap-1.5 pt-1">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-title-sm text-title-sm text-on-surface font-bold text-xs">9.4</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(38k)</span>
+</div>
+<div class="flex flex-wrap items-center gap-1.5 pt-1">
+<span class="font-label-sm text-label-sm bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">1.05M words</span>
+<span class="font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed font-semibold px-2 py-0.5 rounded">Ongoing</span>
+</div>
+</div>
+</div>
+<p class="font-body-ui-dense text-body-ui-dense text-on-surface-variant line-clamp-2 mt-space-sm">
+                I was clearly just an ordinary disciple doing morning drills. Why does everyone gaze upon me like an ancient primordial god descending?
+              </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between bg-surface-container-lowest/60 -mx-space-md -mb-space-md p-space-sm px-space-md rounded-b-xl">
+<a class="font-label-md text-label-md text-primary font-medium hover:underline truncate max-w-[200px] flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[14px]">auto_stories</span>
+                Ch. 412: The Grand Supreme Senior
+              </a>
+<span class="font-label-sm text-label-sm text-on-surface-variant">2h ago</span>
+</div>
+</div>
+<!-- Novel Card 3: Xuanhuang Ding -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
+<div>
+<div class="flex gap-space-md">
+<div class="w-24 h-32 flex-shrink-0 rounded overflow-hidden bg-surface-container shadow-xs relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Novel cover for Xuanhuang Ding: an ancient bronze cauldron floating in cosmos with yellow ancestral mother qi swirling, runic scripts etched into aged metal, epic dark fantasy Xianxia illustration, textured woodcut effect." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtKRpLkYMEZZNoBv-Yur6mctP2Lxi8FXtVzox13H21pjvDSiHMvNWVJUwkXk_kD1CDzB6M_5sk-tR1qYBVXQBKqUFqEhFdNsQAiQ5GOduFLILq75OqdPg184XPtS2IQSHt4BL0qboHNRXJ5cdPjQRWd8xv1Ei7kw2Rfj3dERMMq0iwbQjoU2LVblaPQXWyIshWbavF6beBK_5lH3FJwMbH5cUsj37rSkoAxAsmkq3OlTmnlRLhYYSL"/>
+</div>
+<div class="flex-1 min-w-0 space-y-1">
+<div class="flex items-start justify-between gap-1">
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors cursor-pointer">
+                      Xuanhuang Ding
+                    </h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Bookmark">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant truncate">Nine Cauldron Master (九鼎散人)</p>
+<div class="flex items-center gap-1.5 pt-1">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-title-sm text-title-sm text-on-surface font-bold text-xs">9.7</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(64k)</span>
+</div>
+<div class="flex flex-wrap items-center gap-1.5 pt-1">
+<span class="font-label-sm text-label-sm bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">6.2M words</span>
+<span class="font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed font-semibold px-2 py-0.5 rounded">Ongoing</span>
+</div>
+</div>
+</div>
+<p class="font-body-ui-dense text-body-ui-dense text-on-surface-variant line-clamp-2 mt-space-sm">
+                A single wisp of Mother Qi can crush a stellar galaxy. With the primal cauldron inside his Dantian, he refines myriad worlds into celestial pills.
+              </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between bg-surface-container-lowest/60 -mx-space-md -mb-space-md p-space-sm px-space-md rounded-b-xl">
+<a class="font-label-md text-label-md text-primary font-medium hover:underline truncate max-w-[200px] flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[14px]">auto_stories</span>
+                Ch. 1892: Smelting the Star River
+              </a>
+<span class="font-label-sm text-label-sm text-on-surface-variant">5h ago</span>
+</div>
+</div>
+<!-- Novel Card 4: Green Mountain -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
+<div>
+<div class="flex gap-space-md">
+<div class="w-24 h-32 flex-shrink-0 rounded overflow-hidden bg-surface-container shadow-xs relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Novel cover for Green Mountain: serene mist shrouded emerald pine peaks, lone Taoist hermit standing beside a waterfall in traditional Chinese ink wash style, quiet philosophical mood, elegant calligraphic composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUamZzYpipWQW7qwat3EUv7d2qWK3PY-g_jeSwRE765pVscX4PcyymEmeQ5heseIdmPWu5bWqSHBCJ7WG_WKHDhTUs0o-HCtz7zacUwoKOv8yJiMFBAvieqaMhCqFq1OXapo12ixJuSwF66iUkiAXl1IM4iDZGuzgDPNP_3bbr0ofO6zu6w0HITUPcvv3kbsf7MBqADTsF5060YeNMqUO5fc0w8pp7TJp2jf8e_vuKFDSA8GLyu9vv"/>
+</div>
+<div class="flex-1 min-w-0 space-y-1">
+<div class="flex items-start justify-between gap-1">
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors cursor-pointer">
+                      Green Mountain
+                    </h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Bookmark">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant truncate">Mao Ni (猫腻)</p>
+<div class="flex items-center gap-1.5 pt-1">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-title-sm text-title-sm text-on-surface font-bold text-xs">9.8</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(92k)</span>
+</div>
+<div class="flex flex-wrap items-center gap-1.5 pt-1">
+<span class="font-label-sm text-label-sm bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">3.3M words</span>
+<span class="font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed font-semibold px-2 py-0.5 rounded">Completed</span>
+</div>
+</div>
+</div>
+<p class="font-body-ui-dense text-body-ui-dense text-on-surface-variant line-clamp-2 mt-space-sm">
+                Across three lives and endless snows upon the ninth peak, the Path of Ascension was never meant to escape mortality, but to face it without regret.
+              </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between bg-surface-container-lowest/60 -mx-space-md -mb-space-md p-space-sm px-space-md rounded-b-xl">
+<a class="font-label-md text-label-md text-primary font-medium hover:underline truncate max-w-[200px] flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[14px]">auto_stories</span>
+                Epilogue: The Pine Stood Quiet
+              </a>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Archived</span>
+</div>
+</div>
+<!-- Novel Card 5: Cornflower Witch -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
+<div>
+<div class="flex gap-space-md">
+<div class="w-24 h-32 flex-shrink-0 rounded overflow-hidden bg-surface-container shadow-xs relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Novel cover art for Cornflower Witch: a solitary gothic Victorian apothecary surrounded by luminous cornflower blue herbs and intricate occult distillation glassware, warm amber lamplight in midnight rain, delicate dark fantasy book cover." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1dnk1CuYP4guZzfjOb2o1xs1OoraKLlJRJDhme2QpzmlESmo7HkTfglXofZQoYSGxfiTVJIHiwXQ7cnUzef73KwXcMc4BVNHMPvL-g5Wc-WcYVVazGbCRMtcxplOtY_DJnLZct2PYAfbHh0vobO2D8mzSKpa3KPiHjQ6_jZE3et1aLjoA023HJT60pVRpE3shI43y89k15gkEkuA99CGhy-wdEiSTKE1wjbv4LzhwbwPdouBHXaXp"/>
+<span class="absolute top-1 left-1 bg-tertiary text-on-tertiary font-label-sm text-label-sm px-1.5 py-0.5 rounded">Supernatural</span>
+</div>
+<div class="flex-1 min-w-0 space-y-1">
+<div class="flex items-start justify-between gap-1">
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors cursor-pointer">
+                      Cornflower Witch
+                    </h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Bookmark">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant truncate">Sable Quill (黑羽)</p>
+<div class="flex items-center gap-1.5 pt-1">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-title-sm text-title-sm text-on-surface font-bold text-xs">9.5</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(29k)</span>
+</div>
+<div class="flex flex-wrap items-center gap-1.5 pt-1">
+<span class="font-label-sm text-label-sm bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">2.4M words</span>
+<span class="font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed font-semibold px-2 py-0.5 rounded">Ongoing</span>
+</div>
+</div>
+</div>
+<p class="font-body-ui-dense text-body-ui-dense text-on-surface-variant line-clamp-2 mt-space-sm">
+                Transmigrated as an apothecary's illegitimate apprentice in a gaslit metropolis where Eldritch horrors whisper through church gargoyles...
+              </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between bg-surface-container-lowest/60 -mx-space-md -mb-space-md p-space-sm px-space-md rounded-b-xl">
+<a class="font-label-md text-label-md text-primary font-medium hover:underline truncate max-w-[200px] flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[14px]">auto_stories</span>
+                Ch. 784: The Glass Bell Sings
+              </a>
+<span class="font-label-sm text-label-sm text-on-surface-variant">1d ago</span>
+</div>
+</div>
+<!-- Novel Card 6: Nine Revolutions Devouring Heaven Technique -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
+<div>
+<div class="flex gap-space-md">
+<div class="w-24 h-32 flex-shrink-0 rounded overflow-hidden bg-surface-container shadow-xs relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Novel cover for Nine Revolutions Devouring Heaven Technique: colossal black dragon silhouette devouring a miniature golden star in a deep void, cosmic cultivation themes, fiery gold and rich coal tones, refined digital Xianxia fantasy art." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDh4kxlnK0m3Sxj7slPu1A8WViXQNDUgHm5jSqDvfto6DimoA20z4ZDPwoAlz2XSGqcuuUfkQtugkdOboaNongG3OGUTEInmpp0HlTJ7PQKxu2V1eFczB9OkyZ4vDFrX_xV4B9EePVTgkGB5DHc02z3yMBVqXE8ORRsW0APu2jV4LKiCkK-IhDEPiX-REIned6X0woJj-lbH3qUjd4VbfUL8B1gYmCvlBJsnAhAVgZpp72lPvoaFlJj"/>
+</div>
+<div class="flex-1 min-w-0 space-y-1">
+<div class="flex items-start justify-between gap-1">
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors cursor-pointer">
+                      Nine Revolutions Devouring Heaven
+                    </h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Bookmark">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant truncate">Dragon Sovereign (龙君)</p>
+<div class="flex items-center gap-1.5 pt-1">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-title-sm text-title-sm text-on-surface font-bold text-xs">9.3</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(78k)</span>
+</div>
+<div class="flex flex-wrap items-center gap-1.5 pt-1">
+<span class="font-label-sm text-label-sm bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">10.5M words</span>
+<span class="font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed font-semibold px-2 py-0.5 rounded">Ongoing</span>
+</div>
+</div>
+</div>
+<p class="font-body-ui-dense text-body-ui-dense text-on-surface-variant line-clamp-2 mt-space-sm">
+                Devour earth, devour heaven, devour reincarnation itself! When the divine sects betrayed him, Chu Yan woke the ancestral beast inside his bloodline.
+              </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between bg-surface-container-lowest/60 -mx-space-md -mb-space-md p-space-sm px-space-md rounded-b-xl">
+<a class="font-label-md text-label-md text-primary font-medium hover:underline truncate max-w-[200px] flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[14px]">auto_stories</span>
+                Ch. 3420: Dragon Gate Ascension
+              </a>
+<span class="font-label-sm text-label-sm text-on-surface-variant">3h ago</span>
+</div>
+</div>
+<!-- Novel Card 7: Asura Martial God -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
+<div>
+<div class="flex gap-space-md">
+<div class="w-24 h-32 flex-shrink-0 rounded overflow-hidden bg-surface-container shadow-xs relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Novel cover art for Asura Martial God: an imposing crimson-armored martial deity wielding dual lightning halberds against a sea of defeated immortal spirits, apocalyptic battlefield setting, warm terracotta and burnt copper lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuANv0aavfUQBk6ooJbbC6uHPbtAeQ76yGTnHENYHTORN8qMQXE8qNj_8kgoyHskarsa879WiPOuIkm2u2VfMnwJyIeUWeEuUwVFbkTo4vxPrisPRTsrMzHGHSxLYic-WZ8CgCCHWunU6gzeld-vcAlsa3_TAj5fffqbSypWhR3xuA-cv2MUZ3jYNY253afIUSCpLrqigESm2p_tzwEwTOryJm8N5n8qAbtdxHOzhFq_mk37XaGTRZ4s"/>
+<span class="absolute top-1 left-1 bg-surface-container-highest font-label-sm text-label-sm text-on-surface px-1.5 py-0.5 rounded">Titan</span>
+</div>
+<div class="flex-1 min-w-0 space-y-1">
+<div class="flex items-start justify-between gap-1">
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors cursor-pointer">
+                      Asura Martial God
+                    </h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Bookmark">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant truncate">Kindhearted Bee (善良的蜜蜂)</p>
+<div class="flex items-center gap-1.5 pt-1">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-title-sm text-title-sm text-on-surface font-bold text-xs">9.1</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(145k)</span>
+</div>
+<div class="flex flex-wrap items-center gap-1.5 pt-1">
+<span class="font-label-sm text-label-sm bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">22.2M words</span>
+<span class="font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed font-semibold px-2 py-0.5 rounded">Ongoing</span>
+</div>
+</div>
+</div>
+<p class="font-body-ui-dense text-body-ui-dense text-on-surface-variant line-clamp-2 mt-space-sm">
+                Even if I am deemed a demon by the nine heavens, the lightning inside my blood shall illuminate every dark corner of this continent!
+              </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between bg-surface-container-lowest/60 -mx-space-md -mb-space-md p-space-sm px-space-md rounded-b-xl">
+<a class="font-label-md text-label-md text-primary font-medium hover:underline truncate max-w-[200px] flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[14px]">auto_stories</span>
+                Ch. 5891: The True Ancestral Land
+              </a>
+<span class="font-label-sm text-label-sm text-on-surface-variant">42m ago</span>
+</div>
+</div>
+<!-- Novel Card 8: Record of a Mortal's Journey to Immortality -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
+<div>
+<div class="flex gap-space-md">
+<div class="w-24 h-32 flex-shrink-0 rounded overflow-hidden bg-surface-container shadow-xs relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Novel cover for Record of a Mortal's Journey to Immortality: an austere wandering herbalist with a bamboo basket on his back ascending a treacherous mountain cliff toward floating immortal pavilions, classical realist Chinese cultivation illustration, muted olive and earthen tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmmIXB0oW32-5bcOt7TpCp6s1ArPN48bXoCQTXFlOFWMARIzfBS9ox7hXvefy7aoa2dxRtwsJPsaHrO4IscdrkCNpNYU_hamIlURE3iOw3xH8Ckyh1V47T8fslengIBn_Tv6tImldh9g_o1mD35XSd1upznnDweRPSG3gN44Sv50Bg0jvohMpsjAXB7dWqDlEOFx8nsKYXZw7rn7qpoveRmbyTNaKxDAbZNVZ_Rm5glHBYxK7d6OJZ"/>
+<span class="absolute top-1 left-1 bg-surface-container-highest font-label-sm text-label-sm text-on-surface px-1.5 py-0.5 rounded">Monument</span>
+</div>
+<div class="flex-1 min-w-0 space-y-1">
+<div class="flex items-start justify-between gap-1">
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors cursor-pointer">
+                      Mortal's Journey to Immortality
+                    </h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Bookmark">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant truncate">Wang Yu (忘语)</p>
+<div class="flex items-center gap-1.5 pt-1">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-title-sm text-title-sm text-on-surface font-bold text-xs">9.9</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(210k)</span>
+</div>
+<div class="flex flex-wrap items-center gap-1.5 pt-1">
+<span class="font-label-sm text-label-sm bg-surface-container-highest text-on-surface px-2 py-0.5 rounded">7.4M words</span>
+<span class="font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed font-semibold px-2 py-0.5 rounded">Completed</span>
+</div>
+</div>
+</div>
+<p class="font-body-ui-dense text-body-ui-dense text-on-surface-variant line-clamp-2 mt-space-sm">
+                A poor, ordinary village youth named Han Li joins a small sect in jianghu by chance. Though his aptitude is mediocre, he strives toward immortality with caution...
+              </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between bg-surface-container-lowest/60 -mx-space-md -mb-space-md p-space-sm px-space-md rounded-b-xl">
+<a class="font-label-md text-label-md text-primary font-medium hover:underline truncate max-w-[200px] flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[14px]">auto_stories</span>
+                Epilogue: The Vast Immortal Realm
+              </a>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Archived</span>
+</div>
+</div>
+</div>
+<!-- Catalog Pagination Bar -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<div class="font-label-md text-label-md text-on-surface-variant">
+            Page <strong class="text-on-surface font-semibold">1</strong> of <strong class="text-on-surface font-semibold">124</strong>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-3 py-1.5 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1" disabled="">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+              Prev
+            </button>
+<button class="w-8 h-8 rounded bg-primary text-on-primary font-label-md text-label-md font-semibold shadow-xs">1</button>
+<button class="w-8 h-8 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors">2</button>
+<button class="w-8 h-8 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors">3</button>
+<span class="px-1 text-on-surface-variant font-label-md text-label-md">...</span>
+<button class="w-8 h-8 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors">124</button>
+<button class="px-3 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1">
+              Next
+              <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+<!-- Rapid Jump Input -->
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Go to:</span>
+<input class="w-14 bg-surface-container text-on-surface font-label-md text-label-md rounded px-2 py-1 text-center focus:outline-none focus:bg-surface-container-high" max="124" min="1" type="number" value="1"/>
+<button class="px-2.5 py-1 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded font-label-md text-label-md transition-colors">
+              Jump
+            </button>
+</div>
+</div>
+</div>
+<!-- Right: Real-Time Rankings & Community Stream Sidebar (4 Columns) -->
+<aside class="lg:col-span-4 space-y-space-lg">
+<!-- Widget 1: Real-Time Power Rankings (Top 10) -->
+<div class="bg-surface-container-low rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-medium">Power Rankings</h2>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">Daily Live</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">
+            Ranked by active vote tokens &amp; consecutive reading hours.
+          </p>
+<!-- Top 10 Ranked List Items -->
+<div class="space-y-space-xs divide-y divide-transparent">
+<!-- Rank 1 -->
+<div class="flex items-center gap-space-sm p-space-xs rounded-lg hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="w-7 h-7 flex-shrink-0 rounded bg-primary text-on-primary font-title-sm text-title-sm font-bold flex items-center justify-center shadow-xs">
+                1
+              </div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
+                  Heavenly Tribulation
+                </h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span>Fleeting Dreams</span>
+<span>•</span>
+<span class="text-primary font-medium">94.8k votes</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary text-[18px]">keyboard_double_arrow_up</span>
+</div>
+<!-- Rank 2 -->
+<div class="flex items-center gap-space-sm p-space-xs rounded-lg hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="w-7 h-7 flex-shrink-0 rounded bg-secondary text-on-secondary font-title-sm text-title-sm font-bold flex items-center justify-center shadow-xs">
+                2
+              </div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
+                  Xuanhuang Ding
+                </h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span>Nine Cauldron Master</span>
+<span>•</span>
+<span>88.2k votes</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary text-[18px]">arrow_drop_up</span>
+</div>
+<!-- Rank 3 -->
+<div class="flex items-center gap-space-sm p-space-xs rounded-lg hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="w-7 h-7 flex-shrink-0 rounded bg-tertiary text-on-tertiary font-title-sm text-title-sm font-bold flex items-center justify-center shadow-xs">
+                3
+              </div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
+                  Asura Martial God
+                </h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span>Kindhearted Bee</span>
+<span>•</span>
+<span>79.1k votes</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">remove</span>
+</div>
+<!-- Rank 4 -->
+<div class="flex items-center gap-space-sm p-space-xs rounded-lg hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="w-7 h-7 flex-shrink-0 rounded bg-surface-container-high text-on-surface font-label-md text-label-md font-bold flex items-center justify-center">
+                4
+              </div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
+                  Nine Revolutions Devouring Heaven
+                </h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span>Dragon Sovereign</span>
+<span>•</span>
+<span>62.4k votes</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary text-[18px]">arrow_drop_up</span>
+</div>
+<!-- Rank 5 -->
+<div class="flex items-center gap-space-sm p-space-xs rounded-lg hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="w-7 h-7 flex-shrink-0 rounded bg-surface-container-high text-on-surface font-label-md text-label-md font-bold flex items-center justify-center">
+                5
+              </div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
+                  How Did I Become Invincible?
+                </h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span>Xinfeng</span>
+<span>•</span>
+<span>58.9k votes</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-error text-[18px]">arrow_drop_down</span>
+</div>
+<!-- Rank 6 -->
+<div class="flex items-center gap-space-sm p-space-xs rounded-lg hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="w-7 h-7 flex-shrink-0 rounded bg-surface-container-high text-on-surface font-label-md text-label-md font-bold flex items-center justify-center">
+                6
+              </div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
+                  Cornflower Witch
+                </h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span>Sable Quill</span>
+<span>•</span>
+<span>51.2k votes</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary text-[18px]">arrow_drop_up</span>
+</div>
+<!-- Rank 7 -->
+<div class="flex items-center gap-space-sm p-space-xs rounded-lg hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="w-7 h-7 flex-shrink-0 rounded bg-surface-container-high text-on-surface font-label-md text-label-md font-bold flex items-center justify-center">
+                7
+              </div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
+                  Reincarnation of the Sword Monarch
+                </h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span>Frost Edge</span>
+<span>•</span>
+<span>46.7k votes</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">remove</span>
+</div>
+<!-- Rank 8 -->
+<div class="flex items-center gap-space-sm p-space-xs rounded-lg hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="w-7 h-7 flex-shrink-0 rounded bg-surface-container-high text-on-surface font-label-md text-label-md font-bold flex items-center justify-center">
+                8
+              </div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
+                  Lord of Mysteries (Translation Archive)
+                </h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span>Cuttlefish</span>
+<span>•</span>
+<span>43.0k votes</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary text-[18px]">arrow_drop_up</span>
+</div>
+<!-- Rank 9 -->
+<div class="flex items-center gap-space-sm p-space-xs rounded-lg hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="w-7 h-7 flex-shrink-0 rounded bg-surface-container-high text-on-surface font-label-md text-label-md font-bold flex items-center justify-center">
+                9
+              </div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
+                  Astral Pet Store
+                </h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span>Ancient Xi</span>
+<span>•</span>
+<span>39.4k votes</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-error text-[18px]">arrow_drop_down</span>
+</div>
+<!-- Rank 10 -->
+<div class="flex items-center gap-space-sm p-space-xs rounded-lg hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="w-7 h-7 flex-shrink-0 rounded bg-surface-container-high text-on-surface font-label-md text-label-md font-bold flex items-center justify-center">
+                10
+              </div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
+                  Omniscient Reader's Viewpoint
+                </h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span>Sing Shong</span>
+<span>•</span>
+<span>37.8k votes</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary text-[18px]">arrow_drop_up</span>
+</div>
+</div>
+<a class="block text-center pt-space-xs font-label-md text-label-md text-primary hover:underline" href="#">
+            View Complete 100-Tier Leaderboard →
+          </a>
+</div>
+<!-- Widget 2: Recently Updated Live Stream -->
+<div class="bg-surface-container-low rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">bolt</span>
+<h3 class="font-headline-md text-headline-md text-on-surface font-medium">Live Serial Pulse</h3>
+</div>
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-ping"></span>
+</div>
+<div class="space-y-space-sm">
+<div class="p-space-xs rounded hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span class="font-semibold text-primary">5m ago</span>
+<span class="text-on-surface font-medium">Ch. 5891</span>
+</div>
+<h5 class="font-label-md text-label-md text-on-surface font-semibold truncate hover:text-primary cursor-pointer">
+                Asura Martial God
+              </h5>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">
+                Title: The Awakening of Nine-Coloured Divine Lightning
+              </p>
+</div>
+<div class="p-space-xs rounded hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span class="font-semibold text-primary">12m ago</span>
+<span class="text-on-surface font-medium">Ch. 2418</span>
+</div>
+<h5 class="font-label-md text-label-md text-on-surface font-semibold truncate hover:text-primary cursor-pointer">
+                Heavenly Tribulation
+              </h5>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">
+                Title: Breaking the Bloodbound Seal of Patriarch Wu
+              </p>
+</div>
+<div class="p-space-xs rounded hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span class="font-semibold text-primary">28m ago</span>
+<span class="text-on-surface font-medium">Ch. 1104</span>
+</div>
+<h5 class="font-label-md text-label-md text-on-surface font-semibold truncate hover:text-primary cursor-pointer">
+                Shadow Slave Chronicle
+              </h5>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">
+                Title: Whispers Beneath the Crimson Obelisk
+              </p>
+</div>
+<div class="p-space-xs rounded hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span class="font-semibold text-primary">45m ago</span>
+<span class="text-on-surface font-medium">Ch. 784</span>
+</div>
+<h5 class="font-label-md text-label-md text-on-surface font-semibold truncate hover:text-primary cursor-pointer">
+                Cornflower Witch
+              </h5>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">
+                Title: The Glass Bell Sings at Blackthorn Cross
+              </p>
+</div>
+</div>
+</div>
+<!-- Widget 3: Popular Novel Tags Cloud -->
+<div class="bg-surface-container-low rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">sell</span>
+<h3 class="font-headline-md text-headline-md text-on-surface font-medium">Trending Motifs</h3>
+</div>
+<div class="flex flex-wrap gap-1.5">
+<a class="bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md px-3 py-1.5 rounded transition-all" href="#">#DecisiveHero</a>
+<a class="bg-primary/10 text-primary font-semibold font-label-md text-label-md px-3 py-1.5 rounded hover:bg-primary hover:text-on-primary transition-all" href="#">#ImmortalBones</a>
+<a class="bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md px-3 py-1.5 rounded transition-all" href="#">#CheatSystem</a>
+<a class="bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md px-3 py-1.5 rounded transition-all" href="#">#SectBuilding</a>
+<a class="bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md px-3 py-1.5 rounded transition-all" href="#">#AlchemyMaster</a>
+<a class="bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md px-3 py-1.5 rounded transition-all" href="#">#CautiousProtagonist</a>
+<a class="bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md px-3 py-1.5 rounded transition-all" href="#">#NonHarem</a>
+<a class="bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md px-3 py-1.5 rounded transition-all" href="#">#KingdomWars</a>
+<a class="bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md px-3 py-1.5 rounded transition-all" href="#">#TimeLoop</a>
+<a class="bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md px-3 py-1.5 rounded transition-all" href="#">#ArtifactSpirit</a>
+</div>
+</div>
+<!-- Reader Engagement Banner / Reading Goal Widget -->
+<div class="bg-primary-container text-on-primary-container rounded-xl p-space-lg shadow-sm relative overflow-hidden">
+<div class="relative z-10 space-y-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-primary-fixed-variant font-semibold">Weekly Marathon</span>
+<h4 class="font-headline-md text-headline-md font-medium">1.2M Words Read</h4>
+<p class="font-body-ui-dense text-body-ui-dense text-on-primary-container/90">
+              You are among the top 3% of serialized fiction readers this week. Unlock exclusive typographer fonts in Deckle Studio.
+            </p>
+<div class="w-full bg-surface-container-lowest/30 rounded-full h-2 mt-2">
+<div class="bg-primary-fixed h-2 rounded-full w-4/5"></div>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm pt-1">
+<span>80% Goal Reached</span>
+<span>1.5M Goal</span>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</div>
+</div>
+<script>
+  // Simple bookmark toggle interaction for catalog cards
+  document.querySelectorAll('button[title="Bookmark"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const icon = btn.querySelector('.material-symbols-outlined');
+      if (icon.innerText === 'bookmark_border') {
+        icon.innerText = 'bookmark';
+        icon.style.fontVariationSettings = "'FILL' 1";
+        btn.classList.add('text-primary');
+      } else {
+        icon.innerText = 'bookmark_border';
+        icon.style.fontVariationSettings = "'FILL' 0";
+        btn.classList.remove('text-primary');
+      }
+    });
+  });
+</script></main><footer class="w-full bg-surface-container-low shadow-[0_-1px_8px_rgba(0,0,0,0.02)] mt-space-xl"><div class="max-w-7xl mx-auto px-margin py-space-xl"><div class="grid grid-cols-1 md:grid-cols-4 gap-space-xl pb-space-xl"><div class="space-y-space-sm"><div class="flex items-center gap-space-xs"><span class="font-headline-md text-headline-md text-primary font-medium">Deckle</span></div><p class="font-body-ui-dense text-body-ui-dense text-on-surface-variant">An immersive, distraction-free serialized fiction reader blending tactile print editorial grace with low-friction digital ergonomics.</p></div><div class="space-y-space-xs"><h4 class="font-label-md text-label-md uppercase tracking-wider text-on-surface font-semibold">Discovery</h4><ul class="space-y-1"><li class="font-body-ui text-body-ui text-on-surface-variant hover:text-primary transition-colors"><a data-path="catalog" href="#">Browse Web Novels</a></li><li class="font-body-ui text-body-ui text-on-surface-variant hover:text-primary transition-colors"><a data-path="rankings" href="#">Weekly Power Rankings</a></li><li class="font-body-ui text-body-ui text-on-surface-variant hover:text-primary transition-colors"><a data-path="catalog" href="#">New Serial Releases</a></li></ul></div><div class="space-y-space-xs"><h4 class="font-label-md text-label-md uppercase tracking-wider text-on-surface font-semibold">Authors</h4><ul class="space-y-1"><li class="font-body-ui text-body-ui text-on-surface-variant hover:text-primary transition-colors"><a data-path="author-studio" href="#">Author Dashboard</a></li><li class="font-body-ui text-body-ui text-on-surface-variant hover:text-primary transition-colors"><a data-path="author-studio" href="#">Publishing Guidelines</a></li><li class="font-body-ui text-body-ui text-on-surface-variant hover:text-primary transition-colors"><a data-path="author-studio" href="#">Creator Monetization</a></li></ul></div><div class="space-y-space-xs"><h4 class="font-label-md text-label-md uppercase tracking-wider text-on-surface font-semibold">Experience</h4><ul class="space-y-1"><li class="font-body-ui text-body-ui text-on-surface-variant hover:text-primary transition-colors"><a data-path="reading-preferences" href="#">Typography &amp; Themes</a></li><li class="font-body-ui text-body-ui text-on-surface-variant hover:text-primary transition-colors"><a data-path="library" href="#">Reading Lists &amp; Sync</a></li><li class="font-body-ui text-body-ui text-on-surface-variant hover:text-primary transition-colors"><a data-path="community" href="#">Reader Circles</a></li></ul></div></div><div class="pt-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm font-label-sm text-label-sm text-on-surface-variant"><p>© 2024 Deckle Serialized Literature. All rights reserved.</p><div class="flex items-center gap-space-lg"><a class="hover:text-on-surface transition-colors" href="#">Privacy Policy</a><a class="hover:text-on-surface transition-colors" href="#">Terms of Service</a><a class="hover:text-on-surface transition-colors" href="#">Content Guidelines</a></div></div></div></footer></body></html>
