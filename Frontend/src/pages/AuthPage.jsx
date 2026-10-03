@@ -41,7 +41,8 @@ export default function AuthPage() {
   // Tab State: true = Sign In, false = Create Account
   const [isLoginTab, setIsLoginTab] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedGenres, setSelectedGenres] = useState(["Fantasy"]);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirmPassword, setShowSignupConfirmPassword] = useState(false);
 
   // Server feedback
   const [serverError, setServerError] = useState("");
@@ -126,14 +127,6 @@ export default function AuthPage() {
       setServerError(err.message || "Registration failed.");
     }
   }
-
-  function toggleGenre(genre) {
-    setSelectedGenres((prev) =>
-      prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre],
-    );
-  }
-
-  const genreList = ["Fantasy", "Xianxia", "Sci-Fi", "Romance", "Mystery"];
 
   return (
     <main className="w-full min-h-screen bg-page text-text-main transition-colors duration-200">
@@ -416,14 +409,26 @@ export default function AuthPage() {
                 <div className="relative flex items-center">
                   <Lock className="absolute left-3 w-4 h-4 text-text-muted pointer-events-none" />
                   <input
-                    type="password"
+                    type={showSignupPassword ? "text" : "password"}
                     placeholder="••••••••••••"
                     {...signupField("password", {
                       required: "Password is required",
                       minLength: { value: 6, message: "Minimum 6 characters" },
                     })}
-                    className="w-full h-11 pl-10 pr-3 rounded-xl bg-input text-text-main border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+                    className="w-full h-11 pl-10 pr-10 rounded-xl bg-input text-text-main border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupPassword(!showSignupPassword)}
+                    className="absolute right-3 text-text-muted hover:text-text-main p-1 cursor-pointer"
+                    aria-label={showSignupPassword ? "Hide password" : "Show password"}
+                  >
+                    {showSignupPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
                 {signupErrors.password && (
                   <span className="text-[11px] text-red-500">
@@ -479,7 +484,7 @@ export default function AuthPage() {
       {/* 2. DESKTOP SCREEN LAYOUT (Visible on Tablets & Desktops: `hidden md:flex`) */}
       {/* ========================================================================= */}
       <div className="hidden md:flex w-full min-h-screen flex-col justify-center items-center py-6 sm:py-8 px-4 relative">
-        <div className="relative w-full max-w-[740px] flex flex-col items-center">
+        <div className="relative w-full max-w-[650px] flex flex-col items-center">
           {/* Subtle decorative ambient glow */}
           <div className="absolute -top-16 -left-12 w-96 h-96 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-16 -right-12 w-96 h-96 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
@@ -487,15 +492,15 @@ export default function AuthPage() {
           {/* Unified Desktop Card */}
           <div className="relative w-full bg-card rounded-2xl shadow-xl border border-border-subtle/50 overflow-hidden flex flex-row">
             {/* LEFT PANEL: Literary Ambiance */}
-            <div className="w-5/12 bg-tag p-4 sm:p-5 md:p-6 flex flex-col justify-between relative overflow-hidden border-r border-border-subtle/50">
+            <div className="w-5/12 bg-tag p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden border-r border-border-subtle/50">
               {/* Delicate line art */}
               <div className="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center">
                 <svg
                   className="text-accent stroke-current"
                   fill="none"
-                  height="340"
+                  height="280"
                   viewBox="0 0 200 200"
-                  width="340"
+                  width="280"
                 >
                   <circle
                     cx="100"
@@ -538,13 +543,13 @@ export default function AuthPage() {
               </div>
 
               {/* Curated Editorial Quote Section */}
-              <div className="relative z-10 my-3.5 bg-card-white/80 backdrop-blur-md p-3.5 rounded-xl border border-border-subtle/50 shadow-2xs space-y-1.5">
-                <Quote className="w-4.5 h-4.5 text-accent opacity-60" />
-                <p className="font-serif text-[13px] text-text-main italic leading-relaxed">
+              <div className="relative z-10 my-3 bg-card-white/80 backdrop-blur-md p-3 rounded-xl border border-border-subtle/50 shadow-2xs space-y-1.5">
+                <Quote className="w-4 h-4 text-accent opacity-60" />
+                <p className="font-serif text-xs text-text-main italic leading-relaxed">
                   “Reading is to the mind what exercise is to the body. Resume
                   reading right where you paused.”
                 </p>
-                <div className="flex items-center justify-between text-[10px] text-text-muted pt-1.5 border-t border-border-subtle/40">
+                <div className="flex items-center justify-between text-[10px] text-text-muted pt-1 border-t border-border-subtle/40">
                   <span className="flex items-center gap-1 font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                     Sync Active
@@ -583,7 +588,7 @@ export default function AuthPage() {
             </div>
 
             {/* RIGHT PANEL: Interactive Authentication Hub */}
-            <div className="w-7/12 p-4 sm:p-5 md:p-6 flex flex-col justify-center bg-card-white">
+            <div className="w-7/12 p-4 sm:p-5 flex flex-col justify-center bg-card-white">
               {/* Card Header: Context Label & Beautified Tactile Theme Switcher */}
               <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-border-subtle/30">
                 <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
@@ -851,23 +856,38 @@ export default function AuthPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-text-main">
                         Password *
                       </label>
-                      <input
-                        type="password"
-                        placeholder="At least 6 chars"
-                        {...signupField("password", {
-                          required: "Password is required",
-                          minLength: {
-                            value: 6,
-                            message: "Minimum 6 characters",
-                          },
-                        })}
-                        className="w-full px-3 py-2 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
-                      />
+                      <div className="relative flex items-center">
+                        <Lock className="absolute left-2.5 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+                        <input
+                          type={showSignupPassword ? "text" : "password"}
+                          placeholder="Min 6 chars"
+                          {...signupField("password", {
+                            required: "Password is required",
+                            minLength: {
+                              value: 6,
+                              message: "Minimum 6 characters",
+                            },
+                          })}
+                          className="w-full pl-8 pr-7 py-2 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSignupPassword(!showSignupPassword)}
+                          className="absolute right-2 text-text-muted hover:text-text-main p-0.5 cursor-pointer"
+                          aria-label={showSignupPassword ? "Hide password" : "Show password"}
+                        >
+                          {showSignupPassword ? (
+                            <EyeOff className="w-3.5 h-3.5" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
                       {signupErrors.password && (
                         <span className="text-[11px] text-red-500">
                           {signupErrors.password.message}
@@ -878,52 +898,37 @@ export default function AuthPage() {
                       <label className="text-xs font-semibold text-text-main">
                         Confirm Password *
                       </label>
-                      <input
-                        type="password"
-                        placeholder="Repeat password"
-                        {...signupField("confirmPassword", {
-                          required: "Please confirm password",
-                          validate: (val) =>
-                            val === registeredPassword ||
-                            "Passwords do not match",
-                        })}
-                        className="w-full px-3 py-2 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
-                      />
+                      <div className="relative flex items-center">
+                        <Lock className="absolute left-2.5 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+                        <input
+                          type={showSignupConfirmPassword ? "text" : "password"}
+                          placeholder="Repeat password"
+                          {...signupField("confirmPassword", {
+                            required: "Please confirm password",
+                            validate: (val) =>
+                              val === registeredPassword ||
+                              "Passwords do not match",
+                          })}
+                          className="w-full pl-8 pr-7 py-2 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSignupConfirmPassword(!showSignupConfirmPassword)}
+                          className="absolute right-2 text-text-muted hover:text-text-main p-0.5 cursor-pointer"
+                          aria-label={showSignupConfirmPassword ? "Hide password" : "Show password"}
+                        >
+                          {showSignupConfirmPassword ? (
+                            <EyeOff className="w-3.5 h-3.5" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
                       {signupErrors.confirmPassword && (
                         <span className="text-[11px] text-red-500">
                           {signupErrors.confirmPassword.message}
                         </span>
                       )}
-                    </div>
-                  </div>
-
-                  {/* Reading Affinities Genre Tags (From Stitch) */}
-                  <div className="space-y-1.5 pt-1">
-                    <label className="text-xs font-semibold text-text-main flex items-center justify-between">
-                      <span>Select Reading Affinities</span>
-                      <span className="text-[11px] text-text-muted">
-                        Optional
-                      </span>
-                    </label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {genreList.map((genre) => {
-                        const active = selectedGenres.includes(genre);
-                        return (
-                          <button
-                            key={genre}
-                            type="button"
-                            onClick={() => toggleGenre(genre)}
-                            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
-                              active
-                                ? "bg-accent/15 text-accent"
-                                : "bg-tag text-text-muted hover:text-text-main"
-                            }`}
-                          >
-                            <Sparkles className="w-3 h-3" />
-                            {genre}
-                          </button>
-                        );
-                      })}
                     </div>
                   </div>
 
@@ -976,15 +981,6 @@ export default function AuthPage() {
                 </Link>
               </div>
             </div>
-          </div>
-
-          {/* Micro Privacy Footnote */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-text-muted text-[11px]">
-            <span>🔒 256-bit encrypted telemetry</span>
-            <span>•</span>
-            <span>No tracker analytics or intrusive pop-ups</span>
-            <span>•</span>
-            <span>Reader-first typography engine</span>
           </div>
         </div>
       </div>
