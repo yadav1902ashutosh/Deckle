@@ -14,12 +14,18 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Provider } from 'react-redux';
 import store from './store/store.js';
 import AuthPage from './pages/AuthPage.jsx';
-
+import HomePage from "./pages/HomePage.jsx";
 // Router Object Configuration
 const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
+    children: [
+      {
+        index: true,
+        element: <HomePage />,
+      },
+    ]
   },
   {
     path: '/login',

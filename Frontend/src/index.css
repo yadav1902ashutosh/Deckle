@@ -123,3 +123,15 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
   min-height: 100vh;
 }
+
+/* Hide scrollbar while preserving touch & wheel horizontal scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+
