@@ -599,12 +599,6 @@ export default function AuthPage() {
             <ChevronRight className="w-4 h-4 text-text-muted" />
           </Link>
 
-          {/* Footnote */}
-          <div className="flex flex-col items-center text-center gap-1 text-[11px] text-text-muted pb-4">
-            <p className="text-[10px] text-text-muted/80">
-              Reader-first typography engine built for deep focus
-            </p>
-          </div>
         </div>
       </div>
 
@@ -1095,17 +1089,6 @@ export default function AuthPage() {
                 </Link>
               </div>
             </div>
-          </div>
-
-          {/* Micro Privacy Footnote */}
-          <div className="mt-4 md:mt-6 flex flex-wrap items-center justify-center gap-3 md:gap-4 text-text-muted text-[11px] md:text-xs">
-            <span className="flex items-center gap-1">
-              <Lock className="w-3.5 h-3.5" /> 256-bit encrypted telemetry
-            </span>
-            <span>•</span>
-            <span>No tracker analytics or intrusive pop-ups</span>
-            <span>•</span>
-            <span>Reader-first typography engine</span>
           </div>
         </div>
       </div>
