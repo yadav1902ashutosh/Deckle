@@ -9,8 +9,12 @@ import {
   Menu,
   X,
   LogIn,
+  Palette,
 } from "lucide-react";
 import DeckleLogo from "../common/DeckleLogo";
+import { DECKLE_THEMES, getActiveTheme, applyTheme } from "../../utils/themeConfig";
+
+export const THEMES = DECKLE_THEMES;
 
 export default function Header() {
   const location = useLocation();
@@ -18,17 +22,27 @@ export default function Header() {
   const authState = useSelector((state) => state.auth?.status);
   const user = useSelector((state) => state.auth?.userData);
 
-  const [activeTheme, setActiveTheme] = useState("parchment");
+  const [activeTheme, setActiveTheme] = useState(getActiveTheme());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileThemeOpen, setMobileThemeOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef(null);
   const mobileInputRef = useRef(null);
+  const themeDropdownRef = useRef(null);
+  const userMenuRef = useRef(null);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("deckle_theme") || "parchment";
-    setActiveTheme(savedTheme);
-    document.documentElement.setAttribute("data-theme", savedTheme);
+    const current = getActiveTheme();
+    setActiveTheme(current);
+    applyTheme(current);
+
+    const handleThemeChangeEvt = (e) => {
+      if (e.detail) setActiveTheme(e.detail);
+    };
+    window.addEventListener("deckle_theme_change", handleThemeChangeEvt);
+    return () => window.removeEventListener("deckle_theme_change", handleThemeChangeEvt);
   }, []);
 
   // Global shortcut (⌘K or Ctrl+K) to focus search
@@ -48,10 +62,31 @@ export default function Header() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        themeDropdownRef.current &&
+        !themeDropdownRef.current.contains(e.target)
+      ) {
+        setMobileThemeOpen(false);
+      }
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target)
+      ) {
+        setUserMenuOpen(false);
+      }
+    };
+    if (mobileThemeOpen || userMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [mobileThemeOpen, userMenuOpen]);
+
   function handleThemeChange(themeName) {
     setActiveTheme(themeName);
-    localStorage.setItem("deckle_theme", themeName);
-    document.documentElement.setAttribute("data-theme", themeName);
+    applyTheme(themeName);
   }
 
   function handleSearchKeyDown(e) {
@@ -160,105 +195,221 @@ export default function Header() {
                 </kbd>
               </div>
 
-          {/* 5-Theme Dots */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full bg-card border border-border-subtle">
-            <button
-              type="button"
-              onClick={() => handleThemeChange("parchment")}
-              title="Parchment (Warm Paper)"
-              className={`w-4 h-4 rounded-full bg-[#fdf9f0] border border-[#d6c3b7] cursor-pointer transition-all ${
-                activeTheme === "parchment" ? "ring-2 ring-accent scale-110" : "hover:scale-105"
-              }`}
-            />
-            <button
-              type="button"
-              onClick={() => handleThemeChange("crisp-paper")}
-              title="Crisp Paper (Daylight Clean)"
-              className={`w-4 h-4 rounded-full bg-[#ffffff] border border-[#cbd5e1] cursor-pointer transition-all ${
-                activeTheme === "crisp-paper" ? "ring-2 ring-accent scale-110" : "hover:scale-105"
-              }`}
-            />
-            <button
-              type="button"
-              onClick={() => handleThemeChange("soft-sage")}
-              title="Soft Sage (Eye Care Green)"
-              className={`w-4 h-4 rounded-full bg-[#ebf1ea] border border-[#b8c8b7] cursor-pointer transition-all ${
-                activeTheme === "soft-sage" ? "ring-2 ring-accent scale-110" : "hover:scale-105"
-              }`}
-            />
-            <button
-              type="button"
-              onClick={() => handleThemeChange("nocturne")}
-              title="Nocturne (Slate Twilight)"
-              className={`w-4 h-4 rounded-full bg-[#191e24] border border-[#374353] cursor-pointer transition-all ${
-                activeTheme === "nocturne" ? "ring-2 ring-accent scale-110" : "hover:scale-105"
-              }`}
-            />
-            <button
-              type="button"
-              onClick={() => handleThemeChange("midnight")}
-              title="Midnight (OLED Night)"
-              className={`w-4 h-4 rounded-full bg-[#0b0c0e] border border-[#282c34] cursor-pointer transition-all ${
-                activeTheme === "midnight" ? "ring-2 ring-accent scale-110" : "hover:scale-105"
-              }`}
-            />
-          </div>
+              {/* Mobile Theme Toggle Button (with live active color dot) */}
+              <div className="relative sm:hidden" ref={themeDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setMobileThemeOpen(!mobileThemeOpen)}
+                  aria-label="Change reading theme"
+                  title="Switch theme"
+                  className="p-2 rounded-lg text-text-muted hover:text-text-main hover:bg-tag transition-colors relative flex items-center justify-center cursor-pointer"
+                >
+                  <Palette className="w-4 h-4" />
+                  <span
+                    className="absolute bottom-1 right-1 w-2 h-2 rounded-full border border-card"
+                    style={{
+                      backgroundColor: THEMES.find((t) => t.id === activeTheme)?.color || "#fdf9f0",
+                    }}
+                  />
+                </button>
 
-          {/* Notifications Button with Ping Dot */}
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="p-2 rounded-lg text-text-muted hover:text-text-main hover:bg-tag transition-colors relative cursor-pointer"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accent" />
-          </button>
-
-          {/* User Profile or Sign In */}
-          {authState ? (
-            <div className="flex items-center gap-1.5 cursor-pointer group p-1 rounded-lg hover:bg-tag transition-colors">
-              <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-accent-text font-medium text-xs shadow-2xs">
-                {user?.username ? user.username.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
+                {/* Mobile Theme Popover */}
+                {mobileThemeOpen && (
+                  <div className="absolute right-0 top-11 z-50 bg-card rounded-xl border border-border-subtle p-2 shadow-xl w-44 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="px-2 py-1 text-[10px] uppercase font-bold text-text-muted tracking-wider">
+                      Reading Themes
+                    </div>
+                    {THEMES.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          handleThemeChange(t.id);
+                          setMobileThemeOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer text-left ${
+                          activeTheme === t.id
+                            ? "bg-tag text-text-main font-semibold ring-1 ring-accent"
+                            : "text-text-muted hover:text-text-main hover:bg-page"
+                        }`}
+                      >
+                        <span
+                          className="w-3.5 h-3.5 rounded-full border shrink-0"
+                          style={{ backgroundColor: t.color, borderColor: t.border }}
+                        />
+                        <span className="truncate">{t.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-text-muted group-hover:text-text-main transition-colors" />
-            </div>
-          ) : (
-            <Link
-              to="/login"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-accent-text text-xs font-semibold hover:bg-accent-hover transition-colors shadow-2xs"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Sign In</span>
-            </Link>
-          )}
 
-          {/* Mobile Menu Toggle */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-2 rounded-lg text-text-muted hover:text-text-main hover:bg-tag transition-colors"
-            aria-label="Toggle navigation menu"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-      </>
-      )}
+              {/* 5-Theme Dots (Tablet & Desktop) */}
+              <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full bg-card border border-border-subtle">
+                {THEMES.map((theme) => (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => handleThemeChange(theme.id)}
+                    title={`${theme.name} (${theme.desc})`}
+                    className={`w-4 h-4 rounded-full border cursor-pointer transition-all ${
+                      activeTheme === theme.id ? "ring-2 ring-accent scale-110" : "hover:scale-105"
+                    }`}
+                    style={{ backgroundColor: theme.color, borderColor: theme.border }}
+                  />
+                ))}
+              </div>
+
+              {/* Notifications Button with Ping Dot */}
+              <button
+                type="button"
+                aria-label="Notifications"
+                className="p-2 rounded-lg text-text-muted hover:text-text-main hover:bg-tag transition-colors relative cursor-pointer"
+              >
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accent" />
+              </button>
+
+              {/* User Profile or Sign In */}
+              <div className="relative" ref={userMenuRef}>
+                {authState ? (
+                  <button
+                    type="button"
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center gap-1.5 cursor-pointer group p-1 rounded-lg hover:bg-tag transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-accent-text font-medium text-xs shadow-2xs">
+                      {user?.username ? user.username.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
+                    </div>
+                    <ChevronDown className="w-3.5 h-3.5 text-text-muted group-hover:text-text-main transition-colors" />
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <Link
+                      to="/profile"
+                      title="Reader Settings & Profile"
+                      className="p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-tag transition-colors"
+                    >
+                      <User className="w-4 h-4" />
+                    </Link>
+                    <Link
+                      to="/login"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-accent-text text-xs font-semibold hover:bg-accent-hover transition-colors shadow-2xs"
+                    >
+                      <LogIn className="w-3.5 h-3.5" />
+                      <span>Sign In</span>
+                    </Link>
+                  </div>
+                )}
+
+                {/* User Dropdown Menu */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-card border border-border-subtle rounded-xl shadow-lg py-1.5 z-50 animate-fadeIn text-xs">
+                    <div className="px-3 py-2 border-b border-border-subtle/50">
+                      <div className="font-semibold text-text-main truncate">
+                        {user?.username || "Julian Thorne"}
+                      </div>
+                      <div className="text-[11px] text-text-muted truncate">
+                        {user?.email || "reader@decklenovel.com"}
+                      </div>
+                    </div>
+
+                    <Link
+                      to="/profile"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-3 py-2 text-text-main hover:bg-tag transition-colors"
+                    >
+                      Profile &amp; Settings
+                    </Link>
+                    <Link
+                      to="/library"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-3 py-2 text-text-main hover:bg-tag transition-colors"
+                    >
+                      My Bookshelf
+                    </Link>
+                    <Link
+                      to="/studio"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-3 py-2 text-text-main hover:bg-tag transition-colors"
+                    >
+                      Author Studio
+                    </Link>
+
+                    <div className="border-t border-border-subtle/50 my-1" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        navigate("/login");
+                      }}
+                      className="w-full text-left px-3 py-2 text-red-600 hover:bg-red-500/10 transition-colors"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Menu Toggle */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="xl:hidden p-2 rounded-lg text-text-muted hover:text-text-main hover:bg-tag transition-colors"
+                aria-label="Toggle navigation menu"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-card border-b border-border-subtle px-4 py-3 space-y-2">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-sm text-text-main hover:bg-tag"
-            >
-              {link.name}
-            </Link>
-          ))}
+        <div className="xl:hidden bg-card border-b border-border-subtle px-4 py-3 space-y-3">
+          <div className="space-y-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-md text-sm text-text-main hover:bg-tag"
+              >
+                {link.name}
+              </Link>
+            ))}
+          </div>
+
+          {/* Reading Themes Segmenter in Drawer */}
+          <div className="pt-2 border-t border-border-subtle">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted px-1">
+              Reading Theme
+            </span>
+            <div className="grid grid-cols-5 gap-1.5 pt-2">
+              {THEMES.map((theme) => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => handleThemeChange(theme.id)}
+                  className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all cursor-pointer ${
+                    activeTheme === theme.id
+                      ? "bg-tag border border-accent ring-1 ring-accent"
+                      : "hover:bg-tag border border-border-subtle/50"
+                  }`}
+                  title={theme.name}
+                >
+                  <span
+                    className="w-5 h-5 rounded-full border shadow-2xs"
+                    style={{ backgroundColor: theme.color, borderColor: theme.border }}
+                  />
+                  <span className="text-[10px] text-text-muted font-medium truncate max-w-full">
+                    {theme.name.split(" ")[0]}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </header>

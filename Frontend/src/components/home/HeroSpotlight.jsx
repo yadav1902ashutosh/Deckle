@@ -23,7 +23,7 @@ export default function HeroSpotlight() {
       <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 py-8 lg:py-10 relative z-10">
         <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
           {/* Novel Cover Canvas with Tactile Edge */}
-          <div className="relative flex-shrink-0 group">
+          <Link to="/book/heavenly-tribulation" className="relative flex-shrink-0 group block cursor-pointer">
             <div className="w-64 h-88 sm:w-72 sm:h-96 rounded-lg overflow-hidden shadow-xl bg-card-white border border-border-subtle relative transform transition-transform duration-300 group-hover:scale-[1.02]">
               <img
                 className="w-full h-full object-cover"
@@ -38,7 +38,7 @@ export default function HeroSpotlight() {
             </div>
             {/* Tactile spine/page shadow illusion underneath */}
             <div className="absolute -bottom-2 inset-x-4 h-4 bg-text-main/10 blur-md rounded-full pointer-events-none" />
-          </div>
+          </Link>
 
           {/* Novel Editorial Dossier */}
           <div className="flex-1 flex flex-col justify-between space-y-4 text-left">
@@ -54,9 +54,11 @@ export default function HeroSpotlight() {
                   Chapter 2,418 Live
                 </span>
               </div>
-              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-text-main tracking-tight font-medium">
-                Heavenly Tribulation
-              </h1>
+              <Link to="/book/heavenly-tribulation" className="block group">
+                <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-text-main tracking-tight font-medium group-hover:text-accent transition-colors">
+                  Heavenly Tribulation
+                </h1>
+              </Link>
               <p className="text-sm text-text-muted font-medium">
                 By{" "}
                 <span className="text-text-main underline decoration-border-subtle hover:text-accent cursor-pointer transition-colors">

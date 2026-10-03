@@ -134,4 +134,9 @@ body {
   scrollbar-width: none; /* Firefox */
 }
 
+/* Traditional literary paragraph styling (ixdzs authentic indent) */
+.article-p {
+  text-indent: 2em;
+}
+
 

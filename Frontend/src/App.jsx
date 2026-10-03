@@ -1,9 +1,20 @@
 import React from "react";
-import {  Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
 
 function App() {
+  const location = useLocation();
+  const isReader = location.pathname.includes("/chapter/");
+
+  if (isReader) {
+    return (
+      <main className="min-h-screen w-full">
+        <Outlet />
+      </main>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-page text-text-main transition-colors duration-200">
       <Header />
@@ -15,4 +26,4 @@ function App() {
   );
 }
 
-export default App
+export default App;

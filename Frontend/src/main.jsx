@@ -15,6 +15,14 @@ import { Provider } from 'react-redux';
 import store from './store/store.js';
 import AuthPage from './pages/AuthPage.jsx';
 import HomePage from "./pages/HomePage.jsx";
+import BookDetailsPage from "./pages/BookDetailsPage.jsx";
+import ReaderPage from "./pages/ReaderPage.jsx";
+import LibraryPage from "./pages/LibraryPage.jsx";
+import RankingsPage from "./pages/RankingsPage.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
+import CommunityPage from "./pages/CommunityPage.jsx";
+import AuthorStudioPage from "./pages/AuthorStudioPage.jsx";
+
 // Router Object Configuration
 const router = createBrowserRouter([
   {
@@ -25,10 +33,46 @@ const router = createBrowserRouter([
         index: true,
         element: <HomePage />,
       },
+      {
+        path: 'book/:slug',
+        element: <BookDetailsPage />,
+      },
+      {
+        path: 'book/:slug/chapter/:chapterNum',
+        element: <ReaderPage />,
+      },
+      {
+        path: 'library',
+        element: <LibraryPage />,
+      },
+      {
+        path: 'rankings',
+        element: <RankingsPage />,
+      },
+      {
+        path: 'profile',
+        element: <ProfilePage />,
+      },
+      {
+        path: 'settings',
+        element: <ProfilePage />,
+      },
+      {
+        path: 'community',
+        element: <CommunityPage />,
+      },
+      {
+        path: 'studio',
+        element: <AuthorStudioPage />,
+      },
     ]
   },
   {
     path: '/login',
+    element: <AuthPage />
+  },
+  {
+    path: '/auth',
     element: <AuthPage />
   }
 ]);
