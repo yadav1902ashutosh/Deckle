@@ -204,10 +204,6 @@ export default function AuthPage() {
             <p className="text-[11px] text-text-muted uppercase tracking-widest mt-1">
               Web Novel Reader
             </p>
-            <p className="text-xs text-text-muted mt-2 max-w-[280px] leading-relaxed">
-              Your peaceful sanctum for serialized fiction and uninterrupted
-              focus.
-            </p>
           </div>
 
           {/* Mode Pill Switcher */}
@@ -242,21 +238,6 @@ export default function AuthPage() {
             >
               Create Account
             </button>
-          </div>
-
-          {/* Seamless Cloud Sync Banner */}
-          <div className="bg-card p-3 rounded-xl flex items-center gap-3 border border-border-subtle/40 shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-tag flex items-center justify-center shrink-0 text-accent">
-              <Cloud className="w-4 h-4" />
-            </div>
-            <div className="flex flex-col min-w-0 flex-1 text-left">
-              <p className="text-xs font-semibold text-text-main truncate">
-                Seamless Cloud Sync Enabled
-              </p>
-              <p className="text-[11px] text-text-muted truncate">
-                Bookmarks resume automatically across your e-readers.
-              </p>
-            </div>
           </div>
 
           {/* Mobile Server Alerts */}
@@ -485,42 +466,8 @@ export default function AuthPage() {
             <ChevronRight className="w-4 h-4 text-text-muted" />
           </Link>
 
-          {/* Bottom Editorial Quote Block on Mobile */}
-          <div className="bg-card p-4 rounded-xl flex flex-col gap-2 border border-border-subtle/40 shadow-sm relative overflow-hidden text-left">
-            <div className="flex items-center gap-1.5 text-accent text-xs font-semibold">
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>READER SANCTUARY</span>
-            </div>
-            <blockquote className="font-serif text-sm text-text-main italic leading-relaxed">
-              “Reading is to the mind what exercise is to the body. Resume
-              reading right where you paused.”
-            </blockquote>
-            <p className="text-[11px] text-text-muted flex items-center gap-1.5 pt-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent inline-block" />
-              <span>Session Sync Active • Vol. III • Ch. 248</span>
-            </p>
-            <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-border-subtle/30 text-xs">
-              <div>
-                <span className="font-bold text-accent">14,200+</span>
-                <span className="text-[10px] text-text-muted block">
-                  Web Novels
-                </span>
-              </div>
-              <div>
-                <span className="font-bold text-accent">0.4s</span>
-                <span className="text-[10px] text-text-muted block">
-                  Instant Cloud Sync
-                </span>
-              </div>
-            </div>
-          </div>
-
           {/* Footnote */}
           <div className="flex flex-col items-center text-center gap-1 text-[11px] text-text-muted pb-4">
-            <div className="flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>256-bit encrypted telemetry • Zero trackers</span>
-            </div>
             <p className="text-[10px] text-text-muted/80">
               Reader-first typography engine built for deep focus
             </p>
