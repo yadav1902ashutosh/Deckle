@@ -180,7 +180,7 @@ export default function AuthPage() {
         </header>
 
         {/* Mobile Content Container */}
-        <div className="px-5 pt-5 flex flex-col gap-5 max-w-[360px] mx-auto w-full">
+        <div className="px-4 pt-6 flex flex-col gap-6 max-w-md mx-auto w-full">
           {/* Top Brand Hero */}
           <div className="flex flex-col items-center text-center">
             <div className="w-14 h-14 rounded-full bg-tag flex items-center justify-center mb-3 shadow-sm border border-border-subtle/50">
@@ -483,8 +483,8 @@ export default function AuthPage() {
       {/* ========================================================================= */}
       {/* 2. DESKTOP SCREEN LAYOUT (Visible on Tablets & Desktops: `hidden md:flex`) */}
       {/* ========================================================================= */}
-      <div className="hidden md:flex w-full min-h-screen flex-col justify-center items-center py-6 sm:py-8 px-4 relative">
-        <div className="relative w-full max-w-[650px] flex flex-col items-center">
+      <div className="hidden md:flex w-full min-h-screen flex-col justify-center items-center py-8 sm:py-12 px-4 sm:px-6 relative">
+        <div className="relative w-full max-w-5xl flex flex-col items-center">
           {/* Subtle decorative ambient glow */}
           <div className="absolute -top-16 -left-12 w-96 h-96 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-16 -right-12 w-96 h-96 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
@@ -492,15 +492,15 @@ export default function AuthPage() {
           {/* Unified Desktop Card */}
           <div className="relative w-full bg-card rounded-2xl shadow-xl border border-border-subtle/50 overflow-hidden flex flex-row">
             {/* LEFT PANEL: Literary Ambiance */}
-            <div className="w-5/12 bg-tag p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden border-r border-border-subtle/50">
+            <div className="w-5/12 bg-tag p-6 md:p-8 lg:p-10 flex flex-col justify-between relative overflow-hidden border-r border-border-subtle/50">
               {/* Delicate line art */}
               <div className="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center">
                 <svg
                   className="text-accent stroke-current"
                   fill="none"
-                  height="280"
+                  height="420"
                   viewBox="0 0 200 200"
-                  width="280"
+                  width="420"
                 >
                   <circle
                     cx="100"
@@ -523,74 +523,74 @@ export default function AuthPage() {
               </div>
 
               {/* Brand Topmark */}
-              <div className="relative z-10 space-y-1.5">
-                <Link to="/" className="flex items-center gap-2.5 group">
-                  <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-accent-text shadow-sm">
-                    <BookOpen className="w-4 h-4" />
+              <div className="relative z-10 space-y-2">
+                <Link to="/" className="flex items-center gap-3 group">
+                  <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-accent-text shadow-sm">
+                    <BookOpen className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="font-serif text-lg font-bold tracking-tight text-text-main group-hover:text-accent transition-colors block leading-none">
+                    <span className="font-serif text-2xl font-bold tracking-tight text-text-main group-hover:text-accent transition-colors block leading-none">
                       Deckle
                     </span>
-                    <span className="text-[9px] uppercase tracking-widest text-accent font-semibold mt-0.5 block">
+                    <span className="text-[11px] uppercase tracking-widest text-accent font-semibold mt-1 block">
                       Web Novel Reader
                     </span>
                   </div>
                 </Link>
-                <p className="text-[11px] text-text-muted mt-1 leading-relaxed">
+                <p className="text-xs text-text-muted mt-2 leading-relaxed">
                   Your peaceful sanctum for serialized fiction and uninterrupted focus.
                 </p>
               </div>
 
               {/* Curated Editorial Quote Section */}
-              <div className="relative z-10 my-3 bg-card-white/80 backdrop-blur-md p-3 rounded-xl border border-border-subtle/50 shadow-2xs space-y-1.5">
-                <Quote className="w-4 h-4 text-accent opacity-60" />
-                <p className="font-serif text-xs text-text-main italic leading-relaxed">
+              <div className="relative z-10 my-8 bg-card-white/80 backdrop-blur-md p-6 rounded-xl border border-border-subtle/50 shadow-sm space-y-3">
+                <Quote className="w-7 h-7 text-accent opacity-60" />
+                <p className="font-serif text-lg text-text-main italic leading-relaxed">
                   “Reading is to the mind what exercise is to the body. Resume
                   reading right where you paused.”
                 </p>
-                <div className="flex items-center justify-between text-[10px] text-text-muted pt-1 border-t border-border-subtle/40">
-                  <span className="flex items-center gap-1 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                    Sync Active
+                <div className="flex items-center justify-between text-xs text-text-muted pt-3 border-t border-border-subtle/40">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                    Session Sync Active
                   </span>
-                  <span className="font-semibold text-accent uppercase tracking-wider text-[9px]">
+                  <span className="font-semibold text-accent uppercase tracking-wider">
                     Vol. III • Ch. 248
                   </span>
                 </div>
               </div>
 
               {/* Reading Metrics */}
-              <div className="relative z-10 grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-card/70 p-2 rounded-lg border border-border-subtle/40">
-                  <span className="text-[9px] text-text-muted uppercase tracking-wider block">
+              <div className="relative z-10 grid grid-cols-2 gap-3 text-xs">
+                <div className="bg-card/70 p-3.5 rounded-lg border border-border-subtle/40">
+                  <span className="text-[11px] text-text-muted uppercase tracking-wider block">
                     Library Base
                   </span>
-                  <span className="font-serif text-base font-bold text-accent">
+                  <span className="font-serif text-xl font-bold text-accent">
                     14,200+
                   </span>
-                  <span className="text-[9px] text-text-muted block">
-                    Novels
+                  <span className="text-[11px] text-text-muted block">
+                    Translated Web Novels
                   </span>
                 </div>
-                <div className="bg-card/70 p-2 rounded-lg border border-border-subtle/40">
-                  <span className="text-[9px] text-text-muted uppercase tracking-wider block">
-                    Cloud Sync
+                <div className="bg-card/70 p-3.5 rounded-lg border border-border-subtle/40">
+                  <span className="text-[11px] text-text-muted uppercase tracking-wider block">
+                    Cloud Footprint
                   </span>
-                  <span className="font-serif text-base font-bold text-accent">
+                  <span className="font-serif text-xl font-bold text-accent">
                     0.4s
                   </span>
-                  <span className="text-[9px] text-text-muted block">
-                    Instant
+                  <span className="text-[11px] text-text-muted block">
+                    Instant Cross-Device Sync
                   </span>
                 </div>
               </div>
             </div>
 
             {/* RIGHT PANEL: Interactive Authentication Hub */}
-            <div className="w-7/12 p-4 sm:p-5 flex flex-col justify-center bg-card-white">
+            <div className="w-7/12 p-6 md:p-8 lg:p-10 flex flex-col justify-center bg-card-white">
               {/* Card Header: Context Label & Beautified Tactile Theme Switcher */}
-              <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-border-subtle/30">
+              <div className="flex items-center justify-between mb-6 pb-3 border-b border-border-subtle/30">
                 <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
                   {isLoginTab ? "Sign In to Deckle" : "Create Your Account"}
                 </span>
@@ -628,7 +628,7 @@ export default function AuthPage() {
               </div>
 
               {/* Segmented Tab Switcher */}
-              <div className="w-full bg-tag p-1 rounded-lg flex items-center mb-4 border border-border-subtle/50">
+              <div className="w-full bg-tag p-1 rounded-xl flex items-center mb-6 border border-border-subtle/50">
                 <button
                   type="button"
                   onClick={() => {
@@ -636,7 +636,7 @@ export default function AuthPage() {
                     setServerError("");
                     setServerSuccess("");
                   }}
-                  className={`flex-1 py-2 text-center rounded-md text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
+                  className={`flex-1 py-2 text-center rounded-lg text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
                     isLoginTab
                       ? "bg-card-white text-accent shadow-xs"
                       : "text-text-muted hover:text-text-main"
@@ -652,7 +652,7 @@ export default function AuthPage() {
                     setServerError("");
                     setServerSuccess("");
                   }}
-                  className={`flex-1 py-2 text-center rounded-md text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
+                  className={`flex-1 py-2 text-center rounded-lg text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
                     !isLoginTab
                       ? "bg-card-white text-accent shadow-xs"
                       : "text-text-muted hover:text-text-main"
@@ -681,33 +681,34 @@ export default function AuthPage() {
               {isLoginTab ? (
                 <form
                   onSubmit={handleLoginSubmit(onLogin)}
-                  className="space-y-3.5"
+                  className="space-y-4"
                 >
                   <div>
-                    <h2 className="font-serif text-xl font-bold text-text-main tracking-tight">
+                    <h2 className="font-serif text-2xl font-bold text-text-main tracking-tight">
                       Welcome back
                     </h2>
-                    <p className="text-xs text-text-muted mt-0.5">
-                      Enter your credentials to access your personal shelf and bookmarks.
+                    <p className="text-xs text-text-muted mt-1">
+                      Enter your credentials to access your personal shelf and
+                      bookmarks.
                     </p>
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-text-main flex items-center justify-between">
                       <span>Email or Username</span>
-                      <span className="text-text-muted font-normal text-[10px]">
+                      <span className="text-text-muted font-normal text-[11px]">
                         Required
                       </span>
                     </label>
                     <div className="relative flex items-center">
-                      <User className="absolute left-3 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+                      <User className="absolute left-3 w-4 h-4 text-text-muted pointer-events-none" />
                       <input
                         type="text"
                         placeholder="alex_writer or reader@deckle.com"
                         {...loginField("identity", {
                           required: "Please enter your username or email",
                         })}
-                        className="w-full pl-9 pr-3 py-2 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="w-full pl-9 pr-3 py-2.5 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
                       />
                     </div>
                     {loginErrors.identity && (
@@ -727,14 +728,14 @@ export default function AuthPage() {
                       </span>
                     </div>
                     <div className="relative flex items-center">
-                      <Lock className="absolute left-3 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+                      <Lock className="absolute left-3 w-4 h-4 text-text-muted pointer-events-none" />
                       <input
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••••••"
                         {...loginField("password", {
                           required: "Please enter your password",
                         })}
-                        className="w-full pl-9 pr-9 py-2 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="w-full pl-9 pr-9 py-2.5 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
                       />
                       <button
                         type="button"
@@ -742,9 +743,9 @@ export default function AuthPage() {
                         className="absolute right-2.5 text-text-muted hover:text-text-main p-1 cursor-pointer"
                       >
                         {showPassword ? (
-                          <EyeOff className="w-3.5 h-3.5" />
+                          <EyeOff className="w-4 h-4" />
                         ) : (
-                          <Eye className="w-3.5 h-3.5" />
+                          <Eye className="w-4 h-4" />
                         )}
                       </button>
                     </div>
@@ -755,7 +756,7 @@ export default function AuthPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between pt-0.5">
+                  <div className="flex items-center justify-between pt-1">
                     <label className="flex items-center gap-2 cursor-pointer select-none">
                       <input
                         defaultChecked
@@ -771,7 +772,7 @@ export default function AuthPage() {
                   <button
                     type="submit"
                     disabled={loginSubmitting}
-                    className="w-full mt-1 py-2.5 bg-accent text-accent-text font-semibold rounded-lg text-xs shadow-xs hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 group"
+                    className="w-full mt-2 py-3 bg-accent text-accent-text font-semibold rounded-lg text-xs shadow-xs hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 group"
                   >
                     <span>
                       {loginSubmitting ? "Verifying..." : "Continue Reading"}
@@ -783,13 +784,13 @@ export default function AuthPage() {
                 /* Desktop Create Account Form */
                 <form
                   onSubmit={handleSignupSubmit(onRegister)}
-                  className="space-y-3.5"
+                  className="space-y-4"
                 >
                   <div>
-                    <h2 className="font-serif text-xl font-bold text-text-main tracking-tight">
+                    <h2 className="font-serif text-2xl font-bold text-text-main tracking-tight">
                       Begin your chapter
                     </h2>
-                    <p className="text-xs text-text-muted mt-0.5">
+                    <p className="text-xs text-text-muted mt-1">
                       Configure your reading profile to personalize font scales and bookmarks.
                     </p>
                   </div>
@@ -803,7 +804,7 @@ export default function AuthPage() {
                         type="text"
                         placeholder="Elena Vance"
                         {...signupField("fullName")}
-                        className="w-full px-3 py-2 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="w-full px-3 py-2.5 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
                       />
                     </div>
                     <div className="space-y-1">
@@ -820,7 +821,7 @@ export default function AuthPage() {
                             message: "Minimum 3 characters",
                           },
                         })}
-                        className="w-full px-3 py-2 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="w-full px-3 py-2.5 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
                       />
                       {signupErrors.username && (
                         <span className="text-[11px] text-red-500">
@@ -846,7 +847,7 @@ export default function AuthPage() {
                             message: "Invalid email address",
                           },
                         })}
-                        className="w-full pl-9 pr-3 py-2 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+                        className="w-full pl-9 pr-3 py-2.5 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
                       />
                     </div>
                     {signupErrors.email && (
@@ -862,7 +863,7 @@ export default function AuthPage() {
                         Password *
                       </label>
                       <div className="relative flex items-center">
-                        <Lock className="absolute left-2.5 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+                        <Lock className="absolute left-3 w-4 h-4 text-text-muted pointer-events-none" />
                         <input
                           type={showSignupPassword ? "text" : "password"}
                           placeholder="Min 6 chars"
@@ -873,18 +874,18 @@ export default function AuthPage() {
                               message: "Minimum 6 characters",
                             },
                           })}
-                          className="w-full pl-8 pr-7 py-2 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+                          className="w-full pl-9 pr-9 py-2.5 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
                         />
                         <button
                           type="button"
                           onClick={() => setShowSignupPassword(!showSignupPassword)}
-                          className="absolute right-2 text-text-muted hover:text-text-main p-0.5 cursor-pointer"
+                          className="absolute right-2.5 text-text-muted hover:text-text-main p-1 cursor-pointer"
                           aria-label={showSignupPassword ? "Hide password" : "Show password"}
                         >
                           {showSignupPassword ? (
-                            <EyeOff className="w-3.5 h-3.5" />
+                            <EyeOff className="w-4 h-4" />
                           ) : (
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-4 h-4" />
                           )}
                         </button>
                       </div>
@@ -899,7 +900,7 @@ export default function AuthPage() {
                         Confirm Password *
                       </label>
                       <div className="relative flex items-center">
-                        <Lock className="absolute left-2.5 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+                        <Lock className="absolute left-3 w-4 h-4 text-text-muted pointer-events-none" />
                         <input
                           type={showSignupConfirmPassword ? "text" : "password"}
                           placeholder="Repeat password"
@@ -909,18 +910,18 @@ export default function AuthPage() {
                               val === registeredPassword ||
                               "Passwords do not match",
                           })}
-                          className="w-full pl-8 pr-7 py-2 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+                          className="w-full pl-9 pr-9 py-2.5 bg-input text-text-main rounded-lg border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
                         />
                         <button
                           type="button"
                           onClick={() => setShowSignupConfirmPassword(!showSignupConfirmPassword)}
-                          className="absolute right-2 text-text-muted hover:text-text-main p-0.5 cursor-pointer"
+                          className="absolute right-2.5 text-text-muted hover:text-text-main p-1 cursor-pointer"
                           aria-label={showSignupConfirmPassword ? "Hide password" : "Show password"}
                         >
                           {showSignupConfirmPassword ? (
-                            <EyeOff className="w-3.5 h-3.5" />
+                            <EyeOff className="w-4 h-4" />
                           ) : (
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-4 h-4" />
                           )}
                         </button>
                       </div>
@@ -956,7 +957,7 @@ export default function AuthPage() {
                   <button
                     type="submit"
                     disabled={signupSubmitting}
-                    className="w-full mt-1 py-2.5 bg-accent text-accent-text font-semibold rounded-lg text-xs shadow-xs hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 group"
+                    className="w-full mt-2 py-3 bg-accent text-accent-text font-semibold rounded-lg text-xs shadow-xs hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 group"
                   >
                     <span>
                       {signupSubmitting
@@ -969,7 +970,7 @@ export default function AuthPage() {
               )}
 
               {/* Guest Reader Mode */}
-              <div className="mt-4 pt-3 border-t border-border-subtle/50 text-center">
+              <div className="mt-6 pt-4 border-t border-border-subtle/50 text-center">
                 <Link
                   to="/"
                   className="w-full py-2 px-3 rounded-lg bg-tag/70 hover:bg-tag border border-border-subtle/40 text-text-muted hover:text-text-main transition-all text-xs flex items-center justify-center gap-2"
