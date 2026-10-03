@@ -18,9 +18,9 @@ async function startServer() {
 
         await initializeDatabase();
 
-        app.listen(PORT, () => {
-            console.log(`server is running on PORT: ${process.env.PORT}`);
-        } )
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`Server is running on PORT: ${PORT}`);
+        });
     } catch (error) {
         console.error('Failed to connect to NeonDB:', error.message);
         process.exit(1);
