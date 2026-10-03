@@ -28,6 +28,11 @@ async function login(identity, password) {
     throw new Error(data.message || "Login failed. Please check credentials.");
   }
 
+  // Cross-domain fallback for Netlify <-> Render
+  if (data.data?.accessToken) {
+    localStorage.setItem("deckle_token", data.data.accessToken);
+  }
+
   // Returns { user, personas, accessToken, refreshToken }
   return data.data;
 }
@@ -59,38 +64,55 @@ async function register(userData) {
  * 3. Logout user
  */
 async function logout() {
-  const response = await fetch(`${BASE_URL}/logout`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Logout failed");
+  const token = localStorage.getItem("deckle_token");
+  const headers = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
-  return data;
+  try {
+    const response = await fetch(`${BASE_URL}/logout`, {
+      method: "POST",
+      headers,
+      credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Logout failed");
+    }
+
+    return data;
+  } finally {
+    localStorage.removeItem("deckle_token");
+  }
 }
 
 /**
  * 4. Get Current User profile & personas (Session restoration on page reload)
  */
 async function getCurrentUser() {
+  const token = localStorage.getItem("deckle_token");
+  const headers = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${BASE_URL}/current-user`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     credentials: "include",
   });
 
   const data = await response.json();
 
   if (!response.ok) {
+    localStorage.removeItem("deckle_token");
     throw new Error(data.message || "Session expired");
   }
 

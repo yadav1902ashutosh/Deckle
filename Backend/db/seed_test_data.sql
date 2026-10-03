@@ -182,7 +182,7 @@ VALUES (
 -- ----------------------------------------------------------------------------
 -- 3. INSERT TEST BOOKS (Novels Across Diverse Genres)
 -- ----------------------------------------------------------------------------
-INSERT INTO books (title, slug, description, cover_image, persona_id, status, views_count, tags)
+INSERT INTO books (title, slug, description, cover_image, persona_id, genre_id, status, views_count, tags)
 VALUES
   -- Novel 1: Xianxia / Cultivation by test_void_walker
   (
@@ -191,6 +191,7 @@ VALUES
     'In a world where the heavens demand tribute from every mortal soul, Lin Feng awakens with a shattered dantian and a forbidden void ring. When ancient sects clash above the Nine Peaks, he chooses neither submission nor ascension—he walks the path that severs destiny itself.',
     'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600',
     (SELECT id FROM personas WHERE handle = 'test_void_walker'),
+    (SELECT id FROM genres WHERE slug = 'cultivation'),
     'ongoing',
     15420,
     ARRAY['test', 'cultivation', 'xianxia', 'martial-arts', 'action', 'reincarnation']
@@ -202,6 +203,7 @@ VALUES
     'The lower spires of New Kyoto are drowning under perpetual acid rain and synthetic neuro-toxins. When mercenary hacker Kael steals a ghost drive from the omnipotent Arasaka-Kovacs conglomerate, he discovers a sentient entity built out of harvested human memories.',
     'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=600',
     (SELECT id FROM personas WHERE handle = 'test_solar_flare'),
+    (SELECT id FROM genres WHERE slug = 'sci-fi'),
     'ongoing',
     8930,
     ARRAY['test', 'cyberpunk', 'sci-fi', 'artificial-intelligence', 'dystopian', 'thriller']
@@ -213,6 +215,7 @@ VALUES
     'The sun died three centuries ago. Now humanity survives behind walls of consecrated bone and salt. When the Black Cathedral falls to an unholy siege, Inquisitor Vane must ally with the very demon bounded to his left eye to guide survivors across the Ashlands.',
     'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600',
     (SELECT id FROM personas WHERE handle = 'test_crimson_bard'),
+    (SELECT id FROM genres WHERE slug = 'dark-fantasy'),
     'completed',
     34100,
     ARRAY['test', 'dark-fantasy', 'grimdark', 'eldritch', 'magic', 'survival']
@@ -224,6 +227,7 @@ VALUES
     'Lady Eleanor is arranged to marry the stoic Duke of Blackwood to rescue her family estate from ruin. What begins as a cold political pact unravels into a dangerous dance of salon secrets, decoded diplomatic letters, and stolen candlelit moments.',
     'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=600',
     (SELECT id FROM personas WHERE handle = 'test_velvet_quill'),
+    (SELECT id FROM genres WHERE slug = 'romance'),
     'ongoing',
     4120,
     ARRAY['test', 'romance', 'historical', 'drama', 'slow-burn', 'nobility']
@@ -235,6 +239,7 @@ VALUES
     'Tired of heroic parties trashing his dungeon corridors and looting his decorative vases, a low-tier goblin architect decides to abuse the World System calculation engine. Traps, economic warfare, and unkillable mimic chests soon make floor 1 a living nightmare.',
     'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600',
     (SELECT id FROM personas WHERE handle = 'test_glitch_weaver'),
+    (SELECT id FROM genres WHERE slug = 'litrpg'),
     'ongoing',
     19800,
     ARRAY['test', 'litrpg', 'system', 'comedy', 'fantasy', 'progression']
@@ -246,6 +251,7 @@ VALUES
     'A banned esports champion enters the world largest full-dive neural tournament using a custom agility-focused rogue build. But when the log-out button goes gray, the game mechanics begin altering physical biology in real time.',
     'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600',
     (SELECT id FROM personas WHERE handle = 'test_glitch_weaver'),
+    (SELECT id FROM genres WHERE slug = 'litrpg'),
     'hiatus',
     6200,
     ARRAY['test', 'vrmmo', 'esports', 'adventure', 'sci-fi']
@@ -433,6 +439,74 @@ VALUES
     83,
     'published',
     CURRENT_TIMESTAMP - INTERVAL '40 days'
+  );
+
+-- ============================================================================
+-- 5. INSERT TEST READING HISTORY (Persona-Driven Bookshelf & Progress)
+-- ----------------------------------------------------------------------------
+-- Test Reader 1 (test_bookworm_alpha):
+--  - Novel 1 (Path of the Heavenly Severance): Reading, Chapter 2, 75% scroll, Bookmarked
+--  - Novel 3 (Chronicles of the Eclipse Lord): Completed, Chapter 2, 100% scroll, Bookmarked, Favorite
+INSERT INTO reading_history (persona_id, book_id, last_read_chapter_id, last_chapter_number, scroll_percentage, is_bookmarked, folder, is_favorite, last_read_at)
+VALUES
+  (
+    (SELECT id FROM personas WHERE handle = 'test_bookworm_alpha'),
+    (SELECT id FROM books WHERE slug = 'test-novel-path-of-the-heavenly-severance'),
+    (SELECT id FROM chapters WHERE book_id = (SELECT id FROM books WHERE slug = 'test-novel-path-of-the-heavenly-severance') AND chapter_number = 2),
+    2,
+    75.50,
+    TRUE,
+    'Reading',
+    TRUE,
+    CURRENT_TIMESTAMP - INTERVAL '1 hour'
+  ),
+  (
+    (SELECT id FROM personas WHERE handle = 'test_bookworm_alpha'),
+    (SELECT id FROM books WHERE slug = 'test-novel-chronicles-of-the-eclipse-lord'),
+    (SELECT id FROM chapters WHERE book_id = (SELECT id FROM books WHERE slug = 'test-novel-chronicles-of-the-eclipse-lord') AND chapter_number = 2),
+    2,
+    100.00,
+    TRUE,
+    'Completed',
+    TRUE,
+    CURRENT_TIMESTAMP - INTERVAL '3 days'
+  ),
+  -- Test Reader 2 (test_midnight_critic):
+  --  - Novel 5 (Level 99 NPC): Plan to Read, Bookmarked
+  (
+    (SELECT id FROM personas WHERE handle = 'test_midnight_critic'),
+    (SELECT id FROM books WHERE slug = 'test-novel-level-99-npc-dungeon-architect'),
+    NULL,
+    1,
+    0.00,
+    TRUE,
+    'Plan to Read',
+    FALSE,
+    CURRENT_TIMESTAMP - INTERVAL '5 days'
+  );
+
+-- ============================================================================
+-- 6. INSERT TEST CHAPTER LORE (Margin Notes & Interactive Reader Tooltips)
+-- ----------------------------------------------------------------------------
+INSERT INTO chapter_lore (chapter_id, term, definition, order_index)
+VALUES
+  (
+    (SELECT id FROM chapters WHERE book_id = (SELECT id FROM books WHERE slug = 'test-novel-path-of-the-heavenly-severance') AND chapter_number = 1),
+    'dantian',
+    'The primary spiritual reservoir located three finger-widths beneath the navel where martial practitioners accumulate and condense qi.',
+    1
+  ),
+  (
+    (SELECT id FROM chapters WHERE book_id = (SELECT id FROM books WHERE slug = 'test-novel-path-of-the-heavenly-severance') AND chapter_number = 1),
+    'golden core',
+    'A solid orb of crystallized spiritual energy formed upon ascending to the Core Formation realm in classical Taoist cultivation.',
+    2
+  ),
+  (
+    (SELECT id FROM chapters WHERE book_id = (SELECT id FROM books WHERE slug = 'test-novel-neon-monolith-2099') AND chapter_number = 1),
+    'ghost drive',
+    'An encrypted military neuro-storage module capable of mirroring organic synaptic patterns in real-time.',
+    1
   );
 
 -- ============================================================================

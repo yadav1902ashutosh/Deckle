@@ -1,7 +1,7 @@
 import sql from "../db/index.js";
 import { ApiError } from "../utils/ApiError.js";
 
-// 1. TABLE DEFINITION
+// 1. TABLE DEFINITION & MIGRATION
 export async function createBooksTable() {
   try {
     await sql`
@@ -12,6 +12,7 @@ export async function createBooksTable() {
         description TEXT,
         cover_image TEXT DEFAULT 'https://via.placeholder.com/300x450',
         persona_id INTEGER NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+        genre_id INTEGER REFERENCES genres(id) ON DELETE SET NULL,
         status VARCHAR(20) DEFAULT 'ongoing' CHECK (status IN ('ongoing', 'completed', 'hiatus')),
         views_count INTEGER DEFAULT 0,
         tags TEXT[] DEFAULT '{}',
@@ -21,8 +22,17 @@ export async function createBooksTable() {
       );
     `;
 
+    // Migration helper: add genre_id to existing table if absent
+    await sql`
+      ALTER TABLE books ADD COLUMN IF NOT EXISTS genre_id INTEGER REFERENCES genres(id) ON DELETE SET NULL;
+    `;
+
     await sql`
       CREATE INDEX IF NOT EXISTS idx_books_persona_id ON books(persona_id);
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_books_genre_id ON books(genre_id);
     `;
 
     await sql`
@@ -45,6 +55,7 @@ export async function createBook({
   description,
   cover_image,
   persona_id,
+  genre_id,
   status,
   tags,
 }) {
@@ -56,6 +67,7 @@ export async function createBook({
         description,
         cover_image,
         persona_id,
+        genre_id,
         status,
         tags
       )
@@ -65,6 +77,7 @@ export async function createBook({
         ${description},
         ${cover_image || "https://via.placeholder.com/300x450"},
         ${persona_id},
+        ${genre_id || null},
         ${status || "ongoing"},
         ${tags || []}
       )
@@ -79,7 +92,7 @@ export async function createBook({
   }
 }
 
-// 3. GET ACTIVE BOOKS (Catalog feed - joins with personas!)
+// 3. GET ACTIVE BOOKS (Catalog feed - joins with personas and genres)
 export async function findActiveBooks() {
   try {
     const result = await sql`
@@ -87,9 +100,13 @@ export async function findActiveBooks() {
         books.*,
         personas.display_name AS author_name,
         personas.handle AS author_handle,
-        personas.avatar_url AS author_avatar
+        personas.avatar_url AS author_avatar,
+        genres.name AS genre_name,
+        genres.slug AS genre_slug,
+        genres.icon AS genre_icon
       FROM books
       JOIN personas ON books.persona_id = personas.id
+      LEFT JOIN genres ON books.genre_id = genres.id
       WHERE books.deleted_at IS NULL AND personas.deleted_at IS NULL
       ORDER BY books.created_at DESC;
     `;
@@ -108,9 +125,13 @@ export async function findBookBySlug(slug) {
         personas.display_name AS author_name,
         personas.handle AS author_handle,
         personas.avatar_url AS author_avatar,
-        personas.bio AS author_bio
+        personas.bio AS author_bio,
+        genres.name AS genre_name,
+        genres.slug AS genre_slug,
+        genres.icon AS genre_icon
       FROM books
       JOIN personas ON books.persona_id = personas.id
+      LEFT JOIN genres ON books.genre_id = genres.id
       WHERE books.slug = ${slug} 
         AND books.deleted_at IS NULL 
         AND personas.deleted_at IS NULL;
@@ -128,9 +149,14 @@ export async function findBookBySlug(slug) {
 export async function findBooksByPersona(persona_id) {
   try {
     const result = await sql`
-      SELECT * FROM books
-      WHERE persona_id = ${persona_id} AND deleted_at IS NULL
-      ORDER BY created_at DESC;
+      SELECT 
+        books.*,
+        genres.name AS genre_name,
+        genres.slug AS genre_slug
+      FROM books
+      LEFT JOIN genres ON books.genre_id = genres.id
+      WHERE books.persona_id = ${persona_id} AND books.deleted_at IS NULL
+      ORDER BY books.created_at DESC;
     `;
     return result;
   } catch (error) {
@@ -163,8 +189,13 @@ export async function softDeleteBook(book_id, persona_id) {
 export async function findBookById(id) {
   try {
     const result = await sql`
-      SELECT * FROM books 
-      WHERE id = ${id} AND deleted_at IS NULL;
+      SELECT 
+        books.*,
+        genres.name AS genre_name,
+        genres.slug AS genre_slug
+      FROM books 
+      LEFT JOIN genres ON books.genre_id = genres.id
+      WHERE books.id = ${id} AND books.deleted_at IS NULL;
     `;
     return result[0] || null;
   } catch (error) {

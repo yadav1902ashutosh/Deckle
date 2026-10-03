@@ -15,6 +15,26 @@ Every protected endpoint accepts credentials through **either** of these two met
 
 ---
 
+## 🖼️ Media & File Upload Standards (Multer + Cloudinary)
+
+Endpoints supporting image uploads accept **either**:
+1. **Multipart Form-Data (`multipart/form-data`):**
+   - File attachment directly from local disk (e.g., `<input type="file">` or Postman form-data).
+   - Saved temporarily to `public/temp/` and automatically streamed to Cloudinary.
+   - Automatically unlinks and removes local temporary files on completion.
+   - Max file size: **5 MB**. Supported types: `jpeg`, `jpg`, `png`, `webp`, `gif`.
+2. **Raw JSON (`application/json`):**
+   - Provide an existing direct image URL in the JSON body (e.g. Unsplash or external CDN).
+
+| Entity | Upload Field Name | Cloudinary Destination Folder | Fallback Strategy |
+| :--- | :--- | :--- | :--- |
+| **Book Cover** | `cover_image` | `deckle_books` | Algorithmic genre motif / unsplash |
+| **Volume Arc** | `cover_image` | `deckle_volumes` | Inherits novel's cover |
+| **Persona Avatar** | `avatar` | `deckle_avatars` | Seeded DiceBear avatar via `@handle` |
+| **Persona Banner** | `banner` | `deckle_banners` | Abstract dark gradient palette |
+
+---
+
 ## 👤 User & Authentication Routes (`/users`)
 
 Base: `/api/v1/users`
@@ -25,10 +45,13 @@ Base: `/api/v1/users`
 | `POST` | `/login` | **Public** | Authenticates via email/username & password. Returns tokens & personas |
 | `POST` | `/logout` | **Protected** | Clears refresh token in DB & wipes auth cookies |
 | `GET` | `/current-user` | **Protected** | Fetches the logged-in user profile & all their owned personas |
+| `POST` | `/refresh-token` | **Public** | Issues a new 15m `accessToken` using valid `refreshToken` cookie |
+| `PATCH` | `/change-password` | **Protected** | Verifies old password and sets new password |
+| `PATCH` | `/update-account` | **Protected** | Updates email and full name |
 
 ---
 
-### Detailed Endpoint Specs:
+### User Endpoint Specs:
 
 #### 1. Register User
 * **Endpoint:** `POST /api/v1/users/register`
@@ -55,18 +78,13 @@ Base: `/api/v1/users`
         "full_name": "Alex Johnson",
         "username": "alex_writer",
         "email": "alex@example.com",
-        "role": "writer",
-        "gender": "male",
-        "dob": "2000-05-15T00:00:00.000Z",
-        "created_at": "2026-10-02T12:00:00.000Z"
+        "role": "writer"
       },
       "defaultPersona": {
         "id": 1,
         "user_id": 1,
         "display_name": "Alex Johnson",
         "handle": "alex_writer",
-        "bio": "Hello, I'm Alex Johnson! Welcome to my reading space.",
-        "avatar_url": "https://via.placeholder.com/150",
         "is_default": true
       }
     },
@@ -75,22 +93,13 @@ Base: `/api/v1/users`
   }
   ```
 
----
-
 #### 2. Login User
 * **Endpoint:** `POST /api/v1/users/login`
 * **Access:** Public
-* **Request Body (Accepts Email OR Username):**
+* **Request Body (JSON):**
   ```json
   {
     "email": "alex@example.com",
-    "password": "mySecurePassword123"
-  }
-  ```
-  *(OR)*
-  ```json
-  {
-    "username": "alex_writer",
     "password": "mySecurePassword123"
   }
   ```
@@ -100,73 +109,11 @@ Base: `/api/v1/users`
   {
     "statusCode": 200,
     "data": {
-      "user": {
-        "id": 1,
-        "full_name": "Alex Johnson",
-        "username": "alex_writer",
-        "email": "alex@example.com",
-        "role": "writer"
-      },
-      "personas": [
-        {
-          "id": 1,
-          "display_name": "Alex Johnson",
-          "handle": "alex_writer",
-          "is_default": true
-        }
-      ],
-      "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ...",
-      "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ..."
+      "user": { "id": 1, "username": "alex_writer" },
+      "accessToken": "eyJhbGciOi...",
+      "personas": [{ "id": 1, "handle": "alex_writer", "is_default": true }]
     },
     "message": "User logged in successfully!",
-    "success": true
-  }
-  ```
-
----
-
-#### 3. Logout User
-* **Endpoint:** `POST /api/v1/users/logout`
-* **Access:** Protected (`verifyJWT`)
-* **Headers:** `Authorization: Bearer <accessToken>` (or cookie)
-* **Success Response (`200 OK`):**
-  ```json
-  {
-    "statusCode": 200,
-    "data": {},
-    "message": "User logged out successfully!",
-    "success": true
-  }
-  ```
-
----
-
-#### 4. Get Current User
-* **Endpoint:** `GET /api/v1/users/current-user`
-* **Access:** Protected (`verifyJWT`)
-* **Headers:** `Authorization: Bearer <accessToken>` (or cookie)
-* **Success Response (`200 OK`):**
-  ```json
-  {
-    "statusCode": 200,
-    "data": {
-      "user": {
-        "id": 1,
-        "full_name": "Alex Johnson",
-        "username": "alex_writer",
-        "email": "alex@example.com",
-        "role": "writer"
-      },
-      "personas": [
-        {
-          "id": 1,
-          "display_name": "Alex Johnson",
-          "handle": "alex_writer",
-          "is_default": true
-        }
-      ]
-    },
-    "message": "Current user profile fetched successfully!",
     "success": true
   }
   ```
@@ -179,28 +126,29 @@ Base: `/api/v1/personas`
 
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/` | **Protected** | Creates a new pen name under the logged-in user |
-| `GET` | `/my` | **Protected** | Fetches all pen names owned by the logged-in user |
-| `GET` | `/:handle` | **Public** | Public author profile page (bio, avatar, published books) |
+| `POST` | `/` | **Protected** | Creates a new pen name (supports `avatar` & `banner` file uploads) |
+| `GET` | `/my` | **Protected** | Fetches all pen names owned by logged-in user |
+| `GET` | `/:handle` | **Public** | Author profile page (bio, avatar, published books) |
+| `PATCH` | `/:id/preferences` | **Protected** | Updates reader theme, font family, font size, and favorite genres |
+| `POST` | `/:id/stats/increment` | **Protected** | Adds words read and increments daily reading streak |
+| `DELETE` | `/:id` | **Protected** | Soft-deletes a pen name (cannot delete default primary persona) |
 
 ---
 
-### Detailed Endpoint Specs:
+### Persona Endpoint Specs:
 
-#### 1. Create a New Persona (Pen Name)
+#### 1. Create a New Persona (Supports Multipart Uploads)
 * **Endpoint:** `POST /api/v1/personas`
 * **Access:** Protected (`verifyJWT`)
-* **Headers:** `Authorization: Bearer <accessToken>` (or cookie)
-* **Request Body (JSON):**
-  ```json
-  {
-    "display_name": "Shadow Weaver",
-    "handle": "shadow_weaver",
-    "bio": "Writer of dark fantasy and horror.",
-    "avatar_url": "https://via.placeholder.com/150",
-    "banner_url": "https://via.placeholder.com/400x150"
-  }
-  ```
+* **Headers:** `Content-Type: multipart/form-data` *(or `application/json`)*
+* **Form-Data Fields:**
+  * `avatar` *(File, optional)*: Avatar image uploaded to Cloudinary `deckle_avatars`
+  * `banner` *(File, optional)*: Header banner uploaded to Cloudinary `deckle_banners`
+  * `display_name` *(Text, required)*: e.g. "Shadow Weaver"
+  * `handle` *(Text, required)*: e.g. "shadow_weaver"
+  * `bio` *(Text, optional)*: Author bio
+  * `avatar_url` *(Text, optional)*: Fallback URL if file not uploaded
+  * `banner_url` *(Text, optional)*: Fallback URL if file not uploaded
 * **Success Response (`201 Created`):**
   ```json
   {
@@ -210,82 +158,45 @@ Base: `/api/v1/personas`
       "user_id": 1,
       "display_name": "Shadow Weaver",
       "handle": "shadow_weaver",
-      "bio": "Writer of dark fantasy and horror.",
-      "avatar_url": "https://via.placeholder.com/150",
-      "banner_url": "https://via.placeholder.com/400x150",
-      "is_default": false,
-      "created_at": "2026-10-02T13:00:00.000Z"
+      "avatar_url": "https://res.cloudinary.com/.../deckle_avatars/avatar-1700.webp",
+      "banner_url": "https://res.cloudinary.com/.../deckle_banners/banner-1700.webp",
+      "reading_preferences": {
+        "theme": "parchment",
+        "fontSize": 18,
+        "fontFamily": "Merriweather"
+      },
+      "streak_days": 0,
+      "total_words_read": 0
     },
     "message": "New pen name created successfully!",
     "success": true
   }
   ```
 
----
-
-#### 2. Get My Personas (Active Switcher)
-* **Endpoint:** `GET /api/v1/personas/my`
+#### 2. Update Reading Preferences
+* **Endpoint:** `PATCH /api/v1/personas/:id/preferences`
 * **Access:** Protected (`verifyJWT`)
-* **Headers:** `Authorization: Bearer <accessToken>` (or cookie)
-* **Success Response (`200 OK`):**
+* **Request Body (JSON):**
   ```json
   {
-    "statusCode": 200,
-    "data": [
-      {
-        "id": 1,
-        "display_name": "Alex Johnson",
-        "handle": "alex_writer",
-        "is_default": true,
-        "avatar_url": "https://via.placeholder.com/150"
-      },
-      {
-        "id": 2,
-        "display_name": "Shadow Weaver",
-        "handle": "shadow_weaver",
-        "is_default": false,
-        "avatar_url": "https://via.placeholder.com/150"
-      }
-    ],
-    "message": "User personas fetched successfully!",
-    "success": true
+    "preferences": {
+      "theme": "parchment",
+      "fontSize": 20,
+      "fontFamily": "Lora",
+      "favorite_genres": ["progression-fantasy", "cultivation"]
+    }
   }
   ```
 
----
-
-#### 3. Get Public Persona Profile (By Handle)
-* **Endpoint:** `GET /api/v1/personas/:handle` (e.g. `/api/v1/personas/shadow_weaver`)
-* **Access:** Public
-* **Success Response (`200 OK`):**
+#### 3. Increment Reading Session Stats
+* **Endpoint:** `POST /api/v1/personas/:id/stats/increment`
+* **Access:** Protected (`verifyJWT`)
+* **Request Body (JSON):**
   ```json
   {
-    "statusCode": 200,
-    "data": {
-      "persona": {
-        "id": 2,
-        "display_name": "Shadow Weaver",
-        "handle": "shadow_weaver",
-        "bio": "Writer of dark fantasy and horror.",
-        "avatar_url": "https://via.placeholder.com/150",
-        "banner_url": "https://via.placeholder.com/400x150"
-      },
-      "books": [
-        {
-          "id": 10,
-          "title": "The Whispering Tombs",
-          "slug": "the-whispering-tombs",
-          "status": "ongoing",
-          "views_count": 1420
-        }
-      ]
-    },
-    "message": "Author profile fetched successfully!",
-    "success": true
+    "wordsCount": 2400
   }
   ```
-
----
 
 ---
 
@@ -295,31 +206,28 @@ Base: `/api/v1/books`
 
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/` | **Protected** | Publishes a novel under a persona (validates persona ownership) |
-| `GET` | `/` | **Public** | Main catalog feed of active novels with author pen names & avatars |
-| `GET` | `/:slug` | **Public** | Detailed novel view by slug (includes full synopsis & author details) |
+| `POST` | `/` | **Protected** | Publishes novel (supports `cover_image` file upload, genre & tags) |
+| `GET` | `/` | **Public** | Main catalog feed of active novels joined with author & genre |
+| `GET` | `/:slug` | **Public** | Detailed novel view by slug |
 | `DELETE` | `/:id` | **Protected** | Soft-deletes a novel (requires pen name ownership) |
 
 ---
 
-### Detailed Endpoint Specs:
+### Book Endpoint Specs:
 
-#### 1. Publish a New Novel
+#### 1. Publish a New Novel (Supports Multipart Uploads)
 * **Endpoint:** `POST /api/v1/books`
 * **Access:** Protected (`verifyJWT`)
-* **Headers:** `Authorization: Bearer <accessToken>` (or cookie)
-* **Request Body (JSON):**
-  ```json
-  {
-    "title": "The Shadow Monarch",
-    "slug": "the-shadow-monarch",
-    "description": "In a world overrun by portals, one weak hunter awakens an army of shadows.",
-    "cover_image": "https://via.placeholder.com/300x450",
-    "persona_id": 2,
-    "status": "ongoing",
-    "tags": ["fantasy", "action", "level-up"]
-  }
-  ```
+* **Headers:** `Content-Type: multipart/form-data` *(or `application/json`)*
+* **Form-Data Fields:**
+  * `cover_image` *(File, optional)*: Image file streamed to Cloudinary `deckle_books`
+  * `title` *(Text, required)*: e.g. "The Shadow Monarch"
+  * `slug` *(Text, required)*: e.g. "the-shadow-monarch"
+  * `description` *(Text, optional)*: Novel synopsis
+  * `persona_id` *(Number, required)*: ID of author persona owned by logged-in user
+  * `genre_id` *(Number, optional)*: ID of curated genre
+  * `status` *(Text, optional)*: `'ongoing'` | `'completed'` | `'hiatus'`
+  * `tags` *(JSON Array or Comma string)*: e.g. `["cultivation", "action"]` or `"cultivation, action"`
 * **Success Response (`201 Created`):**
   ```json
   {
@@ -328,27 +236,23 @@ Base: `/api/v1/books`
       "id": 1,
       "title": "The Shadow Monarch",
       "slug": "the-shadow-monarch",
-      "description": "In a world overrun by portals, one weak hunter awakens an army of shadows.",
-      "cover_image": "https://via.placeholder.com/300x450",
+      "cover_image": "https://res.cloudinary.com/.../deckle_books/cover_image-1700.jpg",
       "persona_id": 2,
+      "genre_id": 1,
       "status": "ongoing",
-      "views_count": 0,
-      "tags": ["fantasy", "action", "level-up"],
-      "created_at": "2026-10-02T13:30:00.000Z",
-      "updated_at": "2026-10-02T13:30:00.000Z",
-      "deleted_at": null
+      "tags": ["cultivation", "action"],
+      "created_at": "2026-10-04T02:00:00.000Z"
     },
     "message": "Novel published successfully!",
     "success": true
   }
   ```
 
----
-
-#### 2. Get Active Books Feed
+#### 2. Get Active Catalog Feed
 * **Endpoint:** `GET /api/v1/books`
 * **Access:** Public
 * **Success Response (`200 OK`):**
+  Returns novels with author display name, handle, avatar, and genre details:
   ```json
   {
     "statusCode": 200,
@@ -357,16 +261,12 @@ Base: `/api/v1/books`
         "id": 1,
         "title": "The Shadow Monarch",
         "slug": "the-shadow-monarch",
-        "description": "In a world overrun by portals...",
-        "cover_image": "https://via.placeholder.com/300x450",
-        "persona_id": 2,
-        "status": "ongoing",
-        "views_count": 0,
-        "tags": ["fantasy", "action", "level-up"],
-        "created_at": "2026-10-02T13:30:00.000Z",
+        "cover_image": "https://...",
         "author_name": "Shadow Weaver",
         "author_handle": "shadow_weaver",
-        "author_avatar": "https://via.placeholder.com/150"
+        "author_avatar": "https://...",
+        "genre_name": "Progression Fantasy",
+        "genre_slug": "progression-fantasy"
       }
     ],
     "message": "Books catalog fetched successfully!",
@@ -376,61 +276,66 @@ Base: `/api/v1/books`
 
 ---
 
-#### 3. Get Novel Details by Slug
-* **Endpoint:** `GET /api/v1/books/:slug` (e.g. `/api/v1/books/the-shadow-monarch`)
+## 📂 Story Volumes & Arcs (`/volumes`)
+
+Base: `/api/v1/volumes`
+
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/book/:bookId` | **Public** | Lists all volume arcs of a book with chapter counts & word rollups |
+| `POST` | `/` | **Protected** | Creates story volume arc (supports `cover_image` upload) |
+| `DELETE` | `/:id` | **Protected** | Soft-deletes a volume (sets chapters' `volume_id` to NULL) |
+
+---
+
+### Volume Endpoint Specs:
+
+#### 1. Create a New Volume (Arc)
+* **Endpoint:** `POST /api/v1/volumes`
+* **Access:** Protected (`verifyJWT`)
+* **Headers:** `Content-Type: multipart/form-data` *(or `application/json`)*
+* **Form-Data Fields:**
+  * `cover_image` *(File, optional)*: Image file streamed to Cloudinary `deckle_volumes`
+  * `book_id` *(Number, required)*: Novel ID
+  * `volume_number` *(Number, required)*: Sequential arc number (e.g. 1, 2)
+  * `title` *(Text, required)*: e.g. "Volume 1: The Academy Arc"
+  * `description` *(Text, optional)*: Arc synopsis
+* **Success Response (`201 Created`):**
+  ```json
+  {
+    "statusCode": 201,
+    "data": {
+      "id": 10,
+      "book_id": 1,
+      "volume_number": 1,
+      "title": "Volume 1: The Academy Arc",
+      "cover_image": "https://res.cloudinary.com/.../deckle_volumes/cover-1700.jpg"
+    },
+    "message": "Volume created successfully!",
+    "success": true
+  }
+  ```
+
+#### 2. Get All Volumes of a Book
+* **Endpoint:** `GET /api/v1/volumes/book/:bookId`
 * **Access:** Public
 * **Success Response (`200 OK`):**
   ```json
   {
     "statusCode": 200,
-    "data": {
-      "id": 1,
-      "title": "The Shadow Monarch",
-      "slug": "the-shadow-monarch",
-      "description": "In a world overrun by portals, one weak hunter awakens an army of shadows.",
-      "cover_image": "https://via.placeholder.com/300x450",
-      "persona_id": 2,
-      "status": "ongoing",
-      "views_count": 0,
-      "tags": ["fantasy", "action", "level-up"],
-      "created_at": "2026-10-02T13:30:00.000Z",
-      "author_name": "Shadow Weaver",
-      "author_handle": "shadow_weaver",
-      "author_avatar": "https://via.placeholder.com/150",
-      "author_bio": "Writer of dark fantasy and horror."
-    },
-    "message": "Novel details fetched successfully!",
+    "data": [
+      {
+        "id": 10,
+        "volume_number": 1,
+        "title": "Volume 1: The Academy Arc",
+        "chapters_count": 45,
+        "total_words": 135000
+      }
+    ],
+    "message": "Volumes fetched successfully!",
     "success": true
   }
   ```
-
----
-
-#### 4. Soft Delete a Novel
-* **Endpoint:** `DELETE /api/v1/books/:id` (e.g. `/api/v1/books/1`)
-* **Access:** Protected (`verifyJWT`)
-* **Headers:** `Authorization: Bearer <accessToken>` (or cookie)
-* **Request Body (JSON):**
-  ```json
-  {
-    "persona_id": 2
-  }
-  ```
-* **Success Response (`200 OK`):**
-  ```json
-  {
-    "statusCode": 200,
-    "data": {
-      "id": 1,
-      "title": "The Shadow Monarch",
-      "deleted_at": "2026-10-02T13:45:00.000Z"
-    },
-    "message": "Novel deleted successfully!",
-    "success": true
-  }
-  ```
-
----
 
 ---
 
@@ -440,57 +345,34 @@ Base: `/api/v1/chapters`
 
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/` | **Protected** | Adds a new chapter to a novel (verifies author persona ownership) |
-| `GET` | `/book/:bookId/toc` | **Public** | Table of contents (fast query: titles & word counts only) |
-| `GET` | `/book/:bookId/read/:chapterNumber` | **Public** | Reads a single published chapter (with full text content) |
-| `DELETE` | `/:id` | **Protected** | Soft-deletes a chapter (requires novel ownership) |
+| `POST` | `/` | **Protected** | Publishes chapter (supports optional `volume_id`) |
+| `GET` | `/book/:bookId/toc` | **Public** | Table of contents grouped with volume headers |
+| `GET` | `/book/:bookId/read/:chapterNumber` | **Public** | Full chapter reading text + volume arc title |
+| `DELETE` | `/:id` | **Protected** | Soft-deletes chapter |
 
 ---
 
-### Detailed Endpoint Specs:
+### Chapter Endpoint Specs:
 
-#### 1. Add a New Chapter
+#### 1. Add a New Chapter (Story Arc Continuous Numbering)
 * **Endpoint:** `POST /api/v1/chapters`
 * **Access:** Protected (`verifyJWT`)
-* **Headers:** `Authorization: Bearer <accessToken>` (or cookie)
 * **Request Body (JSON):**
   ```json
   {
     "book_id": 1,
+    "volume_id": 10,
     "chapter_number": 1,
     "title": "Prologue: The Awakening",
-    "content": "The rain fell heavily against the cobblestone street. Alone in the alleyway, Jin felt a strange pulsing warmth inside his chest...",
+    "content": "The rain fell heavily against the cobblestone street...",
     "status": "published"
   }
   ```
-* **Success Response (`201 Created`):**
-  ```json
-  {
-    "statusCode": 201,
-    "data": {
-      "id": 1,
-      "book_id": 1,
-      "chapter_number": 1,
-      "title": "Prologue: The Awakening",
-      "content": "The rain fell heavily against the cobblestone street...",
-      "words_count": 22,
-      "status": "published",
-      "published_at": "2026-10-02T14:00:00.000Z",
-      "created_at": "2026-10-02T14:00:00.000Z",
-      "updated_at": "2026-10-02T14:00:00.000Z",
-      "deleted_at": null
-    },
-    "message": "Chapter created successfully!",
-    "success": true
-  }
-  ```
+  *(Note: If `volume_id` is omitted or null, the chapter renders as standalone/flat).*
 
----
-
-#### 2. Get Novel Table of Contents (TOC)
-* **Endpoint:** `GET /api/v1/chapters/book/:bookId/toc` (e.g. `/api/v1/chapters/book/1/toc`)
+#### 2. Table of Contents (TOC)
+* **Endpoint:** `GET /api/v1/chapters/book/:bookId/toc`
 * **Access:** Public
-* **Performance Note:** Selectively excludes heavy text content (`content`) to transfer only lightweight metadata across thousands of chapters.
 * **Success Response (`200 OK`):**
   ```json
   {
@@ -501,14 +383,9 @@ Base: `/api/v1/chapters`
         "chapter_number": 1,
         "title": "Prologue: The Awakening",
         "words_count": 2250,
-        "published_at": "2026-10-02T14:00:00.000Z"
-      },
-      {
-        "id": 2,
-        "chapter_number": 2,
-        "title": "Chapter 2: The First Dungeon",
-        "words_count": 3100,
-        "published_at": "2026-10-02T15:30:00.000Z"
+        "volume_id": 10,
+        "volume_number": 1,
+        "volume_title": "Volume 1: The Academy Arc"
       }
     ],
     "message": "Table of contents fetched successfully!",
@@ -518,53 +395,164 @@ Base: `/api/v1/chapters`
 
 ---
 
-#### 3. Read a Single Published Chapter
-* **Endpoint:** `GET /api/v1/chapters/book/:bookId/read/:chapterNumber` (e.g. `/api/v1/chapters/book/1/read/1`)
+## 🏷️ Curated Taxonomy & Genres (`/genres`)
+
+Base: `/api/v1/genres`
+
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/` | **Public** | All active curated genres (LitRPG, Cultivation, Dark Fantasy) |
+| `GET` | `/:slug` | **Public** | Single genre details by slug |
+| `POST` | `/` | **Protected** | Creates new genre |
+
+---
+
+### Genre Endpoint Specs:
+
+#### 1. Get All Active Genres
+* **Endpoint:** `GET /api/v1/genres`
 * **Access:** Public
 * **Success Response (`200 OK`):**
   ```json
   {
     "statusCode": 200,
-    "data": {
-      "id": 1,
-      "book_id": 1,
-      "chapter_number": 1,
-      "title": "Prologue: The Awakening",
-      "content": "The rain fell heavily against the cobblestone street...",
-      "words_count": 2250,
-      "status": "published",
-      "published_at": "2026-10-02T14:00:00.000Z",
-      "created_at": "2026-10-02T14:00:00.000Z"
-    },
-    "message": "Chapter content fetched successfully!",
+    "data": [
+      {
+        "id": 1,
+        "name": "Progression Fantasy",
+        "slug": "progression-fantasy",
+        "description": "Power scaling, cultivation of mastery, and training journeys.",
+        "icon": "Zap",
+        "display_order": 1
+      },
+      {
+        "id": 2,
+        "name": "LitRPG & System",
+        "slug": "litrpg",
+        "description": "Game mechanics, stat sheets, skill trees, and level-ups.",
+        "icon": "Layers",
+        "display_order": 2
+      }
+    ],
+    "message": "Genres fetched successfully!",
     "success": true
   }
   ```
 
 ---
 
-#### 4. Soft Delete a Chapter
-* **Endpoint:** `DELETE /api/v1/chapters/:id` (e.g. `/api/v1/chapters/1`)
+## 🔖 Bookshelf & Reading Progress (`/reading-history`)
+
+Base: `/api/v1/reading-history`
+
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/progress` | **Protected** | Syncs reader's current chapter # and scroll percentage |
+| `POST` | `/shelf` | **Protected** | Adds/moves novel to folder (`Reading`, `Completed`, `Plan to Read`) |
+| `GET` | `/shelf` | **Protected** | Fetches reader's bookmarked bookshelf |
+| `GET` | `/recent` | **Protected** | Fetches recent reading history across all novels |
+| `GET` | `/book/:bookId` | **Protected** | Returns reader's exact bookmark & last read chapter for a book |
+
+---
+
+### Reading History Endpoint Specs:
+
+#### 1. Sync Reading Progress (For 1-Click Resume)
+* **Endpoint:** `POST /api/v1/reading-history/progress`
 * **Access:** Protected (`verifyJWT`)
-* **Headers:** `Authorization: Bearer <accessToken>` (or cookie)
 * **Request Body (JSON):**
   ```json
   {
-    "book_id": 1
+    "book_id": 1,
+    "chapter_id": 12,
+    "chapter_number": 12,
+    "scroll_percentage": 78.5
   }
   ```
+
+#### 2. Update Bookshelf Status
+* **Endpoint:** `POST /api/v1/reading-history/shelf`
+* **Access:** Protected (`verifyJWT`)
+* **Request Body (JSON):**
+  ```json
+  {
+    "book_id": 1,
+    "is_bookmarked": true,
+    "folder": "Reading",
+    "is_favorite": true
+  }
+  ```
+  *(Folders allowed: `'Reading'`, `'Completed'`, `'Plan to Read'`, `'On Hold'`, `'Dropped'`)*
+
+#### 3. Fetch Bookshelf
+* **Endpoint:** `GET /api/v1/reading-history/shelf?folder=Reading`
+* **Access:** Protected (`verifyJWT`)
 * **Success Response (`200 OK`):**
   ```json
   {
     "statusCode": 200,
-    "data": {
-      "id": 1,
-      "chapter_number": 1,
-      "title": "Prologue: The Awakening",
-      "deleted_at": "2026-10-02T14:15:00.000Z"
-    },
-    "message": "Chapter deleted successfully!",
+    "data": [
+      {
+        "book_id": 1,
+        "title": "The Shadow Monarch",
+        "slug": "the-shadow-monarch",
+        "cover_image": "https://...",
+        "last_chapter_number": 12,
+        "scroll_percentage": 78.5,
+        "folder": "Reading",
+        "total_chapters": 45
+      }
+    ],
+    "message": "Bookshelf fetched successfully!",
     "success": true
   }
   ```
 
+---
+
+## 📜 Chapter Lore & Margin Notes (`/lore`)
+
+Base: `/api/v1/lore`
+
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/chapter/:chapterId` | **Public** | Fetches all margin annotations/glossary terms for a chapter |
+| `POST` | `/chapter/:chapterId` | **Protected** | Author creates a lore annotation for reader hover tooltips |
+| `DELETE` | `/:id` | **Protected** | Author deletes a lore note by ID |
+
+---
+
+### Chapter Lore Endpoint Specs:
+
+#### 1. Get Chapter Lore (Reader Tooltips)
+* **Endpoint:** `GET /api/v1/lore/chapter/:chapterId` (e.g. `/api/v1/lore/chapter/1`)
+* **Access:** Public
+* **Success Response (`200 OK`):**
+  ```json
+  {
+    "statusCode": 200,
+    "data": [
+      {
+        "id": 1,
+        "chapter_id": 1,
+        "term": "Beyonder",
+        "definition": "A human who has consumed a sequence potion to attain supernatural pathways.",
+        "order_index": 0
+      }
+    ],
+    "message": "Chapter lore fetched successfully!",
+    "success": true
+  }
+  ```
+
+#### 2. Create Lore Annotation
+* **Endpoint:** `POST /api/v1/lore/chapter/:chapterId`
+* **Access:** Protected (`verifyJWT`)
+* **Request Body (JSON):**
+  ```json
+  {
+    "term": "Qi Tribulation",
+    "definition": "The celestial lightning strike that tests a cultivator attempting to break into the Core Formation realm.",
+    "order_index": 1
+  }
+  ```

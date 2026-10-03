@@ -8,6 +8,7 @@ export async function createChapterTable() {
       CREATE TABLE IF NOT EXISTS chapters (
         id SERIAL PRIMARY KEY,
         book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+        volume_id INTEGER REFERENCES volumes(id) ON DELETE SET NULL,
         chapter_number INTEGER NOT NULL,
         title VARCHAR(255) NOT NULL,
         content TEXT NOT NULL,
@@ -21,8 +22,17 @@ export async function createChapterTable() {
       );
     `;
 
+    // Ensure volume_id exists on existing tables (Migration helper)
+    await sql`
+      ALTER TABLE chapters ADD COLUMN IF NOT EXISTS volume_id INTEGER REFERENCES volumes(id) ON DELETE SET NULL;
+    `;
+
     await sql`
       CREATE INDEX IF NOT EXISTS idx_chapters_book_id ON chapters(book_id);
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_chapters_volume_id ON chapters(volume_id);
     `;
   } catch (error) {
     throw new ApiError(
@@ -35,6 +45,7 @@ export async function createChapterTable() {
 // 2. CREATE A NEW CHAPTER
 export async function createChapter({
   book_id,
+  volume_id = null,
   chapter_number,
   title,
   content,
@@ -48,6 +59,7 @@ export async function createChapter({
     const result = await sql`
       INSERT INTO chapters (
         book_id,
+        volume_id,
         chapter_number,
         title,
         content,
@@ -57,6 +69,7 @@ export async function createChapter({
       )
       VALUES (
         ${book_id},
+        ${volume_id},
         ${chapter_number},
         ${title},
         ${content},
@@ -86,16 +99,22 @@ export async function getTableOfContents(book_id) {
   try {
     const result = await sql`
       SELECT 
-        id, 
-        chapter_number, 
-        title, 
-        words_count, 
-        published_at
+        chapters.id, 
+        chapters.chapter_number, 
+        chapters.title, 
+        chapters.words_count, 
+        chapters.published_at,
+        chapters.volume_id,
+        volumes.volume_number,
+        volumes.title AS volume_title
       FROM chapters
-      WHERE book_id = ${book_id} 
-        AND status = 'published'
-        AND deleted_at IS NULL
-      ORDER BY chapter_number ASC;
+      LEFT JOIN volumes ON chapters.volume_id = volumes.id AND volumes.deleted_at IS NULL
+      WHERE chapters.book_id = ${book_id} 
+        AND chapters.status = 'published'
+        AND chapters.deleted_at IS NULL
+      ORDER BY 
+        COALESCE(volumes.volume_number, 0) ASC, 
+        chapters.chapter_number ASC;
     `;
     return result;
   } catch (error) {
@@ -110,12 +129,16 @@ export async function getTableOfContents(book_id) {
 export async function getChapterByNumber(book_id, chapter_number) {
   try {
     const result = await sql`
-      SELECT * 
+      SELECT 
+        chapters.*,
+        volumes.volume_number,
+        volumes.title AS volume_title
       FROM chapters
-      WHERE book_id = ${book_id} 
-        AND chapter_number = ${chapter_number} 
-        AND status = 'published'
-        AND deleted_at IS NULL;
+      LEFT JOIN volumes ON chapters.volume_id = volumes.id AND volumes.deleted_at IS NULL
+      WHERE chapters.book_id = ${book_id} 
+        AND chapters.chapter_number = ${chapter_number} 
+        AND chapters.status = 'published'
+        AND chapters.deleted_at IS NULL;
     `;
     return result[0] || null;
   } catch (error) {
@@ -157,7 +180,19 @@ export async function softDeleteChapter(chapter_id, book_id) {
   } catch (error) {
     throw new ApiError(
       500,
-      `Database error soft-deleting chapter: ${error.message}`,
+      `Database error soft-deleting chapter: ${error.message}`
     );
+  }
+}
+
+// 7. FIND CHAPTER BY ID
+export async function findChapterById(id) {
+  try {
+    const result = await sql`
+      SELECT * FROM chapters WHERE id = ${id} AND deleted_at IS NULL;
+    `;
+    return result[0] || null;
+  } catch (error) {
+    throw new ApiError(500, `Database error finding chapter: ${error.message}`);
   }
 }

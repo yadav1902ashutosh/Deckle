@@ -9,10 +9,11 @@ import {
 } from "../model/books.model.js";
 import { findPersonaById } from "../model/personas.model.js";
 import { getFallbackBookCover } from "../utils/imageReference.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 //1.PUBLISH A NEW NOVEL
 export const createNewBook = asyncHandler(async (req, res) => {
-  const { title, slug, description, cover_image, persona_id, status, tags } =
+  const { title, slug, description, cover_image, persona_id, genre_id, status, tags } =
     req.body;
 
   // Validation
@@ -28,7 +29,7 @@ export const createNewBook = asyncHandler(async (req, res) => {
     .replace(/^-+|-+$/g, "");
 
   // CRITICAL SECURITY CHECK: Does the logged-in user own this persona?
-  const persona = await findPersonaById(persona_id);
+  const persona = await findPersonaById(Number(persona_id));
   if (!persona) {
     throw new ApiError(404, "The specified persona does not exist!");
   }
@@ -36,15 +37,42 @@ export const createNewBook = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Forbidden: You do not own this pen name!");
   }
 
-  const parsedTags = Array.isArray(tags) ? tags : [];
+  // Parse tags (handles JSON string, comma string, or array from multipart forms)
+  let parsedTags = [];
+  if (Array.isArray(tags)) {
+    parsedTags = tags;
+  } else if (typeof tags === "string") {
+    try {
+      parsedTags = JSON.parse(tags);
+    } catch {
+      parsedTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
+    }
+  }
 
-  // Create novel in Neon DB with reliable reference cover fallback
+  // Image Upload: check if file was uploaded via Multer
+  let finalCoverImage = cover_image?.trim() || null;
+  const coverLocalPath = req.file?.path;
+
+  if (coverLocalPath) {
+    const uploadResult = await uploadOnCloudinary(coverLocalPath, "deckle_books");
+    if (uploadResult?.secure_url) {
+      finalCoverImage = uploadResult.secure_url;
+    }
+  }
+
+  // Fallback to reliable reference cover if no image provided
+  if (!finalCoverImage) {
+    finalCoverImage = getFallbackBookCover(cleanSlug, parsedTags);
+  }
+
+  // Create novel in Neon DB
   const newBook = await createBook({
     title: title.trim(),
     slug: cleanSlug,
     description: description?.trim() || null,
-    cover_image: cover_image?.trim() || getFallbackBookCover(cleanSlug, parsedTags),
-    persona_id,
+    cover_image: finalCoverImage,
+    persona_id: Number(persona_id),
+    genre_id: genre_id ? Number(genre_id) : null,
     status: status || "ongoing",
     tags: parsedTags,
   });

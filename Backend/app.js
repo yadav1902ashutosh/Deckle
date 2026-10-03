@@ -5,7 +5,10 @@ import userRouter from "./routes/user.routes.js";
 import personaRouter from "./routes/persona.routes.js";
 import bookRouter from "./routes/book.routes.js" 
 import chapterRouter from "./routes/chapter.routes.js";
-
+import volumeRouter from "./routes/volume.routes.js";
+import genreRouter from "./routes/genre.routes.js";
+import readingHistoryRouter from "./routes/readingHistory.routes.js";
+import loreRouter from "./routes/chapterLore.routes.js";
 
 const app = express();
 
@@ -46,6 +49,10 @@ app.use('/api/v1/users', userRouter);
 app.use("/api/v1/personas", personaRouter);
 app.use("/api/v1/books", bookRouter);
 app.use("/api/v1/chapters", chapterRouter);
+app.use("/api/v1/volumes", volumeRouter);
+app.use("/api/v1/genres", genreRouter);
+app.use("/api/v1/reading-history", readingHistoryRouter);
+app.use("/api/v1/lore", loreRouter);
 
 app.get('/api/health', (req, res) => {
     res.json({status: 'ok', message: ' Backend is running!'});

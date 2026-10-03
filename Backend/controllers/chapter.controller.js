@@ -9,10 +9,11 @@ import {
 } from "../model/chapters.model.js";
 import { findBookById } from "../model/books.model.js";
 import { findPersonaById } from "../model/personas.model.js";
+import {findVolumeById} from "../model/volumes.model.js";
 
 // 1. ADD A NEW CHAPTER TO A NOVEL
 export const createNewChapter = asyncHandler(async (req, res) => {
-  const { book_id, chapter_number, title, content, status } = req.body;
+  const { book_id, volume_id, chapter_number, title, content, status } = req.body;
 
   // Validation
   if (!book_id || !chapter_number || !title?.trim() || !content?.trim()) {
@@ -34,12 +35,22 @@ export const createNewChapter = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Forbidden: You do not own this novel!");
   }
 
+  if (volume_id) {
+  const volume = await findVolumeById(Number(volume_id));
+  if (!volume) {
+    throw new ApiError(404, "The specified volume does not exist!");
+  }
+  if (volume.book_id !== Number(book_id)) {
+    throw new ApiError(400, "Forbidden: This volume does not belong to this novel!");
+  }
+}
   // 3. Automated Word Count Calculation
   const words_count = content.trim().split(/\s+/).length;
 
   // 4. Save Chapter in Neon DB
   const newChapter = await createChapter({
     book_id: Number(book_id),
+    volume_id: volume_id ? Number(volume_id) : null,
     chapter_number: Number(chapter_number),
     title: title.trim(),
     content: content.trim(),

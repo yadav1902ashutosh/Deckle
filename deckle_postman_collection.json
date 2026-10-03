@@ -1,0 +1,807 @@
+{
+  "info": {
+    "_postman_id": "deckle-api-v1-collection",
+    "name": "Deckle API Collection",
+    "description": "Complete Postman collection for all existing endpoints of the Deckle Webnovel & Reader platform.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "00 System & Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "health"]
+            },
+            "description": "Pings the server to verify Express is up and running."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01 Users & Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Alex Johnson\",\n  \"username\": \"alex_writer\",\n  \"email\": \"alex@example.com\",\n  \"password\": \"mySecurePassword123\",\n  \"role\": \"writer\",\n  \"gender\": \"male\",\n  \"dob\": \"2000-05-15\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "register"]
+            },
+            "description": "Registers a new user and automatically creates their default primary Persona."
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "        console.log('accessToken automatically saved into collection variable!');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@example.com\",\n  \"password\": \"mySecurePassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "login"]
+            },
+            "description": "Authenticates the user, sets accessToken & refreshToken cookies, and auto-saves token for Postman."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/current-user",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "current-user"]
+            },
+            "description": "Fetches currently authenticated user account and their list of personas."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Access Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/refresh-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "refresh-token"]
+            },
+            "description": "Refreshes expired access token using refreshToken cookie."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"mySecurePassword123\",\n  \"newPassword\": \"newSecurePassword456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "change-password"]
+            },
+            "description": "Updates user password after verifying old password."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Account Info",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Alex Johnson Updated\",\n  \"email\": \"alex.new@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/update-account",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "update-account"]
+            },
+            "description": "Updates full name or email of the current account."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "logout"]
+            },
+            "description": "Clears DB refreshToken and expires auth cookies."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 Personas (Pen Names)",
+      "item": [
+        {
+          "name": "Create New Persona",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"display_name\": \"Void Sovereign\",\n  \"handle\": \"void_sov\",\n  \"bio\": \"Writing dark xianxia and progression fantasy novels.\",\n  \"avatar_url\": \"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150\",\n  \"banner_url\": \"https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/personas",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas"]
+            },
+            "description": "Creates a new author pen name / reader identity for the logged-in user."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Personas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/personas/my-personas",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "my-personas"]
+            },
+            "description": "Lists all personas owned by the authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Persona by Handle",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/personas/handle/void_sov",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "handle", "void_sov"]
+            },
+            "description": "Public profile lookup for an author handle."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Persona by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/personas/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "1"]
+            },
+            "description": "Fetches a persona by database ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Reading Preferences",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preferences\": {\n    \"theme\": \"parchment\",\n    \"fontSize\": 19,\n    \"fontFamily\": \"Merriweather\",\n    \"lineHeight\": 1.8,\n    \"favorite_genres\": [\"progression-fantasy\", \"cultivation\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/personas/1/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "1", "preferences"]
+            },
+            "description": "Updates theme, font family, font size, and favorite genres for reader persona."
+          },
+          "response": []
+        },
+        {
+          "name": "Increment Reading Stats (Words & Streak)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"wordsCount\": 2850\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/personas/1/stats/increment",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "1", "stats", "increment"]
+            },
+            "description": "Increments reader total words read and daily reading streak."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Persona",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/personas/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["personas", "2"]
+            },
+            "description": "Soft deletes a persona owned by the user (cannot delete default persona)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 Books & Novels",
+      "item": [
+        {
+          "name": "Get Active Books Feed (Catalog)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["books"]
+            },
+            "description": "Public feed of active novels joined with author persona and genre info."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Book Details by Slug",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/the-ethereal-wayfarer",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", "the-ethereal-wayfarer"]
+            },
+            "description": "Detailed book profile including author bio and metadata."
+          },
+          "response": []
+        },
+        {
+          "name": "Publish New Book",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chronicles of the Astral Gate\",\n  \"slug\": \"chronicles-of-the-astral-gate\",\n  \"description\": \"An epic cultivation tale traversing infinite planes.\",\n  \"persona_id\": 1,\n  \"status\": \"ongoing\",\n  \"tags\": [\"cultivation\", \"progression\", \"xianxia\", \"action\"],\n  \"cover_image\": \"https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["books"]
+            },
+            "description": "Publishes a new novel under a persona owned by the logged-in user."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Book",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"persona_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", "1"]
+            },
+            "description": "Soft deletes a book owned by the user's persona."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 Chapters & Reading",
+      "item": [
+        {
+          "name": "Get Table of Contents (TOC)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chapters/book/1/toc",
+              "host": ["{{baseUrl}}"],
+              "path": ["chapters", "book", "1", "toc"]
+            },
+            "description": "Fetches published chapters and their volume numbers for a novel."
+          },
+          "response": []
+        },
+        {
+          "name": "Read Single Chapter",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chapters/book/1/read/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["chapters", "book", "1", "read", "1"]
+            },
+            "description": "Returns full chapter content and title for readers."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Chapter (Flat without Volume)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_id\": 1,\n  \"chapter_number\": 1,\n  \"title\": \"The Awakening\",\n  \"content\": \"The dawn broke over the shattered mountains...\",\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chapters",
+              "host": ["{{baseUrl}}"],
+              "path": ["chapters"]
+            },
+            "description": "Creates and publishes a new chapter without a volume."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Chapter (With Volume ID)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_id\": 1,\n  \"volume_id\": 1,\n  \"chapter_number\": 2,\n  \"title\": \"Entering the Void Domain\",\n  \"content\": \"The portal swirled with violet energy as our journey began...\",\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chapters",
+              "host": ["{{baseUrl}}"],
+              "path": ["chapters"]
+            },
+            "description": "Creates a chapter linked to a specific volume of the novel."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Chapter",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chapters/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["chapters", "1"]
+            },
+            "description": "Soft deletes a chapter after verifying ownership."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 Volumes & Arcs",
+      "item": [
+        {
+          "name": "Get Book Volumes",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/volumes/book/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["volumes", "book", "1"]
+            },
+            "description": "Fetches all volumes and their chapter counts/word counts for a book."
+          },
+          "response": []
+        },
+        {
+          "name": "Create New Volume (Arc)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_id\": 1,\n  \"volume_number\": 1,\n  \"title\": \"Volume 1: The Awakening Arc\",\n  \"description\": \"The introductory story arc covering chapters 1 to 40.\",\n  \"cover_image\": \"https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/volumes",
+              "host": ["{{baseUrl}}"],
+              "path": ["volumes"]
+            },
+            "description": "Creates a new volume arc for a book owned by the user's persona."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Volume",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/volumes/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["volumes", "1"]
+            },
+            "description": "Soft deletes a volume. Chapters inside have volume_id set to null."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 Curated Genres",
+      "item": [
+        {
+          "name": "Get All Active Genres",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/genres",
+              "host": ["{{baseUrl}}"],
+              "path": ["genres"]
+            },
+            "description": "Public list of all curated genres (LitRPG, Cultivation, Dark Fantasy, etc.)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Genre Details by Slug",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/genres/progression-fantasy",
+              "host": ["{{baseUrl}}"],
+              "path": ["genres", "progression-fantasy"]
+            },
+            "description": "Public profile of a single genre by slug."
+          },
+          "response": []
+        },
+        {
+          "name": "Create New Genre",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Urban Supernatural\",\n  \"slug\": \"urban-supernatural\",\n  \"description\": \"Modern cities hidden with secret societies, monsters, and occult hunters.\",\n  \"icon\": \"Building\",\n  \"display_order\": 9\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/genres",
+              "host": ["{{baseUrl}}"],
+              "path": ["genres"]
+            },
+            "description": "Creates a new curated platform genre."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07 Bookshelf & Reading History",
+      "item": [
+        {
+          "name": "Sync Reading Progress",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_id\": 1,\n  \"chapter_id\": 1,\n  \"chapter_number\": 3,\n  \"scroll_percentage\": 64.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reading-history/progress",
+              "host": ["{{baseUrl}}"],
+              "path": ["reading-history", "progress"]
+            },
+            "description": "Records current chapter and scroll position for resume reading."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Bookshelf Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_id\": 1,\n  \"is_bookmarked\": true,\n  \"folder\": \"Reading\",\n  \"is_favorite\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reading-history/shelf",
+              "host": ["{{baseUrl}}"],
+              "path": ["reading-history", "shelf"]
+            },
+            "description": "Adds or moves book to folder (Reading, Completed, Plan to Read, On Hold, Dropped)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Bookshelf",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reading-history/shelf?folder=Reading",
+              "host": ["{{baseUrl}}"],
+              "path": ["reading-history", "shelf"],
+              "query": [
+                {
+                  "key": "folder",
+                  "value": "Reading",
+                  "description": "Optional: filter by folder (Reading, Completed, Plan to Read, On Hold, Dropped)"
+                }
+              ]
+            },
+            "description": "Fetches user's bookmarked novels with covers, author details, and total chapters."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recent Reading Activity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reading-history/recent?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["reading-history", "recent"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Fetches recent history activity across all novels."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Book Progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reading-history/book/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["reading-history", "book", "1"]
+            },
+            "description": "Returns reader's exact bookmark & last read chapter for a specific novel."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08 Chapter Lore & Margin Notes",
+      "item": [
+        {
+          "name": "Get Chapter Lore List",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lore/chapter/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["lore", "chapter", "1"]
+            },
+            "description": "Public glossary list for reader hover tooltips and margin notes."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Lore Annotation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"term\": \"Beyonder\",\n  \"definition\": \"A human who has consumed a sequence potion to attain supernatural pathways.\",\n  \"order_index\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/lore/chapter/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["lore", "chapter", "1"]
+            },
+            "description": "Author creates a margin glossary annotation for a chapter."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Lore Annotation",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lore/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["lore", "1"]
+            },
+            "description": "Author removes a margin annotation by ID."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

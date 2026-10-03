@@ -24,3 +24,8 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Uploads & Temp files
+Backend/public/temp/*
+!Backend/public/temp/.gitkeep
+
