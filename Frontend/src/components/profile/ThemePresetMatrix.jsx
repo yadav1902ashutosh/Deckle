@@ -1,10 +1,14 @@
 import React from "react";
-import { Palette, Check } from "lucide-react";
+import { Palette, Check, Sparkles } from "lucide-react";
 import { DECKLE_THEMES, applyTheme } from "../../utils/themeConfig";
 
 export default function ThemePresetMatrix({
   activeTheme = "parchment",
   onThemeSelect = () => {},
+  fontFamily = "serif",
+  fontSize = 18,
+  lineHeight = 1.8,
+  indentEnabled = true,
 }) {
   const currentPreset = DECKLE_THEMES.find((t) => t.id === activeTheme) || DECKLE_THEMES[0];
 
@@ -71,16 +75,36 @@ export default function ThemePresetMatrix({
         })}
       </div>
 
-      {/* Live Reading Preview Callout */}
-      <div className="p-4 rounded-xl bg-tag/60 border border-border-subtle/40 transition-all flex flex-col gap-2">
+      {/* Live Reading Preview Callout with Dynamic Typography Sync */}
+      <div className="p-4 sm:p-5 rounded-xl bg-tag/60 border border-border-subtle/40 transition-all flex flex-col gap-2.5">
         <div className="flex items-center justify-between text-xs text-text-muted">
-          <span>Viewport Preview — Chapter 142</span>
-          <span>Optimal 65 Chars/Line</span>
+          <div className="flex items-center gap-1.5 font-medium">
+            <Sparkles className="w-3.5 h-3.5 text-accent" />
+            <span>Live Viewport Preview — Chapter 142</span>
+          </div>
+          <span className="text-[11px] font-mono">
+            {fontFamily === "sans" ? "Plus Jakarta" : fontFamily === "source-han" ? "Source Han" : "Newsreader"} • {fontSize}px • {lineHeight}×
+          </span>
         </div>
 
-        <p className="font-serif text-sm sm:text-base text-text-main italic leading-relaxed">
-          “The ink in the celestial codex did not dry with age; instead, it drifted like pulverized starlight across the deckled vellum, whispering forgotten dao mantras into the quiet chamber.”
-        </p>
+        <div className="p-3 bg-card/60 rounded-lg border border-border-subtle/30 overflow-hidden">
+          <p
+            className={`text-text-main italic transition-all ${
+              fontFamily === "sans"
+                ? "font-sans"
+                : fontFamily === "source-han"
+                ? "font-serif tracking-wide"
+                : "font-serif"
+            }`}
+            style={{
+              fontSize: `${fontSize}px`,
+              lineHeight: lineHeight,
+              textIndent: indentEnabled ? "2em" : "0",
+            }}
+          >
+            “The ink in the celestial codex did not dry with age; instead, it drifted like pulverized starlight across the deckled vellum, whispering forgotten dao mantras into the quiet chamber.”
+          </p>
+        </div>
       </div>
     </section>
   );

@@ -573,7 +573,54 @@ ALTER TABLE users
   ADD COLUMN IF NOT EXISTS streak_days INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS total_engagement_hours DECIMAL(6,1) DEFAULT 0.0,
   ADD COLUMN IF NOT EXISTS total_words_consumed BIGINT DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT NULL;
+  ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS two_factor_secret VARCHAR(64) DEFAULT NULL;
+
+-- Reader Typography & Ergonomics Preferences Cloud Sync
+CREATE TABLE IF NOT EXISTS user_settings (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  theme VARCHAR(30) DEFAULT 'parchment',
+  font_family VARCHAR(30) DEFAULT 'serif',
+  font_size INTEGER DEFAULT 18,
+  line_height DECIMAL(3,2) DEFAULT 1.80,
+  indent_enabled BOOLEAN DEFAULT TRUE,
+  auto_save_progress BOOLEAN DEFAULT TRUE,
+  hardware_keys_enabled BOOLEAN DEFAULT TRUE,
+  tap_center_toggle BOOLEAN DEFAULT TRUE,
+  fullscreen_immersive BOOLEAN DEFAULT FALSE,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Active Reading Terminals & Security Sessions
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  device_name VARCHAR(100) NOT NULL,
+  browser_info VARCHAR(100) NOT NULL,
+  ip_address VARCHAR(45) NOT NULL,
+  location_city VARCHAR(100) DEFAULT 'Unknown',
+  is_current BOOLEAN DEFAULT FALSE,
+  last_active_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id);
+
+-- Daily Reading Session Logs for Velocity & Streak Calculations
+CREATE TABLE IF NOT EXISTS user_reading_logs (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  book_id INTEGER REFERENCES books(id) ON DELETE SET NULL,
+  chapter_id INTEGER REFERENCES chapters(id) ON DELETE SET NULL,
+  words_read INTEGER DEFAULT 0,
+  reading_seconds INTEGER DEFAULT 0,
+  logged_date DATE DEFAULT CURRENT_DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_reading_logs_user_date ON user_reading_logs(user_id, logged_date);
 ```
 
 ### B. Endpoints Specification
@@ -583,12 +630,62 @@ ALTER TABLE users
 
 - [ ] **Update Profile Info (`PATCH /api/v1/users/profile`)**:
   - **Controller**: `updateUserProfile`
-  - **Body**: `{ "bio": "...", "display_name": "...", "avatar_url": "..." }`
+  - **Body**: `{ "name": "Julian Thorne", "handle": "daoreader", "role": "Senior Scholar", "bio": "...", "avatar": "..." }`
+
+- [ ] **Reading Typography & Ergonomics Preferences (`GET /api/v1/users/settings`)**:
+  - **Controller**: `getUserSettings`
+  - Returns active theme, font family, font size, line height, indent mode, and ergonomics toggles.
+
+- [ ] **Update Reading Preferences (`PATCH /api/v1/users/settings`)**:
+  - **Controller**: `updateUserSettings`
+  - **Body**: `{ "theme": "soft-sage", "font_size": 20, "line_height": 1.9, "indent_enabled": true, "auto_save_progress": true }`
+
+- [ ] **7-Day Reading Velocity & Session Rhythm (`GET /api/v1/users/reading-velocity`)**:
+  - **Controller**: `getUserReadingVelocity`
+  - Aggregates daily `user_reading_logs` over the last 7 days. Returns words read per day, minutes in flow, and peak day flag for the profile chart.
+  - **Response Sample**:
+    ```json
+    {
+      "days": [
+        { "day": "Mon", "words": 54000, "mins": 42 },
+        { "day": "Tue", "words": 78000, "mins": 58 },
+        { "day": "Wed", "words": 92000, "mins": 74 },
+        { "day": "Thu", "words": 61000, "mins": 48 },
+        { "day": "Fri", "words": 45000, "mins": 35 },
+        { "day": "Sat", "words": 110000, "mins": 92, "is_peak": true },
+        { "day": "Sun", "words": 85000, "mins": 65 }
+      ],
+      "weekly_total_words": 525000,
+      "weekly_flow_hours": 6.9
+    }
+    ```
+
+- [ ] **Literary Genre Affinity & Reading Breakdown (`GET /api/v1/users/genre-affinity`)**:
+  - **Controller**: `getUserGenreAffinity`
+  - Groups finished/read chapters by book genres to return affinity percentages for the statistics dashboard.
+
+- [ ] **Active Terminals & Sessions (`GET /api/v1/users/sessions`)**:
+  - **Controller**: `getActiveSessions`
+  - Returns connected devices, browser strings, IP locations, and current terminal flag.
+
+- [ ] **Revoke Terminal Session (`DELETE /api/v1/users/sessions/:id`)**:
+  - **Controller**: `revokeSession`
+  - Invalidates remote refresh token and purges the session.
+
+- [ ] **Two-Factor Authentication Setup & Toggle (`POST /api/v1/users/2fa/toggle`)**:
+  - **Controller**: `toggleTwoFactor`
+  - Enables or disables TOTP 2FA for the authenticated account.
+
+- [ ] **Change Passphrase (`POST /api/v1/users/change-password`)**:
+  - **Controller**: `changePassword`
+  - **Body**: `{ "current_password": "...", "new_password": "..." }`
 
 - [ ] **Export Library Archive (`GET /api/v1/users/export-archive`)**:
   - **Controller**: `exportUserArchive`
   - **Format**: `?format=json` or `?format=epub`
   - Generates and streams a downloadable archive of the user's bookmarked novels, reading history, highlights, and annotations.
+
+
 
 ---
 

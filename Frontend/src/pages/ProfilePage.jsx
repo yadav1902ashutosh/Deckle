@@ -5,7 +5,10 @@ import ThemePresetMatrix from "../components/profile/ThemePresetMatrix";
 import TypographyLab from "../components/profile/TypographyLab";
 import ReadingErgonomics from "../components/profile/ReadingErgonomics";
 import CurrentlyReadingWidget from "../components/profile/CurrentlyReadingWidget";
-import { getActiveTheme, applyTheme } from "../utils/themeConfig";
+import StorageFootprintWidget from "../components/profile/StorageFootprintWidget";
+import ReadingVelocityChart from "../components/profile/ReadingVelocityChart";
+import EditProfileModal from "../components/profile/EditProfileModal";
+import { getActiveTheme } from "../utils/themeConfig";
 import {
   BarChart3,
   Sliders,
@@ -13,22 +16,46 @@ import {
   Shield,
   Cloud,
   CheckCircle,
-  HardDrive,
+  Key,
+  Smartphone,
+  Laptop,
+  Flame,
+  Award,
+  BookOpen,
+  Calendar,
+  Lock,
 } from "lucide-react";
 
 export default function ProfilePage() {
-  const [activeTab, setActiveTab] = useState("preferences"); // stats | preferences | shelf | security | storage
+  const [activeTab, setActiveTab] = useState("preferences"); // preferences | stats | shelf | security | storage
   const [activeTheme, setActiveTheme] = useState(getActiveTheme());
   const [fontFamily, setFontFamily] = useState("serif");
   const [fontSize, setFontSize] = useState(18);
   const [lineHeight, setLineHeight] = useState(1.8);
   const [indentEnabled, setIndentEnabled] = useState(true);
 
+  // User state
+  const [user, setUser] = useState({
+    name: "Julian Thorne",
+    handle: "daoreader",
+    email: "j.thorne@archive.read",
+    role: "Senior Scholar",
+    tier: "Tier 7",
+    memberSince: "October 2023",
+    bio: "Seeker of forgotten scriptures, celestial dao archives, and late-night serialized chapters.",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400",
+  });
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   // Ergonomics toggles
   const [autoSave, setAutoSave] = useState(true);
   const [hardwareKeys, setHardwareKeys] = useState(true);
   const [tapCenter, setTapCenter] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
+
+  // Security toggles
+  const [twoFactor, setTwoFactor] = useState(false);
 
   const [toastMsg, setToastMsg] = useState("");
 
@@ -53,6 +80,11 @@ export default function ProfilePage() {
     showToast(`Theme calibrated to ${themeId}`);
   };
 
+  const handleSaveProfile = (updatedUser) => {
+    setUser((prev) => ({ ...prev, ...updatedUser }));
+    showToast("Profile details updated successfully");
+  };
+
   return (
     <div className="w-full min-h-screen bg-page text-text-main transition-colors pb-16">
       {/* Toast Notification */}
@@ -62,13 +94,25 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        initialUser={user}
+        onSave={handleSaveProfile}
+      />
+
       {/* Main Full-Width Expansive Container (Matching Home Page) */}
       <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 pt-4 sm:pt-6 flex flex-col gap-6">
         
         {/* Profile Header Dossier */}
         <ProfileHeader
-          onEditProfile={() => showToast("Edit profile dialog opened")}
-          onManageAccount={() => showToast("Account management opened")}
+          user={user}
+          onEditProfile={() => setIsEditModalOpen(true)}
+          onManageAccount={() => {
+            setActiveTab("security");
+            showToast("Switched to Account Security");
+          }}
           onExportArchive={() => showToast("Exporting library archive (JSON/EPUB)...")}
         />
 
@@ -103,84 +147,256 @@ export default function ProfilePage() {
           })}
         </div>
 
-        {/* Primary Asymmetric Grid Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-          
-          {/* Left Column: Deep Customization & Typography Lab (7 Cols) */}
-          <div className="xl:col-span-7 flex flex-col gap-6 min-w-0">
-            {/* Ambient Reading Canvas Presets */}
-            <ThemePresetMatrix
-              activeTheme={activeTheme}
-              onThemeSelect={handleThemeSelect}
-            />
+        {/* Tab 1: Reading Preferences (Primary Default Asymmetric View) */}
+        {activeTab === "preferences" && (
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start animate-fadeIn">
+            {/* Left Column: Deep Customization & Typography Lab (7 Cols) */}
+            <div className="xl:col-span-7 flex flex-col gap-6 min-w-0">
+              <ThemePresetMatrix
+                activeTheme={activeTheme}
+                onThemeSelect={handleThemeSelect}
+                fontFamily={fontFamily}
+                fontSize={fontSize}
+                lineHeight={lineHeight}
+                indentEnabled={indentEnabled}
+              />
 
-            {/* Typography Engine */}
-            <TypographyLab
-              fontFamily={fontFamily}
-              onFontFamilyChange={setFontFamily}
-              fontSize={fontSize}
-              onFontSizeChange={setFontSize}
-              lineHeight={lineHeight}
-              onLineHeightChange={setLineHeight}
-              indentEnabled={indentEnabled}
-              onIndentToggle={setIndentEnabled}
-            />
+              <TypographyLab
+                fontFamily={fontFamily}
+                onFontFamilyChange={setFontFamily}
+                fontSize={fontSize}
+                onFontSizeChange={setFontSize}
+                lineHeight={lineHeight}
+                onLineHeightChange={setLineHeight}
+                indentEnabled={indentEnabled}
+                onIndentToggle={setIndentEnabled}
+              />
 
-            {/* Ergonomics & Behavioral Toggles */}
-            <ReadingErgonomics
-              autoSave={autoSave}
-              onAutoSaveToggle={setAutoSave}
-              hardwareKeys={hardwareKeys}
-              onHardwareKeysToggle={setHardwareKeys}
-              tapCenterToggle={tapCenter}
-              onTapCenterToggle={setTapCenter}
-              immersiveFullscreen={fullscreen}
-              onFullscreenToggle={setFullscreen}
-            />
+              <ReadingErgonomics
+                autoSave={autoSave}
+                onAutoSaveToggle={setAutoSave}
+                hardwareKeys={hardwareKeys}
+                onHardwareKeysToggle={setHardwareKeys}
+                tapCenterToggle={tapCenter}
+                onTapCenterToggle={setTapCenter}
+                immersiveFullscreen={fullscreen}
+                onFullscreenToggle={setFullscreen}
+              />
+            </div>
+
+            {/* Right Column: Currently Reading Shelf, Velocity, & Storage (5 Cols) */}
+            <div className="xl:col-span-5 flex flex-col gap-6 min-w-0">
+              <CurrentlyReadingWidget />
+              <ReadingVelocityChart />
+              <StorageFootprintWidget
+                onClearCache={() => showToast("Offline cache cleared")}
+                onCacheNext={() => showToast("Next 50 chapters cached offline")}
+              />
+            </div>
           </div>
+        )}
 
-          {/* Right Column: Currently Reading Shelf & Storage Manager (5 Cols) */}
-          <div className="xl:col-span-5 flex flex-col gap-6 min-w-0">
-            {/* Currently Reading Active Shelf */}
-            <CurrentlyReadingWidget />
+        {/* Tab 2: Profile & Deep Statistics */}
+        {activeTab === "stats" && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-fadeIn">
+            <div className="lg:col-span-7 flex flex-col gap-6">
+              <ReadingVelocityChart />
 
-            {/* Cloud Sync & Storage Widget */}
-            <section className="bg-card border border-border-subtle/50 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3 transition-colors">
-              <div className="flex items-center justify-between">
+              {/* Genre Affinity Breakdown */}
+              <section className="bg-card border border-border-subtle/50 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
                 <div className="flex items-center gap-2">
-                  <HardDrive className="w-4 h-4 text-accent" />
-                  <h3 className="font-serif text-base font-semibold text-text-main">
-                    Sync &amp; Storage Footprint
+                  <Award className="w-5 h-5 text-accent" />
+                  <h3 className="font-serif text-lg font-semibold text-text-main">
+                    Literary Genre Affinity
                   </h3>
                 </div>
-                <span className="text-xs font-semibold text-accent flex items-center gap-1">
-                  <CheckCircle className="w-3.5 h-3.5" /> Synced
-                </span>
+                <div className="space-y-3 text-xs">
+                  {[
+                    { genre: "Xianxia & Cultivation Dao", pct: 45, count: "18 Serials" },
+                    { genre: "Mystery & Eldritch Horror", pct: 28, count: "12 Serials" },
+                    { genre: "Historical Fantasy & Scribe Lore", pct: 17, count: "6 Serials" },
+                    { genre: "Modern LitRPG & Progression", pct: 10, count: "4 Serials" },
+                  ].map((g) => (
+                    <div key={g.genre} className="space-y-1">
+                      <div className="flex justify-between font-medium">
+                        <span className="text-text-main">{g.genre}</span>
+                        <span className="text-text-muted">{g.count} ({g.pct}%)</span>
+                      </div>
+                      <div className="w-full bg-tag h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-accent h-full rounded-full transition-all duration-500"
+                          style={{ width: `${g.pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+
+            <div className="lg:col-span-5 flex flex-col gap-6">
+              {/* Marathon Goal Card */}
+              <section className="bg-card border border-border-subtle/50 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Flame className="w-5 h-5 text-accent" />
+                    <h3 className="font-serif text-lg font-semibold text-text-main">
+                      Weekly Marathon
+                    </h3>
+                  </div>
+                  <span className="text-xs font-bold text-accent">80% Achieved</span>
+                </div>
+                <p className="text-xs text-text-muted">
+                  Goal: 300 minutes of continuous literary immersion per week.
+                </p>
+                <div className="w-full bg-tag h-3 rounded-full overflow-hidden">
+                  <div className="bg-accent h-full rounded-full w-4/5" />
+                </div>
+                <div className="flex justify-between text-xs text-text-muted font-medium">
+                  <span>240 / 300 mins</span>
+                  <span>60 mins remaining</span>
+                </div>
+              </section>
+
+              <CurrentlyReadingWidget />
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Bookshelf & History */}
+        {activeTab === "shelf" && (
+          <div className="flex flex-col gap-6 animate-fadeIn">
+            <CurrentlyReadingWidget />
+            <StorageFootprintWidget
+              onClearCache={() => showToast("Offline cache cleared")}
+              onCacheNext={() => showToast("Next 50 chapters cached offline")}
+            />
+          </div>
+        )}
+
+        {/* Tab 4: Account Security */}
+        {activeTab === "security" && (
+          <div className="max-w-3xl flex flex-col gap-6 animate-fadeIn">
+            <section className="bg-card border border-border-subtle/50 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col gap-5">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-accent" />
+                <h3 className="font-serif text-lg font-semibold text-text-main">
+                  Authentication &amp; Credentials
+                </h3>
               </div>
 
-              <div className="flex flex-col gap-1.5 text-xs text-text-muted">
-                <div className="flex justify-between">
-                  <span>Local Cache Used</span>
-                  <span className="font-semibold text-text-main">18.4 MB / 500 MB</span>
-                </div>
-                <div className="w-full bg-tag h-2 rounded-full overflow-hidden">
-                  <div className="bg-accent h-full rounded-full" style={{ width: "8%" }} />
-                </div>
-              </div>
-
-              <p className="text-[11px] text-text-muted mt-1 leading-relaxed">
-                All downloaded chapters and paragraph bookmarks are encrypted and available offline in plane or subway environments.
-              </p>
-
-              <button
-                onClick={() => showToast("Offline cache optimized")}
-                className="w-full py-2 bg-tag hover:bg-card border border-border-subtle/50 text-text-main text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+              {/* Password change form */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  showToast("Password updated successfully");
+                }}
+                className="space-y-4 text-xs"
               >
-                Clear Temporary Cache
-              </button>
+                <div>
+                  <label className="block font-semibold text-text-main mb-1">Current Key</label>
+                  <input
+                    type="password"
+                    placeholder="••••••••••••"
+                    className="w-full px-3.5 py-2.5 bg-tag/60 border border-border-subtle/50 rounded-xl text-text-main focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-semibold text-text-main mb-1">New Passphrase</label>
+                    <input
+                      type="password"
+                      placeholder="Minimum 8 characters"
+                      className="w-full px-3.5 py-2.5 bg-tag/60 border border-border-subtle/50 rounded-xl text-text-main focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-text-main mb-1">Confirm New Passphrase</label>
+                    <input
+                      type="password"
+                      placeholder="Repeat passphrase"
+                      className="w-full px-3.5 py-2.5 bg-tag/60 border border-border-subtle/50 rounded-xl text-text-main focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-xl font-semibold shadow-2xs cursor-pointer transition-colors"
+                >
+                  Update Passphrase
+                </button>
+              </form>
+
+              {/* 2FA Toggle */}
+              <div className="pt-4 border-t border-border-subtle/40 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-text-main">Two-Factor Authentication (2FA)</div>
+                  <div className="text-[11px] text-text-muted mt-0.5">
+                    Require TOTP authentication code upon signing into your scholar sanctum.
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={twoFactor}
+                    onChange={(e) => {
+                      setTwoFactor(e.target.checked);
+                      showToast(e.target.checked ? "2FA enabled" : "2FA disabled");
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-10 h-5 bg-border-subtle/70 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent" />
+                </label>
+              </div>
+
+              {/* Active Sessions */}
+              <div className="pt-4 border-t border-border-subtle/40 space-y-3">
+                <div className="text-xs font-semibold text-text-main">Active Reading Terminals</div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-tag/50 border border-border-subtle/30 text-xs">
+                    <div className="flex items-center gap-3">
+                      <Laptop className="w-4 h-4 text-accent" />
+                      <div>
+                        <div className="font-semibold text-text-main">Windows 11 • Chrome 128</div>
+                        <div className="text-[11px] text-text-muted">New York, USA • Active Terminal Now</div>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      Current
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-tag/50 border border-border-subtle/30 text-xs">
+                    <div className="flex items-center gap-3">
+                      <Smartphone className="w-4 h-4 text-accent" />
+                      <div>
+                        <div className="font-semibold text-text-main">iOS 18 • Safari Mobile</div>
+                        <div className="text-[11px] text-text-muted">Boston, USA • 3 hours ago</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => showToast("Terminated remote session")}
+                      className="text-[11px] font-semibold text-red-500 hover:underline cursor-pointer"
+                    >
+                      Revoke
+                    </button>
+                  </div>
+                </div>
+              </div>
             </section>
           </div>
-        </div>
+        )}
+
+        {/* Tab 5: Offline Storage Full View */}
+        {activeTab === "storage" && (
+          <div className="max-w-3xl flex flex-col gap-6 animate-fadeIn">
+            <StorageFootprintWidget
+              onClearCache={() => showToast("Offline cache cleared")}
+              onCacheNext={() => showToast("Next 50 chapters cached offline")}
+            />
+          </div>
+        )}
+
       </div>
     </div>
   );
