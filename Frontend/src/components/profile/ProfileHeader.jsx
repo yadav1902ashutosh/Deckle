@@ -24,11 +24,20 @@ export default function ProfileHeader({
         {/* User Info & Avatar */}
         <div className="flex items-start sm:items-center gap-4 sm:gap-5 min-w-0">
           <div className="relative shrink-0">
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-sm ring-4 ring-card border border-border-subtle/40"
-            />
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user.name}
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-sm ring-4 ring-card border border-border-subtle/40"
+                onError={(e) => {
+                  e.currentTarget.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.handle || "reader")}`;
+                }}
+              />
+            ) : (
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-accent flex items-center justify-center text-white text-2xl font-bold ring-4 ring-card border border-border-subtle/40">
+                {user.name?.charAt(0)?.toUpperCase() || "R"}
+              </div>
+            )}
             <div className="absolute -bottom-1 -right-1 bg-accent text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-xs">
               {user.tier}
             </div>

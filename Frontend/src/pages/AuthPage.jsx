@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { login } from "../store/authSlice";
 import authService from "../services/authService/authService";
@@ -36,6 +36,14 @@ const THEMES = [
 export default function AuthPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const authStatus = useSelector((state) => state.auth?.status);
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (authStatus) {
+      navigate("/", { replace: true });
+    }
+  }, [authStatus, navigate]);
 
   // Tab State: true = Sign In, false = Create Account
   const [isLoginTab, setIsLoginTab] = useState(true);
@@ -136,7 +144,7 @@ export default function AuthPage() {
 
     try {
       const userData = await authService.login(data.identity, data.password);
-      dispatch(login({ userData }));
+      dispatch(login({ user: userData.user, personas: userData.personas, userData }));
 
       setServerSuccess("Welcome back! Redirecting...");
       setTimeout(() => {
@@ -442,6 +450,21 @@ export default function AuthPage() {
                   Create a personal archive to curate shelves and track
                   chapters.
                 </p>
+              </div>
+
+              <div className="space-y-1 text-left">
+                <label className="text-xs font-semibold text-text-main">
+                  Full Name
+                </label>
+                <div className="relative flex items-center">
+                  <User className="absolute left-3 w-4 h-4 text-text-muted pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="e.g. Elena Vance"
+                    {...signupFieldMobile("fullName")}
+                    className="w-full h-11 pl-10 pr-3 rounded-xl bg-input text-text-main border border-border-subtle/60 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+                  />
+                </div>
               </div>
 
               <div className="space-y-1 text-left">

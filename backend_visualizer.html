@@ -3,244 +3,413 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deckle Backend Visualizer (Dark Mode)</title>
+  <title>Deckle Backend Architecture & ER Visualizer</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
     :root {
-      --bg-main: #090d16;
-      --card-bg: #111827;
+      --bg-main: #070a13;
+      --card-bg: #0f172a;
       --card-border: #1e293b;
-      --text-main: #f1f5f9;
+      --text-main: #f8fafc;
       --text-muted: #94a3b8;
     }
     body {
       background-color: var(--bg-main);
       color: var(--text-main);
     }
-    .entity-card {
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    .entity-node {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .entity-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    .entity-node:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.7);
     }
-    .active-card {
+    .active-er-node {
       border-color: #6366f1 !important;
-      box-shadow: 0 0 15px rgba(99, 102, 241, 0.25);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
+    }
+    .dimmed-node {
+      opacity: 0.35;
+      filter: grayscale(60%);
+    }
+    .pipeline-step {
+      transition: all 0.2s ease;
+    }
+    .pipeline-step:hover {
+      border-color: #38bdf8;
     }
   </style>
 </head>
 <body class="antialiased p-4 md:p-8 font-sans min-h-screen">
-  <div class="max-w-6xl mx-auto space-y-8">
+  <div class="max-w-7xl mx-auto space-y-8">
     
-    <!-- Header -->
+    <!-- Top Header & Navigation -->
     <div class="border-b border-slate-800 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
         <div class="flex items-center gap-2.5">
           <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Deckle 3-Tier Architecture
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Deckle Engine v1.0 • 8 Tables
           </span>
-          <span class="px-2 py-0.5 text-xs font-mono rounded bg-slate-800 text-slate-400 border border-slate-700">Dark Mode</span>
+          <span class="px-2 py-0.5 text-xs font-mono rounded bg-slate-800 text-slate-300 border border-slate-700">NeonDB PostgreSQL</span>
+          <span class="px-2 py-0.5 text-xs font-mono rounded bg-sky-500/10 text-sky-300 border border-sky-500/20">Multer + Cloudinary</span>
         </div>
-        <h1 class="text-2xl font-bold tracking-tight text-white mt-2">Backend Architecture Visualizer</h1>
+        <h1 class="text-3xl font-extrabold tracking-tight text-white mt-2">Backend Architecture & ER Visualizer</h1>
         <p class="text-sm text-slate-400 mt-1">
-          Explore data models, arc hierarchies, database foreign keys, and request lifecycles.
+          Interactive Entity-Relationship diagrams, story arc continuous numbering, media pipeline, and API directory.
         </p>
       </div>
 
       <!-- Navigation Tabs -->
-      <div class="flex bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 text-sm">
-        <button id="tabHierarchy" onclick="switchView('hierarchy')" class="px-4 py-2 rounded-lg font-medium transition bg-indigo-600 text-white shadow-sm">
-          1. Entity Hierarchy
+      <div class="flex flex-wrap bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 text-xs font-semibold">
+        <button id="tabERD" onclick="switchView('erd')" class="px-3.5 py-2 rounded-lg transition bg-indigo-600 text-white shadow-sm">
+          📊 1. ER Diagram
         </button>
-        <button id="tabLifecycle" onclick="switchView('lifecycle')" class="px-4 py-2 rounded-lg font-medium transition text-slate-400 hover:text-white">
-          2. Request Lifecycle
+        <button id="tabMedia" onclick="switchView('media')" class="px-3.5 py-2 rounded-lg transition text-slate-400 hover:text-white">
+          🖼️ 2. Media Pipeline
         </button>
-        <button id="tabExample" onclick="switchView('example')" class="px-4 py-2 rounded-lg font-medium transition text-slate-400 hover:text-white">
-          3. Live Data Walkthrough
+        <button id="tabHierarchy" onclick="switchView('hierarchy')" class="px-3.5 py-2 rounded-lg transition text-slate-400 hover:text-white">
+          🏛️ 3. Arc Hierarchy
+        </button>
+        <button id="tabLifecycle" onclick="switchView('lifecycle')" class="px-3.5 py-2 rounded-lg transition text-slate-400 hover:text-white">
+          ⚡ 4. Request Simulator
+        </button>
+        <button id="tabApiDocs" onclick="switchView('apidocs')" class="px-3.5 py-2 rounded-lg transition text-slate-400 hover:text-white">
+          📡 5. API Cheatsheet
         </button>
       </div>
     </div>
 
-    <!-- VIEW 1: ENTITY HIERARCHY -->
-    <div id="viewHierarchy" class="space-y-6">
+    <!-- VIEW 1: INTERACTIVE ER DIAGRAM -->
+    <div id="viewERD" class="space-y-6">
       
-      <!-- Key Concept Banner -->
-      <div class="p-4 rounded-xl border border-sky-500/30 bg-sky-950/40 text-sky-300 text-sm flex items-start gap-3">
-        <div class="px-2 py-1 rounded-md bg-sky-500/20 font-mono font-bold text-xs shrink-0 text-sky-300">CORE LOGIC</div>
-        <div class="leading-relaxed">
-          <strong class="text-white">The Dual-Abstraction Model:</strong> 
-          <span class="text-sky-200/90">User (Private Security) ➔ Persona (Public Pen Name) &nbsp;|&nbsp; Book (The Work) ➔ Volume (Story Arc) ➔ Chapter (The Text).</span>
+      <!-- ER Banner & Legend -->
+      <div class="p-4 rounded-xl border border-indigo-500/30 bg-indigo-950/30 text-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-slate-300">
+        <div>
+          <strong class="text-white font-semibold">Interactive ER Diagram:</strong> 
+          Click on any table node to isolate its relationships and foreign keys.
+        </div>
+        <div class="flex flex-wrap items-center gap-3 font-mono text-xs">
+          <span class="flex items-center gap-1"><span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">PK</span> Primary Key</span>
+          <span class="flex items-center gap-1"><span class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold">FK</span> Foreign Key</span>
+          <span class="flex items-center gap-1"><span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 font-bold">UQ</span> Unique Constraint</span>
+          <button onclick="resetERDSelection()" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white border border-slate-700">Reset Highlight</button>
         </div>
       </div>
 
-      <!-- Visual Hierarchy Tree -->
+      <!-- ER Diagram Grid -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         
-        <!-- Column 1: Identity -->
-        <div class="space-y-4">
-          <div class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-violet-400 shadow-sm shadow-violet-500"></span> 1. Identity Layer
+        <!-- Table 1: users -->
+        <div id="node-users" onclick="highlightERD('users')" class="entity-node cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="font-mono font-bold text-violet-400 text-sm">users</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-violet-500/10 text-violet-300 font-mono">1:N with personas</span>
           </div>
-
-          <!-- User Card -->
-          <div id="card-user" onclick="selectEntity('user')" class="entity-card cursor-pointer p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-violet-500">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-violet-500/20 text-violet-300 font-bold">users</span>
-              <span class="text-xs text-slate-500 font-mono">Private Auth</span>
-            </div>
-            <div class="font-bold text-base text-white mt-2">Root User Account</div>
-            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Credentials, bcrypt password, HTTP cookies, refresh tokens.</p>
-            <div class="mt-3 text-xs text-violet-400 font-semibold flex items-center gap-1">
-              Owns multiple personas ➔
-            </div>
+          <div class="space-y-1.5 font-mono text-xs text-slate-300">
+            <div class="flex justify-between"><span class="text-amber-400 font-bold">PK id</span> <span class="text-slate-500">SERIAL</span></div>
+            <div class="flex justify-between"><span>username</span> <span class="text-slate-500">VARCHAR(50) <span class="text-rose-400">UQ</span></span></div>
+            <div class="flex justify-between"><span>email</span> <span class="text-slate-500">VARCHAR(100) <span class="text-rose-400">UQ</span></span></div>
+            <div class="flex justify-between"><span>password</span> <span class="text-slate-500">VARCHAR(255)</span></div>
+            <div class="flex justify-between"><span>refresh_token</span> <span class="text-slate-500">TEXT</span></div>
           </div>
-
-          <!-- Persona Card -->
-          <div id="card-persona" onclick="selectEntity('persona')" class="entity-card cursor-pointer p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold">personas</span>
-              <span class="text-xs text-emerald-400 font-mono">Public Face</span>
-            </div>
-            <div class="font-bold text-base text-white mt-2">Author & Reader Pen Name</div>
-            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Handle (@novelist), reading theme, font prefs, streaks & words read.</p>
-            <div class="mt-3 text-xs text-indigo-400 font-semibold flex items-center gap-1">
-              Publishes books & tracks reads ➔
-            </div>
-          </div>
+          <div class="pt-2 border-t border-slate-800 text-xs text-slate-400">Private auth credentials. Exposes no public handle.</div>
         </div>
 
-        <!-- Column 2: The Work (Book) -->
-        <div class="space-y-4">
-          <div class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-500"></span> 2. Publication Layer
+        <!-- Table 2: personas -->
+        <div id="node-personas" onclick="highlightERD('personas')" class="entity-node cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="font-mono font-bold text-indigo-400 text-sm">personas</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 font-mono">Pen Names</span>
           </div>
-
-          <!-- Book Card -->
-          <div id="card-book" onclick="selectEntity('book')" class="entity-card cursor-pointer p-4 rounded-xl bg-slate-900 border border-amber-500/50 hover:border-amber-400 active-card">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">books</span>
-              <span class="text-xs text-amber-400 font-bold">Platform Anchor</span>
-            </div>
-            <div class="font-bold text-base text-white mt-2">The Webnovel</div>
-            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Title, slug, views, ratings, global tags, reviews, cover art.</p>
-            <div class="mt-3 text-xs text-amber-400 font-medium">
-              Holds Arcs & Chapters
-            </div>
+          <div class="space-y-1.5 font-mono text-xs text-slate-300">
+            <div class="flex justify-between"><span class="text-amber-400 font-bold">PK id</span> <span class="text-slate-500">SERIAL</span></div>
+            <div class="flex justify-between"><span class="text-blue-400 font-bold">FK user_id</span> <span class="text-slate-500">➔ users(id)</span></div>
+            <div class="flex justify-between"><span>handle</span> <span class="text-slate-500">VARCHAR(50) <span class="text-rose-400">UQ</span></span></div>
+            <div class="flex justify-between"><span>avatar_url</span> <span class="text-slate-500">Cloudinary URL</span></div>
+            <div class="flex justify-between"><span>banner_url</span> <span class="text-slate-500">Cloudinary URL</span></div>
+            <div class="flex justify-between"><span>reading_preferences</span> <span class="text-slate-500">JSONB</span></div>
+            <div class="flex justify-between"><span>streak_days</span> <span class="text-slate-500">INTEGER</span></div>
           </div>
-
-          <!-- Genre Card -->
-          <div id="card-genre" onclick="selectEntity('genre')" class="entity-card cursor-pointer p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-emerald-500">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">genres</span>
-              <span class="text-xs text-slate-500 font-mono">Taxonomy</span>
-            </div>
-            <div class="font-bold text-base text-white mt-2">Curated Genre</div>
-            <p class="text-xs text-slate-400 mt-1 leading-relaxed">LitRPG, Progression Fantasy, Cultivation, Dark Fantasy.</p>
-          </div>
+          <div class="pt-2 border-t border-slate-800 text-xs text-slate-400">Active public driver for publishing and reading.</div>
         </div>
 
-        <!-- Column 3: Organization (Volume) -->
-        <div class="space-y-4">
-          <div class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-blue-400 shadow-sm shadow-blue-500"></span> 3. Arc Partition
+        <!-- Table 3: genres -->
+        <div id="node-genres" onclick="highlightERD('genres')" class="entity-node cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="font-mono font-bold text-emerald-400 text-sm">genres</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 font-mono">Taxonomy</span>
           </div>
-
-          <!-- Volume Card -->
-          <div id="card-volume" onclick="selectEntity('volume')" class="entity-card cursor-pointer p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold">volumes</span>
-              <span class="text-xs text-blue-400 font-mono">Optional</span>
-            </div>
-            <div class="font-bold text-base text-white mt-2">Story Arc (Volume)</div>
-            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Groups chapters into major narrative arcs (e.g. Academy Arc, War Arc).</p>
-            <div class="mt-3 p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-400 leading-normal">
-              💡 <span class="text-slate-300">If 0 volumes:</span> Chapters render flat with zero friction.
-            </div>
+          <div class="space-y-1.5 font-mono text-xs text-slate-300">
+            <div class="flex justify-between"><span class="text-amber-400 font-bold">PK id</span> <span class="text-slate-500">SERIAL</span></div>
+            <div class="flex justify-between"><span>name</span> <span class="text-slate-500">VARCHAR(50) <span class="text-rose-400">UQ</span></span></div>
+            <div class="flex justify-between"><span>slug</span> <span class="text-slate-500">VARCHAR(50) <span class="text-rose-400">UQ</span></span></div>
+            <div class="flex justify-between"><span>icon</span> <span class="text-slate-500">VARCHAR(50)</span></div>
+            <div class="flex justify-between"><span>display_order</span> <span class="text-slate-500">INTEGER</span></div>
           </div>
+          <div class="pt-2 border-t border-slate-800 text-xs text-slate-400">Curated categories like LitRPG & Cultivation.</div>
         </div>
 
-        <!-- Column 4: Content & Reading -->
-        <div class="space-y-4">
-          <div class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-rose-400 shadow-sm shadow-rose-500"></span> 4. Text & Reader
+        <!-- Table 4: books -->
+        <div id="node-books" onclick="highlightERD('books')" class="entity-node cursor-pointer p-4 rounded-2xl bg-slate-900 border-2 border-amber-500/40 space-y-3 shadow-lg">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="font-mono font-bold text-amber-400 text-sm">books</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold font-mono">Core Anchor</span>
           </div>
+          <div class="space-y-1.5 font-mono text-xs text-slate-300">
+            <div class="flex justify-between"><span class="text-amber-400 font-bold">PK id</span> <span class="text-slate-500">SERIAL</span></div>
+            <div class="flex justify-between"><span class="text-blue-400 font-bold">FK persona_id</span> <span class="text-slate-500">➔ personas(id)</span></div>
+            <div class="flex justify-between"><span class="text-blue-400 font-bold">FK genre_id</span> <span class="text-slate-500">➔ genres(id)</span></div>
+            <div class="flex justify-between"><span>title</span> <span class="text-slate-500">VARCHAR(255)</span></div>
+            <div class="flex justify-between"><span>slug</span> <span class="text-slate-500">VARCHAR(255) <span class="text-rose-400">UQ</span></span></div>
+            <div class="flex justify-between"><span>cover_image</span> <span class="text-slate-500">Cloudinary URL</span></div>
+            <div class="flex justify-between"><span>status</span> <span class="text-slate-500">ongoing|completed</span></div>
+            <div class="flex justify-between"><span>tags</span> <span class="text-slate-500">TEXT[]</span></div>
+          </div>
+          <div class="pt-2 border-t border-slate-800 text-xs text-slate-400">Anchor for all ratings, reviews, views, and catalog discovery.</div>
+        </div>
 
-          <!-- Chapter Card -->
-          <div id="card-chapter" onclick="selectEntity('chapter')" class="entity-card cursor-pointer p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-rose-500">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold">chapters</span>
-              <span class="text-xs text-rose-400 font-mono">Continuous</span>
-            </div>
-            <div class="font-bold text-base text-white mt-2">Chapter Content</div>
-            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Chapter #, title, text body, word count, published status.</p>
-            <div class="mt-3 text-xs text-rose-400 font-mono font-medium">
-              UNIQUE(book_id, chapter_number)
-            </div>
+        <!-- Table 5: volumes -->
+        <div id="node-volumes" onclick="highlightERD('volumes')" class="entity-node cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="font-mono font-bold text-blue-400 text-sm">volumes</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 font-mono">Story Arcs</span>
           </div>
+          <div class="space-y-1.5 font-mono text-xs text-slate-300">
+            <div class="flex justify-between"><span class="text-amber-400 font-bold">PK id</span> <span class="text-slate-500">SERIAL</span></div>
+            <div class="flex justify-between"><span class="text-blue-400 font-bold">FK book_id</span> <span class="text-slate-500">➔ books(id)</span></div>
+            <div class="flex justify-between"><span>volume_number</span> <span class="text-slate-500">INTEGER</span></div>
+            <div class="flex justify-between"><span>title</span> <span class="text-slate-500">VARCHAR(255)</span></div>
+            <div class="flex justify-between"><span>cover_image</span> <span class="text-slate-500">Cloudinary URL</span></div>
+            <div class="flex justify-between"><span class="text-rose-400">UQ(book, vol#)</span> <span class="text-slate-500">Unique</span></div>
+          </div>
+          <div class="pt-2 border-t border-slate-800 text-xs text-slate-400">Optional partitions. If 0 volumes, chapters are flat.</div>
+        </div>
 
-          <!-- Lore & Shelf Cards -->
-          <div class="grid grid-cols-2 gap-2">
-            <div id="card-lore" onclick="selectEntity('lore')" class="entity-card cursor-pointer p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500 text-xs">
-              <span class="font-mono text-amber-400 font-bold block mb-1">chapter_lore</span>
-              Margin glossary & tooltips
-            </div>
-            <div id="card-history" onclick="selectEntity('history')" class="entity-card cursor-pointer p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-emerald-500 text-xs">
-              <span class="font-mono text-emerald-400 font-bold block mb-1">reading_history</span>
-              Shelf & scroll bookmark
-            </div>
+        <!-- Table 6: chapters -->
+        <div id="node-chapters" onclick="highlightERD('chapters')" class="entity-node cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="font-mono font-bold text-rose-400 text-sm">chapters</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 font-mono">Continuous</span>
           </div>
+          <div class="space-y-1.5 font-mono text-xs text-slate-300">
+            <div class="flex justify-between"><span class="text-amber-400 font-bold">PK id</span> <span class="text-slate-500">SERIAL</span></div>
+            <div class="flex justify-between"><span class="text-blue-400 font-bold">FK book_id</span> <span class="text-slate-500">➔ books(id)</span></div>
+            <div class="flex justify-between"><span class="text-blue-400 font-bold">FK volume_id</span> <span class="text-slate-500">➔ volumes(id) [NULLABLE]</span></div>
+            <div class="flex justify-between"><span>chapter_number</span> <span class="text-slate-500">INTEGER</span></div>
+            <div class="flex justify-between"><span>title</span> <span class="text-slate-500">VARCHAR(255)</span></div>
+            <div class="flex justify-between"><span>words_count</span> <span class="text-slate-500">INTEGER</span></div>
+            <div class="flex justify-between"><span class="text-rose-400 font-bold">UQ(book, ch#)</span> <span class="text-slate-500">Strict Unique</span></div>
+          </div>
+          <div class="pt-2 border-t border-slate-800 text-xs text-slate-400">Continuous 1 to 500+ across entire book. Zero URL collisions.</div>
+        </div>
+
+        <!-- Table 7: reading_history -->
+        <div id="node-reading_history" onclick="highlightERD('reading_history')" class="entity-node cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="font-mono font-bold text-teal-400 text-sm">reading_history</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 font-mono">Bookshelf</span>
+          </div>
+          <div class="space-y-1.5 font-mono text-xs text-slate-300">
+            <div class="flex justify-between"><span class="text-amber-400 font-bold">PK id</span> <span class="text-slate-500">SERIAL</span></div>
+            <div class="flex justify-between"><span class="text-blue-400 font-bold">FK persona_id</span> <span class="text-slate-500">➔ personas(id)</span></div>
+            <div class="flex justify-between"><span class="text-blue-400 font-bold">FK book_id</span> <span class="text-slate-500">➔ books(id)</span></div>
+            <div class="flex justify-between"><span class="text-blue-400 font-bold">FK chapter_id</span> <span class="text-slate-500">➔ chapters(id)</span></div>
+            <div class="flex justify-between"><span>last_chapter_number</span> <span class="text-slate-500">INTEGER</span></div>
+            <div class="flex justify-between"><span>scroll_percentage</span> <span class="text-slate-500">DECIMAL(5,2)</span></div>
+            <div class="flex justify-between"><span>folder</span> <span class="text-slate-500">Reading|Completed</span></div>
+            <div class="flex justify-between"><span class="text-rose-400">UQ(persona, book)</span> <span class="text-slate-500">Unique</span></div>
+          </div>
+          <div class="pt-2 border-t border-slate-800 text-xs text-slate-400">Tracks reading bookmark and bookshelf folders.</div>
+        </div>
+
+        <!-- Table 8: chapter_lore -->
+        <div id="node-chapter_lore" onclick="highlightERD('chapter_lore')" class="entity-node cursor-pointer p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="font-mono font-bold text-purple-400 text-sm">chapter_lore</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 font-mono">Margin Notes</span>
+          </div>
+          <div class="space-y-1.5 font-mono text-xs text-slate-300">
+            <div class="flex justify-between"><span class="text-amber-400 font-bold">PK id</span> <span class="text-slate-500">SERIAL</span></div>
+            <div class="flex justify-between"><span class="text-blue-400 font-bold">FK chapter_id</span> <span class="text-slate-500">➔ chapters(id)</span></div>
+            <div class="flex justify-between"><span>term</span> <span class="text-slate-500">VARCHAR(100)</span></div>
+            <div class="flex justify-between"><span>definition</span> <span class="text-slate-500">TEXT</span></div>
+            <div class="flex justify-between"><span>order_index</span> <span class="text-slate-500">INTEGER</span></div>
+          </div>
+          <div class="pt-2 border-t border-slate-800 text-xs text-slate-400">Reader margin glossaries and interactive tooltips.</div>
         </div>
 
       </div>
 
-      <!-- Detail Inspector Box -->
-      <div id="inspectorBox" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-          <div class="flex items-center gap-3">
-            <span id="inspectBadge" class="text-xs font-mono px-3 py-1 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">TABLE: books</span>
-            <h3 id="inspectTitle" class="text-lg font-bold text-white">The Book Entity</h3>
-          </div>
-          <span class="text-xs text-slate-500 font-mono">Click any card above to inspect</span>
+      <!-- Relationship Matrix & Info -->
+      <div id="erdInfoBox" class="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="text-xs font-mono uppercase tracking-wider text-slate-400">Selected Node Relationships:</div>
+          <div id="erdSelectedTitle" class="text-base font-bold text-white mt-1">Select a table above to view foreign key mapping</div>
+          <div id="erdConnections" class="text-xs text-slate-400 mt-1 space-y-0.5">Showing all 8 interconnected tables.</div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Schema Fields & Foreign Keys</h4>
-            <div id="inspectFields" class="font-mono text-xs space-y-1.5 p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
-              <!-- populated by JS -->
-            </div>
+        <div class="text-xs font-mono text-slate-400 p-3 rounded-xl bg-slate-950 border border-slate-800">
+          <div>NeonDB Schema: <span class="text-emerald-400 font-bold">8 Tables Ready</span></div>
+          <div>All Foreign Keys: <span class="text-indigo-400 font-bold">CASCADE / SET NULL Protected</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- VIEW 2: MEDIA & CLOUDINARY PIPELINE -->
+    <div id="viewMedia" class="hidden space-y-6">
+      
+      <div class="p-4 rounded-xl border border-sky-500/30 bg-sky-950/30 text-xs flex items-center justify-between">
+        <div>
+          <strong class="text-white">Zero-Disk-Leak Media Pipeline:</strong> 
+          Every image upload is checked for MIME types, streamed to Cloudinary, and immediately unlinked from local disk.
+        </div>
+        <span class="px-2.5 py-1 rounded bg-sky-500/20 text-sky-300 font-mono font-bold">5 MB Max Size</span>
+      </div>
+
+      <!-- Flowchart Steps -->
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+        
+        <div class="pipeline-step p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+          <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">1</div>
+          <div class="font-bold text-sm text-white">Client Upload</div>
+          <div class="text-xs text-slate-400">
+            Frontend sends <code class="text-sky-300">multipart/form-data</code> with image file (or optional text URL).
           </div>
-          <div>
-            <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Why It's Designed This Way</h4>
-            <p id="inspectWhy" class="text-sm text-slate-300 leading-relaxed">
-              <!-- populated by JS -->
-            </p>
-            <div class="mt-4 p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-              <span class="text-xs font-semibold text-slate-200 block mb-2">Relevant Endpoints:</span>
-              <div id="inspectEndpoints" class="text-xs font-mono space-y-1.5 text-emerald-400">
-                <!-- populated by JS -->
-              </div>
-            </div>
+          <div class="text-xs font-mono text-slate-500">POST /api/v1/books</div>
+        </div>
+
+        <div class="pipeline-step p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+          <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">2</div>
+          <div class="font-bold text-sm text-white">Multer Filter</div>
+          <div class="text-xs text-slate-400">
+            Validates <code class="text-emerald-300">/jpeg|jpg|png|webp|gif/</code>, rejects anything > 5MB.
+          </div>
+          <div class="text-xs font-mono text-slate-500">multer.diskStorage</div>
+        </div>
+
+        <div class="pipeline-step p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+          <div class="w-7 h-7 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-xs">3</div>
+          <div class="font-bold text-sm text-white">Temporary Staging</div>
+          <div class="text-xs text-slate-400">
+            Stored in <code class="text-amber-300">./public/temp/</code> with timestamped unique hash.
+          </div>
+          <div class="text-xs font-mono text-slate-500">.gitignore protected</div>
+        </div>
+
+        <div class="pipeline-step p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+          <div class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">4</div>
+          <div class="font-bold text-sm text-white">Cloudinary Stream</div>
+          <div class="text-xs text-slate-400">
+            Pushed to cloud folder (e.g. <code class="text-emerald-300">deckle_books</code>), returns permanent HTTPS CDN URL.
+          </div>
+          <div class="text-xs font-mono text-slate-500">secure_url</div>
+        </div>
+
+        <div class="pipeline-step p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+          <div class="w-7 h-7 rounded-full bg-rose-600 text-white flex items-center justify-center font-bold text-xs">5</div>
+          <div class="font-bold text-sm text-white">Local Unlink & DB</div>
+          <div class="text-xs text-slate-400">
+            <code class="text-rose-300">fs.unlinkSync</code> wipes local file instantly. CDN URL saved to PostgreSQL.
+          </div>
+          <div class="text-xs font-mono text-slate-500">Zero Disk Leak</div>
+        </div>
+
+      </div>
+
+      <!-- Upload Destinations Map -->
+      <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+        <h3 class="font-bold text-white text-base">Cloudinary Destination Folders & Endpoints</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+          <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+            <span class="text-amber-400 font-bold">Folder: deckle_books</span>
+            <div class="text-slate-400 font-sans">For book novel covers.</div>
+            <div class="text-emerald-400">POST /api/v1/books</div>
+            <div class="text-slate-500">Field: cover_image</div>
+          </div>
+          <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+            <span class="text-blue-400 font-bold">Folder: deckle_volumes</span>
+            <div class="text-slate-400 font-sans">For story arc covers.</div>
+            <div class="text-emerald-400">POST /api/v1/volumes</div>
+            <div class="text-slate-500">Field: cover_image</div>
+          </div>
+          <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+            <span class="text-indigo-400 font-bold">Folder: deckle_avatars & banners</span>
+            <div class="text-slate-400 font-sans">Author pen name visual branding.</div>
+            <div class="text-emerald-400">POST /api/v1/personas</div>
+            <div class="text-slate-500">Fields: avatar, banner</div>
           </div>
         </div>
       </div>
 
     </div>
 
-    <!-- VIEW 2: REQUEST LIFECYCLE -->
+    <!-- VIEW 3: ARC HIERARCHY -->
+    <div id="viewHierarchy" class="hidden space-y-6">
+      <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-white">The Web Serial "Story Arc" Model Explained</h2>
+          <p class="text-xs text-slate-400 mt-1">Why Book is the anchor, Volume is an optional arc, and Chapter numbering is continuous.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+          
+          <div class="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold text-xs">ANCHOR</span>
+              <h3 class="font-bold text-white text-base">The Book Entity</h3>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              In serialized web fiction (Royal Road, Wuxiaworld), readers search for <strong>Novels</strong>, not isolated volumes. 
+              The Book holds all 5-star ratings, total view counts, user reviews, and catalog cards.
+            </p>
+            <div class="text-xs text-amber-400 font-mono">Prevents rating & review dilution across arcs.</div>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold text-xs">OPTIONAL</span>
+              <h3 class="font-bold text-white text-base">The Volume (Arc)</h3>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Volumes are story partitions (e.g. <em>The Clown Arc</em>, <em>The Academy Arc</em>). 
+              If an author defines 0 volumes, chapters render flat with zero friction. If volumes exist, the Table of Contents automatically groups them.
+            </p>
+            <div class="text-xs text-blue-400 font-mono">volume_id is nullable on chapters table.</div>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-bold text-xs">CONTINUOUS</span>
+              <h3 class="font-bold text-white text-base">Continuous Numbering</h3>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Volume 1 ends at Chapter 40; Volume 2 starts at Chapter 41. 
+              This allows unbreakable permalinks like <code class="text-rose-300">/read/45</code>, seamless auto-next chapter loading, and simple bookmarks.
+            </p>
+            <div class="text-xs text-rose-400 font-mono">UNIQUE(book_id, chapter_number)</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 4: REQUEST LIFECYCLE SIMULATOR -->
     <div id="viewLifecycle" class="hidden space-y-6">
-      <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-wrap gap-3 items-center justify-between">
+      <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-wrap gap-2 items-center justify-between">
         <span class="text-sm font-semibold text-white">Select Simulation Flow:</span>
         <div class="flex flex-wrap gap-2">
-          <button id="btnFlow-createChapter" onclick="simulateFlow('createChapter')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow-sm transition">
-            POST /chapters (Create Chapter)
+          <button id="btnFlow-createBook" onclick="simulateFlow('createBook')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow-sm transition">
+            POST /books (Cover Upload + Publish)
+          </button>
+          <button id="btnFlow-createChapter" onclick="simulateFlow('createChapter')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition">
+            POST /chapters (Volume Check + Math)
           </button>
           <button id="btnFlow-getTOC" onclick="simulateFlow('getTOC')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition">
-            GET /chapters/book/:id/toc (Read TOC)
+            GET /chapters/book/:id/toc (LEFT JOIN)
           </button>
-          <button id="btnFlow-authLogin" onclick="simulateFlow('authLogin')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition">
-            POST /users/login (Auth)
+          <button id="btnFlow-readingProgress" onclick="simulateFlow('readingProgress')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition">
+            POST /reading-history/progress (Upsert)
           </button>
         </div>
       </div>
@@ -251,54 +420,19 @@
       </div>
     </div>
 
-    <!-- VIEW 3: LIVE DATA WALKTHROUGH -->
-    <div id="viewExample" class="hidden space-y-6">
-      <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
-        <div>
-          <h2 class="text-lg font-bold text-white">Concrete Example: How "Lord of the Mysteries" is Stored</h2>
-          <p class="text-xs text-slate-400 mt-1">See how real data sits in each table and links together cleanly across NeonDB PostgreSQL.</p>
+    <!-- VIEW 5: API CHEATSHEET -->
+    <div id="viewApiDocs" class="hidden space-y-6">
+      <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div>
+            <h2 class="text-lg font-bold text-white">Deckle API Reference & Cheatsheet</h2>
+            <p class="text-xs text-slate-400">All 8 active router modules mapped to Base URL: <code class="text-indigo-400">http://localhost:8000/api/v1</code></p>
+          </div>
+          <input type="text" id="apiSearch" oninput="filterApiDocs(this.value)" placeholder="Search endpoints (e.g. 'volume', 'cover', 'shelf')..." class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500 w-full md:w-64">
         </div>
 
-        <div class="space-y-4 text-xs font-mono">
-          <!-- Step 1 -->
-          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-            <span class="text-violet-400 font-bold text-sm">1. Table: users (id: 1)</span>
-            <div class="text-slate-400">username: "cuttlefish", email: "author@deckle.com", password_hash: "$2a$10$..."</div>
-          </div>
-
-          <!-- Step 2 -->
-          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-            <span class="text-indigo-400 font-bold text-sm">2. Table: personas (id: 1, user_id: 1)</span>
-            <div class="text-slate-400">display_name: "Cuttlefish That Loves Diving", handle: "cuttlefish", streak_days: 14</div>
-          </div>
-
-          <!-- Step 3 -->
-          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-            <span class="text-amber-400 font-bold text-sm">3. Table: books (id: 10, persona_id: 1, genre_id: 3)</span>
-            <div class="text-slate-400">title: "Lord of the Mysteries", slug: "lord-of-the-mysteries", views: 245000, genre: "Cultivation & Mystery"</div>
-          </div>
-
-          <!-- Step 4 -->
-          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-            <span class="text-blue-400 font-bold text-sm">4. Table: volumes (book_id: 10)</span>
-            <div class="space-y-1 text-slate-300">
-              <div>• Volume 1 (id: 101): "Clown Arc", volume_number: 1</div>
-              <div>• Volume 2 (id: 102): "Faceless Arc", volume_number: 2</div>
-            </div>
-          </div>
-
-          <!-- Step 5 -->
-          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-            <span class="text-rose-400 font-bold text-sm">5. Table: chapters (book_id: 10)</span>
-            <div class="space-y-1.5 text-slate-300">
-              <div>• Chapter 1: "Crimson", chapter_number: 1, volume_id: 101 (Part of Clown Arc)</div>
-              <div>• Chapter 50: "Farewell", chapter_number: 50, volume_id: 101</div>
-              <div>• Chapter 51: "Backlund", chapter_number: 51, volume_id: 102 (Starts Faceless Arc)</div>
-              <div class="text-emerald-400 mt-3 font-sans font-medium bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/20">
-                ✨ Continuous numbering (Ch 1 ➔ 51) ensures URLs never conflict, while volume_id gives readers beautiful story arc headers!
-              </div>
-            </div>
-          </div>
+        <div id="apiList" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
+          <!-- Populated by JS -->
         </div>
       </div>
     </div>
@@ -306,203 +440,153 @@
   </div>
 
   <script>
-    const entities = {
-      book: {
-        badge: "TABLE: books",
-        title: "The Book Entity (Anchor of the Platform)",
-        fields: [
-          "id: SERIAL PRIMARY KEY",
-          "title: VARCHAR(255)",
-          "slug: VARCHAR(255) UNIQUE",
-          "persona_id: INTEGER REFERENCES personas(id)",
-          "genre_id: INTEGER REFERENCES genres(id)",
-          "status: 'ongoing' | 'completed' | 'hiatus'",
-          "tags: TEXT[] (e.g. ['cultivation', 'magic'])",
-          "views_count: INTEGER DEFAULT 0",
-          "created_at / deleted_at: TIMESTAMP"
-        ],
-        why: "The Book is the intellectual property and primary discovery citizen. All ratings, views, bookmarks, and catalog search cards belong to the Book so metrics don't get diluted across individual volumes.",
-        endpoints: [
-          "GET /api/v1/books (Catalog Feed)",
-          "GET /api/v1/books/:slug (Details)",
-          "POST /api/v1/books (Publish Novel)",
-          "DELETE /api/v1/books/:id"
+    const erdRelations = {
+      users: {
+        title: "users (Root Account)",
+        connections: [
+          "➔ personas: 1 User has Many Personas (user_id REFERENCES users(id))"
         ]
       },
-      volume: {
-        badge: "TABLE: volumes",
-        title: "The Volume Entity (Story Arc Partition)",
-        fields: [
-          "id: SERIAL PRIMARY KEY",
-          "book_id: INTEGER REFERENCES books(id) ON DELETE CASCADE",
-          "volume_number: INTEGER NOT NULL",
-          "title: VARCHAR(255) (e.g. 'Volume 1: The Academy Arc')",
-          "description: TEXT",
-          "cover_image: TEXT",
-          "UNIQUE (book_id, volume_number)"
-        ],
-        why: "Volumes are optional groupings of chapters into story arcs. If an author doesn't create any volumes, chapters just render flat with zero friction. If volumes exist, the Table of Contents groups chapters into collapsible accordions.",
-        endpoints: [
-          "GET /api/v1/volumes/book/:bookId (List Arcs)",
-          "POST /api/v1/volumes (Create Arc)",
-          "DELETE /api/v1/volumes/:id (Delete Arc)"
+      personas: {
+        title: "personas (Author Pen Name & Reader Profile)",
+        connections: [
+          "⬅ users: Belongs to 1 User (user_id)",
+          "➔ books: 1 Persona writes Many Books (persona_id REFERENCES personas(id))",
+          "➔ reading_history: 1 Persona owns Many Bookshelf rows (persona_id REFERENCES personas(id))"
         ]
       },
-      chapter: {
-        badge: "TABLE: chapters",
-        title: "The Chapter Entity (Sequential Text)",
-        fields: [
-          "id: SERIAL PRIMARY KEY",
-          "book_id: INTEGER REFERENCES books(id) ON DELETE CASCADE",
-          "volume_id: INTEGER REFERENCES volumes(id) ON DELETE SET NULL (Optional)",
-          "chapter_number: INTEGER NOT NULL",
-          "title: VARCHAR(255)",
-          "content: TEXT",
-          "words_count: INTEGER",
-          "status: 'draft' | 'published' | 'scheduled'",
-          "UNIQUE (book_id, chapter_number)"
-        ],
-        why: "Chapter numbers are continuous across the whole novel (Ch 1 to 500+). This guarantees permanent unique URLs (/read/45) and makes auto-next instant without checking volume boundaries.",
-        endpoints: [
-          "GET /api/v1/chapters/book/:bookId/toc",
-          "GET /api/v1/chapters/book/:bookId/read/:chapterNumber",
-          "POST /api/v1/chapters (Create)",
-          "DELETE /api/v1/chapters/:id"
+      genres: {
+        title: "genres (Platform Taxonomy)",
+        connections: [
+          "➔ books: 1 Genre has Many Books (books.genre_id REFERENCES genres(id))"
         ]
       },
-      user: {
-        badge: "TABLE: users",
-        title: "The Root User (Private Auth & Security)",
-        fields: [
-          "id: SERIAL PRIMARY KEY",
-          "username: VARCHAR(50) UNIQUE",
-          "email: VARCHAR(100) UNIQUE",
-          "password: VARCHAR(255) (Bcrypt hashed)",
-          "refresh_token: TEXT (Hashed session token)",
-          "role: 'writer' | 'reader' | 'admin'"
-        ],
-        why: "Separates security and credentials from the public social layer. Users never expose their user_id or private credentials in comments or novel pages.",
-        endpoints: [
-          "POST /api/v1/users/register",
-          "POST /api/v1/users/login",
-          "POST /api/v1/users/refresh-token",
-          "GET /api/v1/users/current-user"
+      books: {
+        title: "books (Webnovel Anchor)",
+        connections: [
+          "⬅ personas: Authored by 1 Persona (persona_id)",
+          "⬅ genres: Belongs to 1 Genre (genre_id [NULLABLE])",
+          "➔ volumes: 1 Book has Many Story Arc Volumes (volumes.book_id)",
+          "➔ chapters: 1 Book has Many Sequential Chapters (chapters.book_id)",
+          "➔ reading_history: Bookmarked in Many Reader Shelves (reading_history.book_id)"
         ]
       },
-      persona: {
-        badge: "TABLE: personas",
-        title: "The Persona Entity (Public Pen Name & Reader)",
-        fields: [
-          "id: SERIAL PRIMARY KEY",
-          "user_id: INTEGER REFERENCES users(id) ON DELETE CASCADE",
-          "display_name: VARCHAR(100)",
-          "handle: VARCHAR(50) UNIQUE (e.g. 'cuttlefish')",
-          "bio: TEXT",
-          "reading_preferences: JSONB (theme, font, size)",
-          "streak_days: INTEGER DEFAULT 0",
-          "total_words_read: BIGINT DEFAULT 0"
-        ],
-        why: "A user can have multiple pen names or reader profiles. It acts as the driver for both publishing (author of books) and reading (owns bookshelf, streaks, and theme settings).",
-        endpoints: [
-          "POST /api/v1/personas (Create Pen Name)",
-          "GET /api/v1/personas/my-personas",
-          "GET /api/v1/personas/handle/:handle"
+      volumes: {
+        title: "volumes (Story Arcs)",
+        connections: [
+          "⬅ books: Belongs to 1 Book (book_id)",
+          "➔ chapters: 1 Volume groups Many Chapters (chapters.volume_id [NULLABLE])"
         ]
       },
-      genre: {
-        badge: "TABLE: genres",
-        title: "The Genre Taxonomy",
-        fields: [
-          "id: SERIAL PRIMARY KEY",
-          "name: VARCHAR(50) UNIQUE",
-          "slug: VARCHAR(50) UNIQUE",
-          "description: TEXT",
-          "icon: VARCHAR(50)",
-          "display_order: INTEGER"
-        ],
-        why: "Provides curated categories like LitRPG, Progression Fantasy, and Cultivation to organize the catalog feed and power discovery filters.",
-        endpoints: [
-          "GET /api/v1/genres (All Active Genres)",
-          "GET /api/v1/genres/:slug"
+      chapters: {
+        title: "chapters (Sequential Text)",
+        connections: [
+          "⬅ books: Belongs to 1 Book (book_id)",
+          "⬅ volumes: Optionally grouped into 1 Volume (volume_id [NULLABLE])",
+          "➔ chapter_lore: 1 Chapter has Many Lore margin tooltips (chapter_lore.chapter_id)",
+          "➔ reading_history: Referenced as last_read_chapter_id"
         ]
       },
-      lore: {
-        badge: "TABLE: chapter_lore",
-        title: "Chapter Lore & Margin Notes",
-        fields: [
-          "id: SERIAL PRIMARY KEY",
-          "chapter_id: INTEGER REFERENCES chapters(id) ON DELETE CASCADE",
-          "term: VARCHAR(100) (e.g. 'Beyonder')",
-          "definition: TEXT",
-          "order_index: INTEGER"
-        ],
-        why: "Powers interactive margin notes and hover tooltips for readers as they encounter complex worldbuilding terms in the text.",
-        endpoints: [
-          "GET /api/v1/chapters/:chapterId/lore"
+      reading_history: {
+        title: "reading_history (Bookshelf & Bookmark Tracker)",
+        connections: [
+          "⬅ personas: Owned by 1 Reader Persona (persona_id)",
+          "⬅ books: Points to 1 Book (book_id)",
+          "⬅ chapters: Points to 1 Chapter (last_read_chapter_id)"
         ]
       },
-      history: {
-        badge: "TABLE: reading_history",
-        title: "Bookshelf & Reading Tracker",
-        fields: [
-          "id: SERIAL PRIMARY KEY",
-          "persona_id: INTEGER REFERENCES personas(id)",
-          "book_id: INTEGER REFERENCES books(id)",
-          "last_chapter_number: INTEGER",
-          "scroll_percentage: DECIMAL(5,2)",
-          "folder: 'Reading' | 'Completed' | 'Plan to Read'",
-          "UNIQUE (persona_id, book_id)"
-        ],
-        why: "Tracks exact reading progress per reader persona, enabling 'Resume Reading' with 1-click directly to their bookmark.",
-        endpoints: [
-          "POST /api/v1/reading-history/progress",
-          "GET /api/v1/reading-history/shelf"
+      chapter_lore: {
+        title: "chapter_lore (Margin Notes)",
+        connections: [
+          "⬅ chapters: Attached to 1 Chapter (chapter_id)"
         ]
       }
     };
 
-    function selectEntity(name) {
-      const data = entities[name];
-      if (!data) return;
+    function highlightERD(nodeId) {
+      document.querySelectorAll('.entity-node').forEach(el => {
+        el.classList.add('dimmed-node');
+        el.classList.remove('active-er-node');
+      });
 
-      // Update active card styling
-      document.querySelectorAll('.entity-card').forEach(c => c.classList.remove('active-card'));
-      const card = document.getElementById('card-' + name);
-      if (card) card.classList.add('active-card');
+      const activeEl = document.getElementById('node-' + nodeId);
+      if (activeEl) {
+        activeEl.classList.remove('dimmed-node');
+        activeEl.classList.add('active-er-node');
+      }
 
-      document.getElementById('inspectBadge').innerText = data.badge;
-      document.getElementById('inspectTitle').innerText = data.title;
-      document.getElementById('inspectWhy').innerText = data.why;
+      // Highlight related nodes
+      const rel = erdRelations[nodeId];
+      if (rel) {
+        document.getElementById('erdSelectedTitle').innerText = rel.title;
+        document.getElementById('erdConnections').innerHTML = rel.connections.map(c => `<div>• ${c}</div>`).join('');
 
-      const fieldsEl = document.getElementById('inspectFields');
-      fieldsEl.innerHTML = data.fields.map(f => `<div class="text-slate-300 opacity-90">${f}</div>`).join('');
-
-      const endEl = document.getElementById('inspectEndpoints');
-      endEl.innerHTML = data.endpoints.map(e => `<div>${e}</div>`).join('');
+        if (nodeId === 'books') {
+          ['personas', 'genres', 'volumes', 'chapters', 'reading_history'].forEach(id => {
+            document.getElementById('node-' + id)?.classList.remove('dimmed-node');
+          });
+        } else if (nodeId === 'volumes') {
+          ['books', 'chapters'].forEach(id => {
+            document.getElementById('node-' + id)?.classList.remove('dimmed-node');
+          });
+        } else if (nodeId === 'chapters') {
+          ['books', 'volumes', 'chapter_lore'].forEach(id => {
+            document.getElementById('node-' + id)?.classList.remove('dimmed-node');
+          });
+        } else if (nodeId === 'personas') {
+          ['users', 'books', 'reading_history'].forEach(id => {
+            document.getElementById('node-' + id)?.classList.remove('dimmed-node');
+          });
+        }
+      }
     }
 
-    function switchView(view) {
-      ['Hierarchy', 'Lifecycle', 'Example'].forEach(v => {
-        const el = document.getElementById('view' + v);
-        const btn = document.getElementById('tab' + v);
-        if (v.toLowerCase() === view) {
-          el.classList.remove('hidden');
-          btn.classList.add('bg-indigo-600', 'text-white');
-          btn.classList.remove('text-slate-400');
+    function resetERDSelection() {
+      document.querySelectorAll('.entity-node').forEach(el => {
+        el.classList.remove('dimmed-node', 'active-er-node');
+      });
+      document.getElementById('erdSelectedTitle').innerText = "Select a table above to view foreign key mapping";
+      document.getElementById('erdConnections').innerText = "Showing all 8 interconnected tables.";
+    }
+
+    const tabMap = {
+      erd: { viewId: 'viewERD', btnId: 'tabERD' },
+      media: { viewId: 'viewMedia', btnId: 'tabMedia' },
+      hierarchy: { viewId: 'viewHierarchy', btnId: 'tabHierarchy' },
+      lifecycle: { viewId: 'viewLifecycle', btnId: 'tabLifecycle' },
+      apidocs: { viewId: 'viewApiDocs', btnId: 'tabApiDocs' }
+    };
+
+    function switchView(target) {
+      Object.keys(tabMap).forEach(key => {
+        const { viewId, btnId } = tabMap[key];
+        const viewEl = document.getElementById(viewId);
+        const btnEl = document.getElementById(btnId);
+
+        if (key === target) {
+          if (viewEl) viewEl.classList.remove('hidden');
+          if (btnEl) {
+            btnEl.classList.add('bg-indigo-600', 'text-white');
+            btnEl.classList.remove('text-slate-400');
+          }
         } else {
-          el.classList.add('hidden');
-          btn.classList.remove('bg-indigo-600', 'text-white');
-          btn.classList.add('text-slate-400');
+          if (viewEl) viewEl.classList.add('hidden');
+          if (btnEl) {
+            btnEl.classList.remove('bg-indigo-600', 'text-white');
+            btnEl.classList.add('text-slate-400');
+          }
         }
       });
 
-      if (view === 'lifecycle') {
-        simulateFlow('createChapter');
+      if (target === 'lifecycle') {
+        simulateFlow('createBook');
+      } else if (target === 'apidocs') {
+        renderApiDocs();
       }
     }
 
     function simulateFlow(type) {
-      ['createChapter', 'getTOC', 'authLogin'].forEach(t => {
+      ['createBook', 'createChapter', 'getTOC', 'readingProgress'].forEach(t => {
         const btn = document.getElementById('btnFlow-' + t);
         if (btn) {
           if (t === type) {
@@ -516,34 +600,38 @@
       const container = document.getElementById('flowSteps');
       let steps = [];
 
-      if (type === 'createChapter') {
+      if (type === 'createBook') {
         steps = [
-          { num: "1", title: "Client POST Request", code: "POST /api/v1/chapters", desc: "Author submits { book_id: 10, volume_id: 1, chapter_number: 5, title: '...', content: '...' } with accessToken cookie." },
-          { num: "2", title: "Auth Middleware (verifyJWT)", code: "middleware/auth.middleware.js", desc: "Validates JWT signature from cookies/header and attaches req.user = decodedUser." },
-          { num: "3", title: "Ownership & Volume Validation", code: "controllers/chapter.controller.js", desc: "1. Checks book exists.<br>2. Verifies persona owns book.<br>3. Verifies volume_id belongs to book_id (prevents cross-novel mixing!)." },
-          { num: "4", title: "Automated Word Count", code: "content.trim().split(/\\s+/).length", desc: "Calculates words_count on the backend so clients can't forge it." },
-          { num: "5", title: "Postgres INSERT Query", code: "model/chapters.model.js", desc: "INSERT INTO chapters (...) RETURNING * to NeonDB PostgreSQL." },
-          { num: "6", title: "Standardized Response", code: "ApiResponse(201, chapter, '...')", desc: "Returns JSON payload { statusCode: 201, data: {...}, success: true }." }
+          { num: "1", title: "Multipart Form Submission", code: "POST /api/v1/books", desc: "User attaches cover_image (PNG/JPG) + title, slug, tags, persona_id with accessToken." },
+          { num: "2", title: "Multer Image Interception", code: "middleware/multer.middleware.js", desc: "Checks image type, enforces 5MB limit, and writes temp file to ./public/temp/cover_image-1700.png." },
+          { num: "3", title: "Cloudinary Stream & Unlink", code: "utils/cloudinary.js", desc: "Pushes file to cloud folder 'deckle_books', obtains secure_url, and immediately invokes fs.unlinkSync() to wipe temp file." },
+          { num: "4", title: "Ownership & Tag Parsing", code: "controllers/book.controller.js", desc: "Verifies req.user owns persona_id. Safely parses tags array from form-data string." },
+          { num: "5", title: "Postgres NeonDB INSERT", code: "model/books.model.js", desc: "Inserts novel record with cover_image CDN URL and returns complete book entity with 201 Created." }
+        ];
+      } else if (type === 'createChapter') {
+        steps = [
+          { num: "1", title: "Chapter POST Request", code: "POST /api/v1/chapters", desc: "Author sends { book_id: 1, volume_id: 2, chapter_number: 5, title, content }." },
+          { num: "2", title: "Cross-Novel Volume Check", code: "controllers/chapter.controller.js", desc: "Checks if volume_id exists AND volume.book_id === book_id (prevents assigning another novel's volume!)." },
+          { num: "3", title: "Server Word Count", code: "content.trim().split(/\\s+/).length", desc: "Backend mathematically calculates word count from text body so clients cannot spoof stats." },
+          { num: "4", title: "Continuous Number Insert", code: "model/chapters.model.js", desc: "Enforces UNIQUE(book_id, chapter_number) across NeonDB, binding chapter to volume." }
         ];
       } else if (type === 'getTOC') {
         steps = [
-          { num: "1", title: "Client GET Request", code: "GET /api/v1/chapters/book/10/toc", desc: "Reader opens Novel page. Request is completely public (no login required)." },
-          { num: "2", title: "TOC Controller Execution", code: "controllers/chapter.controller.js", desc: "Calls getTableOfContents(10)." },
-          { num: "3", title: "SQL LEFT JOIN with Volumes", code: "SELECT chapters.*, volumes.volume_number, volumes.title FROM chapters LEFT JOIN volumes...", desc: "Pulls chapter titles, word counts, and volume names. Automatically handles null volume_id." },
-          { num: "4", title: "Frontend Accordion Rendering", code: "Response: 200 OK", desc: "If volumes exist: groups into Arc folders. If 0 volumes: renders clean flat list." }
+          { num: "1", title: "TOC Request (Public)", code: "GET /api/v1/chapters/book/1/toc", desc: "Reader opens table of contents. Completely public, zero auth overhead." },
+          { num: "2", title: "SQL LEFT JOIN with Volumes", code: "SELECT chapters.*, volumes.volume_title FROM chapters LEFT JOIN volumes...", desc: "Pulls chapter list with volume headers. Automatically handles null volume_ids." },
+          { num: "3", title: "Accordion Grouping", code: "Frontend Component", desc: "If volumes exist: groups into Arc tabs. If 0 volumes: renders flat list with zero clicks." }
         ];
       } else {
         steps = [
-          { num: "1", title: "Client Login POST", code: "POST /api/v1/users/login", desc: "Submits { email, password }." },
-          { num: "2", title: "Bcrypt Verification", code: "bcrypt.compare(password, user.password)", desc: "Verifies salted password hash." },
-          { num: "3", title: "Dual Token Generation", code: "generateAccessAndRefreshToken(user.id)", desc: "Signs 15m accessToken and 7d refreshToken." },
-          { num: "4", title: "HTTP-Only Secure Cookies", code: "res.cookie('accessToken', ...)", desc: "Sets secure cookies and returns user + primary default persona profile." }
+          { num: "1", title: "Sync Location", code: "POST /api/v1/reading-history/progress", desc: "Reader scrolls to Chapter 12 at 78.5%. Sends heartbeat to backend." },
+          { num: "2", title: "Persona Resolution", code: "resolveUserPersona()", desc: "Resolves active reader persona from cookie session." },
+          { num: "3", title: "PostgreSQL ON CONFLICT UPSERT", code: "ON CONFLICT (persona_id, book_id) DO UPDATE", desc: "Updates last_chapter_number, scroll_percentage, and last_read_at timestamp." }
         ];
       }
 
       container.innerHTML = steps.map(s => `
         <div class="flex items-start gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800">
-          <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm shadow-indigo-500/50">
+          <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-md shadow-indigo-500/30">
             ${s.num}
           </div>
           <div class="space-y-1">
@@ -557,8 +645,62 @@
       `).join('');
     }
 
-    // Initialize with book selected
-    selectEntity('book');
+    const apiEndpoints = [
+      { method: "POST", path: "/users/register", desc: "Registers user & creates default persona", auth: "Public" },
+      { method: "POST", path: "/users/login", desc: "Issues JWT accessToken & refreshToken", auth: "Public" },
+      { method: "POST", path: "/users/logout", desc: "Wipes auth cookies & session", auth: "JWT" },
+      { method: "GET", path: "/users/current-user", desc: "Gets logged in account & personas", auth: "JWT" },
+      { method: "POST", path: "/personas", desc: "Creates pen name (Multer avatar/banner)", auth: "JWT" },
+      { method: "GET", path: "/personas/my", desc: "Lists all pen names owned by user", auth: "JWT" },
+      { method: "GET", path: "/personas/:handle", desc: "Public author bio & works", auth: "Public" },
+      { method: "PATCH", path: "/personas/:id/preferences", desc: "Updates reader theme, font, and size", auth: "JWT" },
+      { method: "POST", path: "/personas/:id/stats/increment", desc: "Increments words read & streak days", auth: "JWT" },
+      { method: "POST", path: "/books", desc: "Publishes novel (Multer cover upload)", auth: "JWT" },
+      { method: "GET", path: "/books", desc: "Active catalog feed with authors & genres", auth: "Public" },
+      { method: "GET", path: "/books/:slug", desc: "Full novel synopsis and author details", auth: "Public" },
+      { method: "DELETE", path: "/books/:id", desc: "Soft deletes novel", auth: "JWT" },
+      { method: "POST", path: "/volumes", desc: "Creates story arc (Multer cover upload)", auth: "JWT" },
+      { method: "GET", path: "/volumes/book/:bookId", desc: "Lists all volumes of a novel with word counts", auth: "Public" },
+      { method: "DELETE", path: "/volumes/:id", desc: "Soft deletes volume arc", auth: "JWT" },
+      { method: "POST", path: "/chapters", desc: "Creates chapter (volume_id optional)", auth: "JWT" },
+      { method: "GET", path: "/chapters/book/:id/toc", desc: "Table of contents with volume headers", auth: "Public" },
+      { method: "GET", path: "/chapters/book/:id/read/:ch", desc: "Single chapter reader content", auth: "Public" },
+      { method: "GET", path: "/genres", desc: "All curated genres (LitRPG, Cultivation)", auth: "Public" },
+      { method: "GET", path: "/genres/:slug", desc: "Genre details by slug", auth: "Public" },
+      { method: "POST", path: "/reading-history/progress", desc: "Syncs chapter # & scroll % for 1-click resume", auth: "JWT" },
+      { method: "POST", path: "/reading-history/shelf", desc: "Adds/moves book to shelf folder", auth: "JWT" },
+      { method: "GET", path: "/reading-history/shelf", desc: "Fetches reader's bookmarked shelf", auth: "JWT" },
+      { method: "GET", path: "/lore/chapter/:chapterId", desc: "Margin notes & hover tooltips for readers", auth: "Public" },
+      { method: "POST", path: "/lore/chapter/:chapterId", desc: "Author creates a margin lore entry", auth: "JWT" }
+    ];
+
+    function renderApiDocs(filter = "") {
+      const container = document.getElementById('apiList');
+      const filtered = apiEndpoints.filter(e => 
+        e.path.toLowerCase().includes(filter.toLowerCase()) || 
+        e.desc.toLowerCase().includes(filter.toLowerCase())
+      );
+
+      container.innerHTML = filtered.map(e => `
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="px-1.5 py-0.5 rounded text-[11px] font-bold ${e.method === 'GET' ? 'bg-sky-500/20 text-sky-400' : e.method === 'POST' ? 'bg-emerald-500/20 text-emerald-400' : e.method === 'PATCH' ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'}">${e.method}</span>
+              <span class="text-white font-bold">${e.path}</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-[10px] ${e.auth === 'JWT' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-400'}">${e.auth}</span>
+          </div>
+          <div class="text-slate-400 font-sans text-xs">${e.desc}</div>
+        </div>
+      `).join('');
+    }
+
+    function filterApiDocs(val) {
+      renderApiDocs(val);
+    }
+
+    // Default initialization
+    highlightERD('books');
   </script>
 </body>
 </html>

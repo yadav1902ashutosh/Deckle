@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import ProfileHeader from "../components/profile/ProfileHeader";
 import ReadingMetricsRow from "../components/profile/ReadingMetricsRow";
 import ThemePresetMatrix from "../components/profile/ThemePresetMatrix";
@@ -8,7 +9,9 @@ import CurrentlyReadingWidget from "../components/profile/CurrentlyReadingWidget
 import StorageFootprintWidget from "../components/profile/StorageFootprintWidget";
 import ReadingVelocityChart from "../components/profile/ReadingVelocityChart";
 import EditProfileModal from "../components/profile/EditProfileModal";
-import { getActiveTheme } from "../utils/themeConfig";
+import { getActiveTheme, applyTheme } from "../utils/themeConfig";
+import personaService from "../services/personaService/personaService";
+import { updateActivePersona } from "../store/authSlice";
 import {
   BarChart3,
   Sliders,
@@ -27,6 +30,11 @@ import {
 } from "lucide-react";
 
 export default function ProfilePage() {
+  const dispatch = useDispatch();
+  const authStatus = useSelector((state) => state.auth?.status);
+  const currentUser = useSelector((state) => state.auth?.user || state.auth?.userData);
+  const activePersona = useSelector((state) => state.auth?.activePersona);
+
   const [activeTab, setActiveTab] = useState("preferences"); // preferences | stats | shelf | security | storage
   const [activeTheme, setActiveTheme] = useState(getActiveTheme());
   const [fontFamily, setFontFamily] = useState("serif");
@@ -34,17 +42,41 @@ export default function ProfilePage() {
   const [lineHeight, setLineHeight] = useState(1.8);
   const [indentEnabled, setIndentEnabled] = useState(true);
 
-  // User state
-  const [user, setUser] = useState({
-    name: "Julian Thorne",
-    handle: "daoreader",
-    email: "j.thorne@archive.read",
-    role: "Senior Scholar",
-    tier: "Tier 7",
-    memberSince: "October 2023",
-    bio: "Seeker of forgotten scriptures, celestial dao archives, and late-night serialized chapters.",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400",
-  });
+  // Local overrides when user edits profile via modal
+  const [localProfile, setLocalProfile] = useState(null);
+
+  // Dynamic user dossier computed from activePersona / currentUser
+  const user = useMemo(() => {
+    if (localProfile) return localProfile;
+
+    const memberDate = currentUser?.created_at
+      ? new Date(currentUser.created_at).toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        })
+      : "October 2026";
+
+    return {
+      name:
+        activePersona?.display_name ||
+        currentUser?.full_name ||
+        currentUser?.username ||
+        "Julian Thorne",
+      handle: activePersona?.handle || currentUser?.username || "daoreader",
+      email: currentUser?.email || "reader@decklenovel.com",
+      role:
+        currentUser?.role === "writer" ? "Grand Author" : "Senior Scholar",
+      tier: "Tier 1",
+      memberSince: memberDate,
+      bio:
+        activePersona?.bio ||
+        "Seeker of forgotten scriptures, celestial dao archives, and late-night serialized chapters.",
+      avatar:
+        activePersona?.avatar_url ||
+        currentUser?.avatar_url ||
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400",
+    };
+  }, [currentUser, activePersona, localProfile]);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -64,6 +96,7 @@ export default function ProfilePage() {
     setTimeout(() => setToastMsg(""), 2200);
   };
 
+  // Sync theme with global theme config
   useEffect(() => {
     const current = getActiveTheme();
     setActiveTheme(current);
@@ -75,15 +108,101 @@ export default function ProfilePage() {
     return () => window.removeEventListener("deckle_theme_change", handleThemeChange);
   }, []);
 
+  // Hydrate reading preferences from active persona in DB
+  useEffect(() => {
+    if (activePersona?.reading_preferences) {
+      const prefs = activePersona.reading_preferences;
+      if (prefs.theme) {
+        setActiveTheme(prefs.theme);
+        applyTheme(prefs.theme);
+      }
+      if (prefs.fontFamily) setFontFamily(prefs.fontFamily);
+      if (prefs.fontSize) setFontSize(Number(prefs.fontSize));
+      if (prefs.lineHeight) setLineHeight(Number(prefs.lineHeight));
+      if (typeof prefs.indentEnabled === "boolean") {
+        setIndentEnabled(prefs.indentEnabled);
+      }
+    }
+  }, [activePersona?.id]);
+
+  // Sync preferences to backend
+  const syncPreferencesToBackend = async (partialPrefs) => {
+    if (!activePersona?.id) return;
+    try {
+      const currentPrefs = {
+        theme: activeTheme,
+        fontFamily,
+        fontSize,
+        lineHeight,
+        indentEnabled,
+        ...partialPrefs,
+      };
+      const updated = await personaService.updatePreferences(
+        activePersona.id,
+        currentPrefs
+      );
+      if (updated) {
+        dispatch(updateActivePersona(updated));
+      }
+    } catch (err) {
+      console.error("Failed to sync reading preferences to backend:", err);
+    }
+  };
+
   const handleThemeSelect = (themeId) => {
     setActiveTheme(themeId);
+    applyTheme(themeId);
     showToast(`Theme calibrated to ${themeId}`);
+    syncPreferencesToBackend({ theme: themeId });
+  };
+
+  const handleFontFamilyChange = (newFont) => {
+    setFontFamily(newFont);
+    syncPreferencesToBackend({ fontFamily: newFont });
+  };
+
+  const handleFontSizeChange = (newSize) => {
+    setFontSize(newSize);
+    syncPreferencesToBackend({ fontSize: newSize });
+  };
+
+  const handleLineHeightChange = (newLineHeight) => {
+    setLineHeight(newLineHeight);
+    syncPreferencesToBackend({ lineHeight: newLineHeight });
+  };
+
+  const handleIndentToggle = (newIndent) => {
+    setIndentEnabled(newIndent);
+    syncPreferencesToBackend({ indentEnabled: newIndent });
   };
 
   const handleSaveProfile = (updatedUser) => {
-    setUser((prev) => ({ ...prev, ...updatedUser }));
+    setLocalProfile((prev) => ({ ...(prev || user), ...updatedUser }));
     showToast("Profile details updated successfully");
+
+    if (activePersona?.id) {
+      dispatch(
+        updateActivePersona({
+          id: activePersona.id,
+          display_name: updatedUser.name,
+          handle: updatedUser.handle,
+          bio: updatedUser.bio,
+          avatar_url: updatedUser.avatar,
+        })
+      );
+    }
   };
+
+  // Formatted stats
+  const totalWords = activePersona?.total_words_read || 0;
+  const formattedWords =
+    totalWords >= 1000000
+      ? `${(totalWords / 1000000).toFixed(1)}M`
+      : totalWords >= 1000
+      ? `${(totalWords / 1000).toFixed(1)}k`
+      : totalWords.toLocaleString();
+  const engagementHours = totalWords > 0 ? (totalWords / 14000).toFixed(1) : "0.0";
+  const streakDays = activePersona?.streak_days || 0;
 
   return (
     <div className="w-full min-h-screen bg-page text-text-main transition-colors pb-16">
@@ -117,7 +236,11 @@ export default function ProfilePage() {
         />
 
         {/* Reading Metrics Row */}
-        <ReadingMetricsRow />
+        <ReadingMetricsRow
+          streakDays={streakDays}
+          wordsConsumed={formattedWords}
+          engagementHours={engagementHours}
+        />
 
         {/* Segmented Hub Navigation Bar */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 border-b border-border-subtle/30">
@@ -163,13 +286,13 @@ export default function ProfilePage() {
 
               <TypographyLab
                 fontFamily={fontFamily}
-                onFontFamilyChange={setFontFamily}
+                onFontFamilyChange={handleFontFamilyChange}
                 fontSize={fontSize}
-                onFontSizeChange={setFontSize}
+                onFontSizeChange={handleFontSizeChange}
                 lineHeight={lineHeight}
-                onLineHeightChange={setLineHeight}
+                onLineHeightChange={handleLineHeightChange}
                 indentEnabled={indentEnabled}
-                onIndentToggle={setIndentEnabled}
+                onIndentToggle={handleIndentToggle}
               />
 
               <ReadingErgonomics
