@@ -24,6 +24,7 @@ import CommunityPage from "./pages/CommunityPage.jsx";
 import AuthorStudioPage from "./pages/AuthorStudioPage.jsx";
 import AuthorChannelPage from "./pages/AuthorChannelPage.jsx";
 import AccountSettingsPage from "./pages/AccountSettingsPage.jsx";
+import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
 
 // Router Object Configuration
 const router = createBrowserRouter([
@@ -45,7 +46,11 @@ const router = createBrowserRouter([
       },
       {
         path: 'library',
-        element: <LibraryPage />,
+        element: (
+          <ProtectedRoute>
+            <LibraryPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'rankings',
@@ -53,19 +58,35 @@ const router = createBrowserRouter([
       },
       {
         path: 'profile',
-        element: <ProfilePage />,
+        element: (
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'settings',
-        element: <ProfilePage />,
+        element: (
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'account',
-        element: <AccountSettingsPage />,
+        element: (
+          <ProtectedRoute>
+            <AccountSettingsPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'settings/account',
-        element: <AccountSettingsPage />,
+        element: (
+          <ProtectedRoute>
+            <AccountSettingsPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'community',
@@ -73,7 +94,11 @@ const router = createBrowserRouter([
       },
       {
         path: 'studio',
-        element: <AuthorStudioPage />,
+        element: (
+          <ProtectedRoute>
+            <AuthorStudioPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'author/:handle',

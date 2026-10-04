@@ -32,15 +32,15 @@ export default function BookHero({ book }) {
     coverImage = "",
     rating = "4.9",
     reviewsCount = "1.2k",
-    totalWords = "Serial",
+    totalWords = "0",
     wordsPerChapter = "~2,600 w/ch",
-    totalChapters = "1",
+    totalChapters = 0,
     activeReaders = "Active",
     powerRank = "#01",
     powerRankCategory = "Catalog",
     status = "ongoing",
-    latestChapterNum = 1,
-    latestChapterTitle = "Chapter 1",
+    latestChapterNum = 0,
+    latestChapterTitle = "",
     latestChapterTime = "Recent",
     currentReadingChapter = 1,
     currentReadingTitle = "Chapter 1",
@@ -50,6 +50,14 @@ export default function BookHero({ book }) {
     description = "",
     genre_name = "",
   } = book;
+
+  const resolvedTotalChapters =
+    book.totalChapters !== undefined
+      ? Number(book.totalChapters)
+      : book.total_chapters !== undefined
+      ? Number(book.total_chapters)
+      : Number(totalChapters) || 0;
+  const hasChapters = resolvedTotalChapters > 0;
 
   const resolvedTitle = title;
   const resolvedAuthor = author_name || authorName || "Deckle Author";
@@ -133,15 +141,26 @@ export default function BookHero({ book }) {
 
           {/* Quick Action Buttons */}
           <div className="flex flex-col gap-2">
-            <Link
-              to={`/book/${slug}/chapter/${currentReadingChapter || 1}`}
-              className="w-full h-12 bg-accent text-accent-text font-semibold text-sm flex items-center justify-center gap-2 rounded-xl shadow-sm hover:bg-accent-hover transition-all group cursor-pointer"
-            >
-              <BookOpen className="w-5 h-5 transition-transform group-hover:scale-110" />
-              <span>
-                Start Reading Ch. {currentReadingChapter || 1}
-              </span>
-            </Link>
+            {hasChapters ? (
+              <Link
+                to={`/book/${slug}/chapter/${currentReadingChapter || 1}`}
+                className="w-full h-12 bg-accent text-accent-text font-semibold text-sm flex items-center justify-center gap-2 rounded-xl shadow-sm hover:bg-accent-hover transition-all group cursor-pointer"
+              >
+                <BookOpen className="w-5 h-5 transition-transform group-hover:scale-110" />
+                <span>
+                  Start Reading Ch. {currentReadingChapter || 1}
+                </span>
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="w-full h-12 bg-tag text-text-muted font-medium text-xs sm:text-sm flex items-center justify-center gap-2 rounded-xl border border-border-subtle cursor-not-allowed"
+              >
+                <BookOpen className="w-4 h-4 opacity-50" />
+                <span>No Chapters Released Yet</span>
+              </button>
+            )}
 
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -275,7 +294,7 @@ export default function BookHero({ book }) {
                 Total Chapters
               </span>
               <p className="text-sm font-bold text-text-main">
-                {totalChapters}
+                {resolvedTotalChapters}
               </p>
             </div>
             <div className="bg-card border border-border-subtle rounded-xl p-3.5 space-y-1">

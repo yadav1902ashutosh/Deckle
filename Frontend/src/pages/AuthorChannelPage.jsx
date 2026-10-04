@@ -82,6 +82,25 @@ export default function AuthorChannelPage() {
     };
   }, [cleanHandle]);
 
+  // Fetch live announcements for community tab
+  const [announcements, setAnnouncements] = useState([]);
+  useEffect(() => {
+    let isMounted = true;
+    if (cleanHandle) {
+      import("../services/studioService/studioService").then(({ default: studioService }) => {
+        studioService
+          .getAnnouncements(cleanHandle)
+          .then((data) => {
+            if (isMounted) setAnnouncements(Array.isArray(data) ? data : []);
+          })
+          .catch(() => {});
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [cleanHandle]);
+
   // Check if logged-in user owns this author channel
   const isOwner = useMemo(() => {
     if (!cleanHandle) return false;
@@ -89,15 +108,21 @@ export default function AuthorChannelPage() {
     return personas.some((p) => p.handle?.toLowerCase() === cleanHandle);
   }, [cleanHandle, activePersona, personas]);
 
-  const handleToggleFollow = () => {
-    if (!isFollowing) {
-      setIsFollowing(true);
-      setFollowersCount((prev) => prev + 1);
-      showToast(`Subscribed to @${cleanHandle}! You will receive release notifications.`);
-    } else {
-      setIsFollowing(false);
-      setFollowersCount((prev) => Math.max(0, prev - 1));
-      showToast(`Unsubscribed from @${cleanHandle}`);
+  const handleToggleFollow = async () => {
+    if (!channelData?.persona?.id) return;
+    const { default: studioService } = await import("../services/studioService/studioService");
+
+    try {
+      const res = await studioService.toggleSubscription(channelData.persona.id);
+      setIsFollowing(res.isSubscribed);
+      setFollowersCount(res.subscriber_count);
+      showToast(
+        res.isSubscribed
+          ? `Subscribed to @${cleanHandle}! You will receive release notifications.`
+          : `Unsubscribed from @${cleanHandle}`
+      );
+    } catch (err) {
+      showToast(err.message || "Failed to update channel subscription");
     }
   };
 
@@ -171,7 +196,7 @@ export default function AuthorChannelPage() {
       {/* ============================================================== */}
       {/* 1. CINEMATIC CHANNEL ART / BANNER (YOUTUBE STYLE)              */}
       {/* ============================================================== */}
-      <div className="w-full h-44 sm:h-64 lg:h-72 relative overflow-hidden bg-card">
+      <div className="w-full h-44 sm:h-64 lg:h-72 relative overflow-hidden bg-card border-b border-border-subtle/40">
         <img
           src={authorBanner}
           alt={`${authorName} channel banner`}
@@ -185,15 +210,15 @@ export default function AuthorChannelPage() {
       </div>
 
       {/* ============================================================== */}
-      {/* 2. CHANNEL PROFILE DOSSIER (HEADER BELOW BANNER)               */}
+      {/* 2. CHANNEL PROFILE DOSSIER (HEADER SAFELY BELOW BANNER)        */}
       {/* ============================================================== */}
-      <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-border-subtle/40">
+      <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 relative z-10 pt-4 sm:pt-6">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-6 border-b border-border-subtle/40">
           {/* Avatar & Author Info */}
-          <div className="flex flex-col sm:flex-row sm:items-end gap-5">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-5 sm:gap-6">
             {/* Avatar elevates into the banner while text stays cleanly below */}
-            <div className="relative shrink-0 -mt-12 sm:-mt-16 lg:-mt-20">
-              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-card border-4 border-page shadow-xl ring-2 ring-border-subtle/50">
+            <div className="relative shrink-0 -mt-16 sm:-mt-20 lg:-mt-24">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-card border-4 border-page shadow-2xl ring-2 ring-border-subtle/60">
                 <img
                   src={authorAvatar}
                   alt={authorName}
@@ -205,7 +230,7 @@ export default function AuthorChannelPage() {
               </div>
             </div>
 
-            <div className="space-y-1.5 sm:pb-1 pt-1 sm:pt-0">
+            <div className="space-y-1.5 pt-1 sm:pt-2">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-text-main tracking-tight">
                   {authorName}
@@ -215,7 +240,7 @@ export default function AuthorChannelPage() {
                 </span>
               </div>
 
-              {/* Handle & Channel Stats */}
+              {/* Handle & Channel Stats - 100% cleanly below banner */}
               <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
                 <span className="font-mono font-semibold text-text-main">
                   @{persona.handle}
@@ -473,46 +498,56 @@ export default function AuthorChannelPage() {
                   Author Updates &amp; Announcements
                 </h3>
               </div>
-
-              <div className="bg-card border border-border-subtle/60 rounded-2xl p-5 shadow-xs space-y-3">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={authorAvatar}
-                    alt=""
-                    className="w-10 h-10 rounded-full object-cover border border-border-subtle"
-                  />
-                  <div>
-                    <div className="font-semibold text-xs text-text-main">
-                      {authorName}
+              <div className="space-y-4">
+                {(announcements.length > 0 ? announcements : [
+                  {
+                    id: "default",
+                    title: "Welcome to my Official Channel",
+                    content: "Welcome to my official Deckle channel! Follow for upcoming chapter drops, worldbuilding lore, and reader polls.",
+                    created_at: new Date().toISOString(),
+                  }
+                ]).map((ann) => (
+                  <div key={ann.id} className="bg-card border border-border-subtle/60 rounded-2xl p-5 shadow-xs space-y-3">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={authorAvatar}
+                        alt=""
+                        className="w-10 h-10 rounded-full object-cover border border-border-subtle"
+                      />
+                      <div>
+                        <div className="font-semibold text-xs text-text-main">
+                          {authorName}
+                        </div>
+                        <div className="text-[11px] text-text-muted">
+                          {ann.title || "Official Channel Broadcast"}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[11px] text-text-muted">
-                      Official Channel Broadcast
+
+                    <p className="text-xs text-text-main leading-relaxed">
+                      {ann.content}
+                    </p>
+
+                    <div className="pt-2 border-t border-border-subtle/30 flex items-center gap-4 text-xs text-text-muted">
+                      <button
+                        type="button"
+                        onClick={() => showToast("Liked announcement")}
+                        className="flex items-center gap-1.5 hover:text-accent transition-colors cursor-pointer"
+                      >
+                        <ThumbsUp className="w-3.5 h-3.5" />
+                        <span>Like</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => showToast("Opening discussions...")}
+                        className="flex items-center gap-1.5 hover:text-text-main transition-colors cursor-pointer"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Discussion</span>
+                      </button>
                     </div>
                   </div>
-                </div>
-
-                <p className="text-xs text-text-main leading-relaxed">
-                  Welcome to my official Deckle channel! Follow for upcoming chapter drops, worldbuilding lore, and reader polls.
-                </p>
-
-                <div className="pt-2 border-t border-border-subtle/30 flex items-center gap-4 text-xs text-text-muted">
-                  <button
-                    type="button"
-                    onClick={() => showToast("Liked announcement")}
-                    className="flex items-center gap-1.5 hover:text-accent transition-colors cursor-pointer"
-                  >
-                    <ThumbsUp className="w-3.5 h-3.5" />
-                    <span>Like</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => showToast("Opening discussions...")}
-                    className="flex items-center gap-1.5 hover:text-text-main transition-colors cursor-pointer"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>Discussion</span>
-                  </button>
-                </div>
+                ))}
               </div>
             </div>
           )}

@@ -6,6 +6,8 @@ import { createVolumesTable } from "../model/volumes.model.js";
 import { createChapterTable } from "../model/chapters.model.js";
 import { createReadingHistoryTable } from "../model/readingHistory.model.js";
 import { createChapterLoreTable } from "../model/chapterLore.model.js";
+import { createCommunityTable } from "../model/community.model.js";
+import { createPersonaSubscriptionsTable } from "../model/studio.model.js";
 
 export async function initializeDatabase() {
   try {
@@ -35,7 +37,13 @@ export async function initializeDatabase() {
     // 8. Chapter Lore (Margin notes & interactive reader tooltips)
     await createChapterLoreTable();
 
-    console.log("All 8 database tables and indexes are initialized and ready!");
+    // 9. Community Forum & Scholarly Agora
+    await createCommunityTable();
+
+    // 10. Studio Author Subscriptions & Announcements
+    await createPersonaSubscriptionsTable();
+
+    console.log("All 10 database tables and indexes are initialized and ready!");
   } catch (error) {
     console.error("Database initialization error:", error.message);
     throw error;

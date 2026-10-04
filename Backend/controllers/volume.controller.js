@@ -15,8 +15,8 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 export const createNewVolume = asyncHandler(async (req, res) => {
   const { book_id, volume_number, title, description, cover_image } = req.body;
   // Validation
-  if (!book_id || !volume_number || !title?.trim()) {
-    throw new ApiError(400, "book_id, volume_number, and title are required!");
+  if (!book_id || !title?.trim()) {
+    throw new ApiError(400, "book_id and title are required!");
   }
   // 1. Verify Book Exists
   const book = await findBookById(Number(book_id));
@@ -43,7 +43,7 @@ export const createNewVolume = asyncHandler(async (req, res) => {
   // 3. Create Volume
   const newVolume = await createVolume({
     book_id: Number(book_id),
-    volume_number: Number(volume_number),
+    volume_number: volume_number !== undefined && volume_number !== null && volume_number !== "" ? Number(volume_number) : undefined,
     title: title.trim(),
     description: description?.trim() || null,
     cover_image: finalCoverImage,

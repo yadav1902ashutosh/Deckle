@@ -12,6 +12,7 @@ import ReadingVelocityChart from "../components/profile/ReadingVelocityChart";
 import EditProfileModal from "../components/profile/EditProfileModal";
 import { getActiveTheme, applyTheme } from "../utils/themeConfig";
 import personaService from "../services/personaService/personaService";
+import userService from "../services/userService/userService";
 import { updateActivePersona } from "../store/authSlice";
 import {
   BarChart3,
@@ -100,20 +101,117 @@ export default function ProfilePage() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Ergonomics toggles
+  // Ergonomics toggles synced to backend user_settings
   const [autoSave, setAutoSave] = useState(true);
   const [hardwareKeys, setHardwareKeys] = useState(true);
   const [tapCenter, setTapCenter] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
 
-  // Security toggles
-  const [twoFactor, setTwoFactor] = useState(false);
+  // Security toggles synced to backend
+  const [twoFactor, setTwoFactor] = useState(currentUser?.two_factor_enabled || false);
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+
+  // Genre affinity synced from backend
+  const [genreAffinity, setGenreAffinity] = useState([]);
+  const [affinityLoading, setAffinityLoading] = useState(false);
 
   const [toastMsg, setToastMsg] = useState("");
 
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(""), 2200);
+  };
+
+  // Hydrate settings and security from backend
+  useEffect(() => {
+    let isMounted = true;
+    async function loadUserSettings() {
+      try {
+        const settings = await userService.getSettings();
+        if (isMounted && settings) {
+          if (settings.bionic_reading !== undefined) setAutoSave(Boolean(settings.bionic_reading));
+          if (settings.sound_effects !== undefined) setHardwareKeys(Boolean(settings.sound_effects));
+        }
+      } catch (err) {
+        console.error("Failed to load user settings:", err);
+      }
+    }
+    loadUserSettings();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Fetch genre affinity when in stats tab
+  useEffect(() => {
+    let isMounted = true;
+    async function loadAffinity() {
+      setAffinityLoading(true);
+      try {
+        const data = await userService.getGenreAffinity();
+        if (isMounted) setGenreAffinity(data || []);
+      } catch (err) {
+        console.error("Failed to load genre affinity:", err);
+      } finally {
+        if (isMounted) setAffinityLoading(false);
+      }
+    }
+    loadAffinity();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Fetch sessions when in security tab
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSessions() {
+      setSessionsLoading(true);
+      try {
+        const data = await userService.getSessions();
+        if (isMounted) setSessions(data || []);
+      } catch (err) {
+        console.error("Failed to load sessions:", err);
+      } finally {
+        if (isMounted) setSessionsLoading(false);
+      }
+    }
+    if (activeTab === "security") {
+      loadSessions();
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab]);
+
+  const handleToggle2FA = async (enabled) => {
+    try {
+      await userService.toggle2FA(enabled);
+      setTwoFactor(enabled);
+      showToast(enabled ? "2FA enabled" : "2FA disabled");
+    } catch (err) {
+      showToast(err.message || "Failed to update 2FA");
+    }
+  };
+
+  const handleRevokeSession = async (id) => {
+    try {
+      await userService.revokeSession(id);
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+      showToast("Terminated remote session");
+    } catch (err) {
+      showToast(err.message || "Failed to revoke session");
+    }
+  };
+
+  const handleToggleErgonomics = async (field, value) => {
+    try {
+      await userService.updateSettings({ [field]: value });
+      showToast("Ergonomics preference saved");
+    } catch (err) {
+      console.error("Failed to update ergonomics:", err);
+    }
   };
 
   // Sync theme with global theme config
@@ -313,13 +411,19 @@ export default function ProfilePage() {
 
               <ReadingErgonomics
                 autoSave={autoSave}
-                onAutoSaveToggle={setAutoSave}
+                onAutoSaveToggle={(val) => {
+                  setAutoSave(val);
+                  handleToggleErgonomics("bionic_reading", val);
+                }}
                 hardwareKeys={hardwareKeys}
-                onHardwareKeysToggle={setHardwareKeys}
+                onHardwareKeysToggle={(val) => {
+                  setHardwareKeys(val);
+                  handleToggleErgonomics("sound_effects", val);
+                }}
                 tapCenterToggle={tapCenter}
-                onTapCenterToggle={setTapCenter}
+                onTapCenterToggle={(val) => setTapCenter(val)}
                 immersiveFullscreen={fullscreen}
-                onFullscreenToggle={setFullscreen}
+                onFullscreenToggle={(val) => setFullscreen(val)}
               />
             </div>
 
@@ -350,25 +454,32 @@ export default function ProfilePage() {
                   </h3>
                 </div>
                 <div className="space-y-3 text-xs">
-                  {[
-                    { genre: "Epic Fantasy", pct: 40, count: "16 Serials" },
-                    { genre: "Progression & LitRPG", pct: 30, count: "12 Serials" },
-                    { genre: "Dark Fantasy & Horror", pct: 18, count: "7 Serials" },
-                    { genre: "Urban Fantasy & Mystery", pct: 12, count: "5 Serials" },
-                  ].map((g) => (
-                    <div key={g.genre} className="space-y-1">
-                      <div className="flex justify-between font-medium">
-                        <span className="text-text-main">{g.genre}</span>
-                        <span className="text-text-muted">{g.count} ({g.pct}%)</span>
-                      </div>
-                      <div className="w-full bg-tag h-2 rounded-full overflow-hidden">
-                        <div
-                          className="bg-accent h-full rounded-full transition-all duration-500"
-                          style={{ width: `${g.pct}%` }}
-                        />
-                      </div>
+                  {affinityLoading ? (
+                    <div className="p-4 text-center text-text-muted text-xs">
+                      Analyzing literary affinity...
                     </div>
-                  ))}
+                  ) : genreAffinity.length === 0 ? (
+                    <div className="p-4 text-center text-text-muted text-xs bg-tag/40 rounded-xl">
+                      No reading history recorded yet. Explore serial works in the catalog to build your affinity profile!
+                    </div>
+                  ) : (
+                    genreAffinity.map((g) => (
+                      <div key={g.genre} className="space-y-1">
+                        <div className="flex justify-between font-medium">
+                          <span className="text-text-main">{g.genre}</span>
+                          <span className="text-text-muted">
+                            {g.book_count} {g.book_count === 1 ? "Serial" : "Serials"} ({g.percentage}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-tag h-2 rounded-full overflow-hidden">
+                          <div
+                            className="bg-accent h-full rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(100, g.percentage || 0)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </section>
             </div>
@@ -478,10 +589,7 @@ export default function ProfilePage() {
                   <input
                     type="checkbox"
                     checked={twoFactor}
-                    onChange={(e) => {
-                      setTwoFactor(e.target.checked);
-                      showToast(e.target.checked ? "2FA enabled" : "2FA disabled");
-                    }}
+                    onChange={(e) => handleToggle2FA(e.target.checked)}
                     className="sr-only peer"
                   />
                   <div className="w-10 h-5 bg-border-subtle/70 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent" />
@@ -492,34 +600,49 @@ export default function ProfilePage() {
               <div className="pt-4 border-t border-border-subtle/40 space-y-3">
                 <div className="text-xs font-semibold text-text-main">Active Reading Terminals</div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-tag/50 border border-border-subtle/30 text-xs">
-                    <div className="flex items-center gap-3">
-                      <Laptop className="w-4 h-4 text-accent" />
-                      <div>
-                        <div className="font-semibold text-text-main">Windows 11 • Chrome 128</div>
-                        <div className="text-[11px] text-text-muted">New York, USA • Active Terminal Now</div>
-                      </div>
+                  {sessionsLoading ? (
+                    <div className="p-4 text-center text-xs text-text-muted">Loading terminals...</div>
+                  ) : sessions.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-text-muted bg-tag/30 rounded-xl">
+                      No additional active terminals recorded.
                     </div>
-                    <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      Current
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-tag/50 border border-border-subtle/30 text-xs">
-                    <div className="flex items-center gap-3">
-                      <Smartphone className="w-4 h-4 text-accent" />
-                      <div>
-                        <div className="font-semibold text-text-main">iOS 18 • Safari Mobile</div>
-                        <div className="text-[11px] text-text-muted">Boston, USA • 3 hours ago</div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => showToast("Terminated remote session")}
-                      className="text-[11px] font-semibold text-red-500 hover:underline cursor-pointer"
-                    >
-                      Revoke
-                    </button>
-                  </div>
+                  ) : (
+                    sessions.map((sess) => {
+                      const isMobile = (sess.device_name || "").toLowerCase().includes("mobile") ||
+                        (sess.device_name || "").toLowerCase().includes("iphone");
+                      const DevIcon = isMobile ? Smartphone : Laptop;
+                      return (
+                        <div
+                          key={sess.id}
+                          className="flex items-center justify-between p-3 rounded-xl bg-tag/50 border border-border-subtle/30 text-xs"
+                        >
+                          <div className="flex items-center gap-3">
+                            <DevIcon className="w-4 h-4 text-accent" />
+                            <div>
+                              <div className="font-semibold text-text-main">
+                                {sess.device_name || "Reading Terminal"}
+                              </div>
+                              <div className="text-[11px] text-text-muted">
+                                {sess.ip_address || "127.0.0.1"} • {sess.is_current ? "Active Terminal Now" : "Remote"}
+                              </div>
+                            </div>
+                          </div>
+                          {sess.is_current ? (
+                            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                              Current
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleRevokeSession(sess.id)}
+                              className="text-[11px] font-semibold text-red-500 hover:underline cursor-pointer"
+                            >
+                              Revoke
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </section>

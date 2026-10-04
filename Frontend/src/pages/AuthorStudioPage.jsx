@@ -18,10 +18,19 @@ import {
   Camera,
   Layers,
   Users,
+  Edit3,
+  Trash2,
+  FolderPlus,
+  AlertCircle,
+  Filter,
+  Check,
+  ChevronRight,
+  ArrowRight,
 } from "lucide-react";
 import ImageFramingModal from "../components/common/ImageFramingModal";
 import PersonasHubTab from "../components/profile/PersonasHubTab";
 import bookService from "../services/bookService/bookService";
+import studioService from "../services/studioService/studioService";
 
 export default function AuthorStudioPage() {
   const activePersona = useSelector((state) => state.auth?.activePersona);
@@ -31,24 +40,31 @@ export default function AuthorStudioPage() {
   const [activeTab, setActiveTab] = useState(initialTab); // desk | editor | customization | analytics
   const [toastMsg, setToastMsg] = useState("");
 
-  useEffect(() => {
-    const tabParam = searchParams.get("tab");
-    if (tabParam && ["desk", "editor", "customization", "analytics"].includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [searchParams]);
+  const [serials, setSerials] = useState([]);
+  const [loadingSerials, setLoadingSerials] = useState(true);
 
-  const alertToast = (msg) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(""), 2400);
-  };
+  // Chapters & Volumes Management State
+  const [selectedBookId, setSelectedBookId] = useState("");
+  const [bookChapters, setBookChapters] = useState([]);
+  const [volumes, setVolumes] = useState([]);
+  const [loadingChapters, setLoadingChapters] = useState(false);
+  const [chapterFilter, setChapterFilter] = useState("all"); // 'all' | 'draft' | 'scheduled' | 'published'
 
-  const [draftTitle, setDraftTitle] = useState("Chapter 43: The Pill Tribulation Cloud");
-  const [draftContent, setDraftContent] = useState(
-    "Deep inside the alchemist chamber, the medicinal pill hummed with violent azure energy. Xiao Yan wiped the perspiration from his brow, his soul perception extended outward like invisible silk threads..."
-  );
+  // Editor states
+  const [editingChapterId, setEditingChapterId] = useState(null);
+  const [draftChapterNum, setDraftChapterNum] = useState(1);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftContent, setDraftContent] = useState("");
+  const [selectedVolumeId, setSelectedVolumeId] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [savedStatus, setSavedStatus] = useState("All changes saved");
+  const [savedStatus, setSavedStatus] = useState("Ready");
+
+  // Volume Modal State
+  const [isVolumeModalOpen, setIsVolumeModalOpen] = useState(false);
+  const [volumeTitle, setVolumeTitle] = useState("");
+  const [volumeDescription, setVolumeDescription] = useState("");
+  const [creatingVolume, setCreatingVolume] = useState(false);
 
   // New Novel Modal State
   const [isNewBookModalOpen, setIsNewBookModalOpen] = useState(false);
@@ -67,15 +83,247 @@ export default function AuthorStudioPage() {
   const [isCoverFramingOpen, setIsCoverFramingOpen] = useState(false);
   const [framingSrc, setFramingSrc] = useState(null);
 
+  const alertToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(""), 2800);
+  };
+
+  const fetchSerials = async () => {
+    try {
+      setLoadingSerials(true);
+      const data = await studioService.getMySerials();
+      const list = Array.isArray(data) ? data : [];
+      setSerials(list);
+      if (list.length > 0 && !selectedBookId) {
+        setSelectedBookId(list[0].id);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch author serials:", err);
+    } finally {
+      setLoadingSerials(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSerials();
+  }, [activePersona?.id]);
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["desk", "editor", "customization", "analytics"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  // Fetch chapters & volumes whenever selected book changes
+  const fetchChaptersAndVolumes = async (bookId) => {
+    if (!bookId) return;
+    try {
+      setLoadingChapters(true);
+      const [chaptersData, volumesData] = await Promise.all([
+        studioService.getBookChapters(bookId),
+        studioService.getVolumes(bookId),
+      ]);
+      setBookChapters(Array.isArray(chaptersData) ? chaptersData : []);
+      setVolumes(Array.isArray(volumesData) ? volumesData : []);
+    } catch (err) {
+      console.warn("Failed to fetch book chapters or volumes:", err);
+    } finally {
+      setLoadingChapters(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedBookId) {
+      fetchChaptersAndVolumes(selectedBookId);
+    }
+  }, [selectedBookId]);
+
+  // Auto-calculate next consecutive chapter number when starting fresh draft
+  const maxExistingChapterNum = bookChapters.reduce(
+    (max, ch) => Math.max(max, Number(ch.chapter_number) || 0),
+    0
+  );
+  const nextConsecutiveChapter = maxExistingChapterNum + 1;
+
+  // Maximum existing volume number
+  const maxExistingVolumeNum = volumes.reduce(
+    (max, v) => Math.max(max, Number(v.volume_number) || 0),
+    0
+  );
+  const nextConsecutiveVolume = maxExistingVolumeNum + 1;
+
+  // Update default chapter number if not editing
+  useEffect(() => {
+    if (!editingChapterId) {
+      setDraftChapterNum(nextConsecutiveChapter);
+    }
+  }, [bookChapters, editingChapterId]);
+
   const wordCount = draftContent.trim().split(/\s+/).filter(Boolean).length;
 
-  const handleSave = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      setSavedStatus("Saved to cloud 10:45 PM");
-    }, 600);
+  // Reset editor to new draft
+  const handleResetToNewDraft = () => {
+    setEditingChapterId(null);
+    setDraftChapterNum(nextConsecutiveChapter);
+    setDraftTitle("");
+    setDraftContent("");
+    setSelectedVolumeId(volumes[0]?.id || "");
+    setScheduledAt("");
+    setSavedStatus("New Chapter Ready");
   };
+
+  // Populate editor with existing chapter
+  const handleEditChapter = (chapter) => {
+    setEditingChapterId(chapter.id);
+    setSelectedBookId(chapter.book_id || selectedBookId);
+    setDraftChapterNum(chapter.chapter_number);
+    setDraftTitle(chapter.title || "");
+    setDraftContent(chapter.content || "");
+    setSelectedVolumeId(chapter.volume_id || "");
+
+    if (chapter.status === "scheduled" && chapter.scheduled_at) {
+      const dt = new Date(chapter.scheduled_at);
+      const localIso = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+      setScheduledAt(localIso);
+    } else {
+      setScheduledAt("");
+    }
+
+    setSavedStatus(`Editing Chapter ${chapter.chapter_number}`);
+    setActiveTab("editor");
+    setSearchParams({ tab: "editor" });
+  };
+
+  // Delete chapter with confirmation
+  const handleDeleteChapter = async (id, title) => {
+    if (!window.confirm(`Are you sure you want to delete chapter "${title || id}"?`)) {
+      return;
+    }
+    try {
+      await studioService.deleteChapter(id);
+      alertToast("Chapter deleted successfully");
+      if (editingChapterId === id) {
+        handleResetToNewDraft();
+      }
+      fetchChaptersAndVolumes(selectedBookId);
+      fetchSerials();
+    } catch (err) {
+      alertToast(err.message || "Failed to delete chapter");
+    }
+  };
+
+  // Save / Publish / Schedule handler
+  const handleSaveChapter = async (targetStatus) => {
+    if (!selectedBookId) {
+      alertToast("Please select a target novel work!");
+      return;
+    }
+    if (!draftTitle.trim()) {
+      alertToast("Chapter title is required.");
+      return;
+    }
+    if (!draftContent.trim()) {
+      alertToast("Chapter content cannot be empty.");
+      return;
+    }
+
+    if (targetStatus === "scheduled") {
+      if (!scheduledAt) {
+        alertToast("Please choose a scheduled release date and time.");
+        return;
+      }
+      const schedTime = new Date(scheduledAt).getTime();
+      if (schedTime <= Date.now()) {
+        alertToast("Scheduled time must be in the future.");
+        return;
+      }
+    }
+
+    try {
+      setIsSaving(true);
+      const payload = {
+        book_id: Number(selectedBookId),
+        volume_id: selectedVolumeId ? Number(selectedVolumeId) : null,
+        chapter_number: Number(draftChapterNum),
+        title: draftTitle.trim(),
+        content: draftContent.trim(),
+        status: targetStatus,
+        scheduled_at: targetStatus === "scheduled" ? new Date(scheduledAt).toISOString() : null,
+      };
+
+      if (editingChapterId) {
+        await studioService.updateChapter(editingChapterId, payload);
+        alertToast(
+          targetStatus === "published"
+            ? "Chapter published live!"
+            : targetStatus === "scheduled"
+            ? "Chapter schedule updated!"
+            : "Draft updated successfully!"
+        );
+        setSavedStatus(`Updated Chapter ${draftChapterNum}`);
+      } else {
+        await studioService.createChapter(payload);
+        alertToast(
+          targetStatus === "published"
+            ? "Chapter published live!"
+            : targetStatus === "scheduled"
+            ? `Chapter scheduled for ${new Date(scheduledAt).toLocaleString()}`
+            : "Draft saved to studio!"
+        );
+        setSavedStatus(targetStatus === "published" ? "Published" : "Draft saved");
+        handleResetToNewDraft();
+      }
+
+      fetchChaptersAndVolumes(selectedBookId);
+      fetchSerials();
+    } catch (err) {
+      alertToast(err.message || "Failed to save chapter");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Create Volume Submit
+  const handleCreateVolume = async (e) => {
+    e.preventDefault();
+    if (!selectedBookId) {
+      alertToast("Please select a novel first.");
+      return;
+    }
+    if (!volumeTitle.trim()) {
+      alertToast("Volume title is required.");
+      return;
+    }
+
+    try {
+      setCreatingVolume(true);
+      await studioService.createVolume({
+        book_id: Number(selectedBookId),
+        volume_number: nextConsecutiveVolume,
+        title: volumeTitle.trim(),
+        description: volumeDescription.trim() || null,
+      });
+
+      alertToast(`Volume ${nextConsecutiveVolume}: "${volumeTitle}" created!`);
+      setIsVolumeModalOpen(false);
+      setVolumeTitle("");
+      setVolumeDescription("");
+      fetchChaptersAndVolumes(selectedBookId);
+    } catch (err) {
+      alertToast(err.message || "Failed to create volume");
+    } finally {
+      setCreatingVolume(false);
+    }
+  };
+
+  // Filtered chapters list for display
+  const filteredChapters = bookChapters.filter((ch) => {
+    if (chapterFilter === "all") return true;
+    return ch.status === chapterFilter;
+  });
 
   const handlePickCoverFile = () => {
     const input = document.createElement("input");
@@ -118,7 +366,7 @@ export default function AuthorStudioPage() {
     setNewBookError("");
 
     if (!activePersona?.id) {
-      setNewBookError("Active pen name required. Switch persona or create one in profile.");
+      setNewBookError("Active pen name required. Switch persona or create one in Author Studio.");
       return;
     }
 
@@ -129,7 +377,7 @@ export default function AuthorStudioPage() {
 
     setNewBookLoading(true);
     try {
-      await bookService.createBook({
+      const created = await bookService.createBook({
         title: newBookData.title.trim(),
         slug: newBookData.slug.trim(),
         description: newBookData.description.trim(),
@@ -139,7 +387,11 @@ export default function AuthorStudioPage() {
         tags: [newBookData.genre],
       });
       setIsNewBookModalOpen(false);
-      alert(`Novel "${newBookData.title}" published successfully!`);
+      alertToast(`Novel "${newBookData.title}" initialized with 0 chapters!`);
+      if (created?.id) {
+        setSelectedBookId(created.id);
+      }
+      fetchSerials();
     } catch (err) {
       console.error(err);
       setNewBookError(err.message || "Failed to publish novel.");
@@ -147,6 +399,12 @@ export default function AuthorStudioPage() {
       setNewBookLoading(false);
     }
   };
+
+  // Rollup metrics
+  const totalWordsSum = serials.reduce((acc, s) => acc + (parseInt(s.total_words, 10) || 0), 0);
+  const totalStonesSum = serials.reduce((acc, s) => acc + (parseInt(s.power_stones_count, 10) || 0), 0);
+
+  const selectedNovelObj = serials.find((s) => s.id === Number(selectedBookId)) || serials[0];
 
   return (
     <div className="w-full min-h-screen bg-page text-text-main transition-colors pb-16">
@@ -157,7 +415,7 @@ export default function AuthorStudioPage() {
         </div>
       )}
 
-      {/* Full-Width Expansive Container (Matching Home Page) */}
+      {/* Full-Width Expansive Container */}
       <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 pt-6 flex flex-col gap-6">
         {/* Author Desk Header */}
         <div className="bg-card border border-border-subtle/50 rounded-2xl p-6 sm:p-7 relative overflow-hidden shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -174,7 +432,7 @@ export default function AuthorStudioPage() {
             </h1>
 
             <p className="text-xs sm:text-sm text-text-muted">
-              Serialize your works, schedule upcoming chapter releases, and analyze reader engagement.
+              Serialize your works, manage chapter drafts and scheduled releases, and structure consecutive story arcs.
             </p>
           </div>
 
@@ -188,11 +446,15 @@ export default function AuthorStudioPage() {
             </button>
 
             <button
-              onClick={() => setActiveTab("editor")}
+              onClick={() => {
+                handleResetToNewDraft();
+                setActiveTab("editor");
+                setSearchParams({ tab: "editor" });
+              }}
               className="px-4 py-2.5 rounded-xl bg-tag hover:bg-card border border-border-subtle text-text-main text-xs font-semibold shadow-xs flex items-center gap-2 transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>New Chapter Draft</span>
+              <span>Compose Chapter</span>
             </button>
           </div>
         </div>
@@ -200,10 +462,26 @@ export default function AuthorStudioPage() {
         {/* Metrics Row */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           {[
-            { label: "Active Serials", val: "2 Novels", sub: "1 Completed, 1 Ongoing" },
-            { label: "Total Manuscript Words", val: "840,200", sub: "+12,400 this week" },
-            { label: "Power Stones Received", val: "14,820", sub: "#4 Weekly Ranking" },
-            { label: "Reader Retention", val: "84.2%", sub: "Top 5% on Deckle" },
+            {
+              label: "Active Serials",
+              val: `${serials.length} Novels`,
+              sub: `${serials.filter((s) => s.status === "ongoing").length} Ongoing`,
+            },
+            {
+              label: "Total Manuscript Words",
+              val: totalWordsSum ? `${(totalWordsSum / 1000).toFixed(0)}k` : "0 Words",
+              sub: "All serials combined",
+            },
+            {
+              label: "Power Stones Received",
+              val: totalStonesSum.toLocaleString(),
+              sub: "Community voting",
+            },
+            {
+              label: "Active Pen Name",
+              val: activePersona ? `@${activePersona.handle}` : "No Persona",
+              sub: activePersona?.display_name || "Select in studio",
+            },
           ].map((m, i) => (
             <div
               key={i}
@@ -246,92 +524,423 @@ export default function AuthorStudioPage() {
           })}
         </div>
 
-        {/* Tab 1: Serials & Drafts */}
+        {/* ================= TAB 1: SERIALS & DRAFTS REPOSITORY ================= */}
         {activeTab === "desk" && (
-          <div className="flex flex-col gap-4 animate-fadeIn">
-            {[
-              {
-                title: "Battle Through the Heavens",
-                chaptersCount: 1663,
-                wordsCount: "4.8M words",
-                status: "Completed",
-                views: "1.9M views",
-                lastUpdate: "Yesterday",
-              },
-              {
-                title: "Path of the Celestial Forge",
-                chaptersCount: 42,
-                wordsCount: "128k words",
-                status: "Ongoing",
-                views: "48.2k views",
-                lastUpdate: "3 hours ago",
-              },
-            ].map((novel, idx) => (
-              <div
-                key={idx}
-                className="bg-card/75 border border-border-subtle/50 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs"
-              >
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-serif text-lg font-semibold text-text-main">{novel.title}</h3>
-                    <span className="px-2 py-0.5 rounded-full bg-tag text-text-muted text-[11px] font-semibold">
-                      {novel.status}
-                    </span>
+          <div className="flex flex-col gap-6 animate-fadeIn">
+            {/* 1. Serials Overview Cards */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-serif text-lg font-bold text-text-main flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-accent" />
+                  <span>My Serial Works</span>
+                </h3>
+                <span className="text-xs text-text-muted">
+                  Click a serial below to view all chapters, drafts &amp; scheduled releases.
+                </span>
+              </div>
+
+              {loadingSerials ? (
+                <div className="py-12 text-center text-xs text-text-muted bg-card rounded-2xl border border-border-subtle/40">
+                  Loading author serials...
+                </div>
+              ) : serials.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {serials.map((novel) => {
+                    const isSelected = Number(selectedBookId) === novel.id;
+                    return (
+                      <div
+                        key={novel.id}
+                        onClick={() => setSelectedBookId(novel.id)}
+                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex gap-3.5 items-center ${
+                          isSelected
+                            ? "bg-card border-accent shadow-sm ring-1 ring-accent/30"
+                            : "bg-card/75 hover:bg-card border-border-subtle/50"
+                        }`}
+                      >
+                        <img
+                          src={novel.cover_image}
+                          alt={novel.title}
+                          className="w-12 h-16 rounded-lg object-cover border border-border-subtle/40 shrink-0"
+                        />
+                        <div className="flex flex-col gap-1 min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <h4 className="font-serif text-sm font-bold text-text-main truncate">
+                              {novel.title}
+                            </h4>
+                            <span className="px-2 py-0.5 rounded-full bg-tag text-text-muted text-[10px] font-semibold shrink-0 capitalize">
+                              {novel.status}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-text-muted truncate">
+                            {novel.published_chapters_count || 0} Published • {novel.draft_chapters_count || 0} Drafts
+                          </p>
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[10px] text-accent font-semibold">
+                              {novel.total_words ? `${(novel.total_words / 1000).toFixed(0)}k words` : "0 words"}
+                            </span>
+                            <Link
+                              to={`/book/${novel.slug}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[10px] text-text-muted hover:text-accent font-medium transition-colors"
+                            >
+                              Public View →
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-14 text-center text-xs text-text-muted bg-card rounded-2xl border border-border-subtle/40 space-y-3">
+                  <BookOpen className="w-8 h-8 text-text-muted mx-auto" />
+                  <p>You have not launched any serialized works under this pen name yet.</p>
+                  <button
+                    onClick={() => setIsNewBookModalOpen(true)}
+                    className="px-4 py-2 rounded-xl bg-accent text-accent-text font-semibold cursor-pointer"
+                  >
+                    Publish First Serial
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Chapters & Drafts Manager for Selected Serial */}
+            {selectedBookId && (
+              <div className="bg-card border border-border-subtle/50 rounded-2xl p-6 shadow-xs flex flex-col gap-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border-subtle/30">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-5 h-5 text-accent" />
+                      <h3 className="font-serif text-xl font-bold text-text-main">
+                        Chapters &amp; Drafts: {selectedNovelObj?.title || "Serial"}
+                      </h3>
+                    </div>
+                    <p className="text-xs text-text-muted">
+                      Manage published chapters, review unpublished drafts, and schedule release timestamps.
+                    </p>
                   </div>
-                  <p className="text-xs text-text-muted">
-                    {novel.chaptersCount} Chapters • {novel.wordsCount} • {novel.views} • Updated {novel.lastUpdate}
-                  </p>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => setIsVolumeModalOpen(true)}
+                      className="px-3.5 py-2 rounded-xl bg-tag hover:bg-card border border-border-subtle text-text-main text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <FolderPlus className="w-4 h-4 text-accent" />
+                      <span>Create Arc / Volume ({volumes.length})</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        handleResetToNewDraft();
+                        setActiveTab("editor");
+                        setSearchParams({ tab: "editor" });
+                      }}
+                      className="px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-accent-text text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Draft Chapter #{nextConsecutiveChapter}</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setActiveTab("editor")}
-                    className="px-3 py-1.5 rounded-lg bg-tag hover:bg-card border border-border-subtle/50 text-xs font-medium text-text-main transition-colors cursor-pointer"
-                  >
-                    Draft Chapter
-                  </button>
-                  <Link
-                    to={`/book/battle-through-the-heavens`}
-                    className="px-3 py-1.5 rounded-lg bg-accent text-accent-text text-xs font-semibold hover:bg-accent-hover transition-colors shadow-2xs"
-                  >
-                    Public View
-                  </Link>
+                {/* Filter Pills */}
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                    {[
+                      { id: "all", label: `All Chapters (${bookChapters.length})` },
+                      {
+                        id: "draft",
+                        label: `Drafts (${bookChapters.filter((c) => c.status === "draft").length})`,
+                      },
+                      {
+                        id: "scheduled",
+                        label: `Scheduled (${bookChapters.filter((c) => c.status === "scheduled").length})`,
+                      },
+                      {
+                        id: "published",
+                        label: `Published (${bookChapters.filter((c) => c.status === "published").length})`,
+                      },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setChapterFilter(tab.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer border ${
+                          chapterFilter === tab.id
+                            ? "bg-accent text-accent-text border-accent shadow-2xs"
+                            : "bg-tag hover:bg-page text-text-muted border-border-subtle"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <span className="text-xs text-text-muted">
+                    Next consecutive chapter: <strong className="text-accent">#{nextConsecutiveChapter}</strong>
+                  </span>
                 </div>
+
+                {/* Chapters List Table */}
+                {loadingChapters ? (
+                  <div className="py-12 text-center text-xs text-text-muted">
+                    Loading chapters and drafts...
+                  </div>
+                ) : filteredChapters.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-border-subtle/50 text-text-muted">
+                          <th className="py-2.5 px-3 font-semibold">Ch. #</th>
+                          <th className="py-2.5 px-3 font-semibold">Title</th>
+                          <th className="py-2.5 px-3 font-semibold">Volume / Arc</th>
+                          <th className="py-2.5 px-3 font-semibold">Words</th>
+                          <th className="py-2.5 px-3 font-semibold">Status</th>
+                          <th className="py-2.5 px-3 font-semibold">Timeline</th>
+                          <th className="py-2.5 px-3 font-semibold text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border-subtle/30">
+                        {filteredChapters.map((ch) => {
+                          const isDraft = ch.status === "draft";
+                          const isScheduled = ch.status === "scheduled";
+                          const isPublished = ch.status === "published";
+
+                          return (
+                            <tr key={ch.id} className="hover:bg-tag/30 transition-colors">
+                              <td className="py-3 px-3 font-bold text-accent">
+                                #{ch.chapter_number}
+                              </td>
+                              <td className="py-3 px-3 font-medium text-text-main max-w-[200px] truncate">
+                                {ch.title}
+                              </td>
+                              <td className="py-3 px-3 text-text-muted">
+                                {ch.volume_number
+                                  ? `Vol. ${ch.volume_number}: ${ch.volume_title || "Arc"}`
+                                  : "Standalone"}
+                              </td>
+                              <td className="py-3 px-3 text-text-muted">
+                                {ch.words_count ? ch.words_count.toLocaleString() : "0"}
+                              </td>
+                              <td className="py-3 px-3">
+                                {isDraft && (
+                                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 font-semibold text-[11px] border border-amber-500/30">
+                                    Draft
+                                  </span>
+                                )}
+                                {isScheduled && (
+                                  <span className="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-500 font-semibold text-[11px] border border-sky-500/30 flex items-center gap-1 w-fit">
+                                    <Clock className="w-3 h-3" />
+                                    <span>Scheduled</span>
+                                  </span>
+                                )}
+                                {isPublished && (
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-semibold text-[11px] border border-emerald-500/30">
+                                    Published
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-text-muted">
+                                {isScheduled && ch.scheduled_at
+                                  ? `Releases ${new Date(ch.scheduled_at).toLocaleString([], {
+                                      dateStyle: "short",
+                                      timeStyle: "short",
+                                    })}`
+                                  : isPublished && ch.published_at
+                                  ? new Date(ch.published_at).toLocaleDateString()
+                                  : "Unpublished"}
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => handleEditChapter(ch)}
+                                    className="p-1.5 rounded-lg bg-tag hover:bg-card border border-border-subtle/50 text-text-main hover:text-accent transition-colors cursor-pointer"
+                                    title="Edit Chapter"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteChapter(ch.id, ch.title)}
+                                    className="p-1.5 rounded-lg bg-tag hover:bg-red-500/10 border border-border-subtle/50 text-text-muted hover:text-red-500 transition-colors cursor-pointer"
+                                    title="Delete Chapter"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  {isPublished && selectedNovelObj?.slug && (
+                                    <Link
+                                      to={`/book/${selectedNovelObj.slug}/chapter/${ch.chapter_number}`}
+                                      className="p-1.5 rounded-lg bg-tag hover:bg-card border border-border-subtle/50 text-text-muted hover:text-text-main transition-colors"
+                                      title="Read Published"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                    </Link>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="py-12 text-center text-xs text-text-muted space-y-1">
+                    <p className="font-semibold text-text-main text-sm">No chapters found</p>
+                    <p>
+                      {chapterFilter === "all"
+                        ? "Start drafting your first chapter using the composer."
+                        : `No chapters matching the "${chapterFilter}" filter.`}
+                    </p>
+                  </div>
+                )}
               </div>
-            ))}
+            )}
           </div>
         )}
 
-        {/* Tab 2: Manuscript Editor Canvas */}
+        {/* ================= TAB 2: MANUSCRIPT EDITOR CANVAS ================= */}
         {activeTab === "editor" && (
           <div className="bg-card border border-border-subtle/50 rounded-2xl p-6 shadow-xs flex flex-col gap-4 animate-fadeIn">
-            {/* Editor Toolbar */}
+            {/* Editor Action Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border-subtle/30">
               <div className="flex items-center gap-3">
                 <span className="text-xs font-semibold text-accent flex items-center gap-1.5">
                   <CheckCircle className="w-4 h-4 text-accent" /> {savedStatus}
                 </span>
-                <span className="text-xs text-text-muted">Words: <strong className="text-text-main">{wordCount}</strong></span>
+                <span className="text-xs text-text-muted">
+                  Words: <strong className="text-text-main">{wordCount}</strong>
+                </span>
+                {editingChapterId && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[11px] font-semibold border border-amber-500/30">
+                    Editing Mode
+                  </span>
+                )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {editingChapterId && (
+                  <button
+                    onClick={handleResetToNewDraft}
+                    className="px-3 py-1.5 rounded-xl bg-tag hover:bg-card border border-border-subtle text-text-muted hover:text-text-main text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    Cancel Editing
+                  </button>
+                )}
+
                 <button
-                  onClick={handleSave}
+                  onClick={() => handleSaveChapter("draft")}
                   disabled={isSaving}
                   className="px-3.5 py-1.5 rounded-xl bg-tag hover:bg-card border border-border-subtle/50 text-text-main text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Save className="w-3.5 h-3.5 text-accent" />
-                  <span>{isSaving ? "Saving..." : "Save Draft"}</span>
+                  <span>{isSaving ? "Saving..." : editingChapterId ? "Update Draft" : "Save Draft"}</span>
                 </button>
 
                 <button
-                  onClick={() => alert("Chapter scheduled for publication!")}
+                  onClick={() => handleSaveChapter("scheduled")}
+                  disabled={isSaving}
+                  className="px-3.5 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-600 dark:text-sky-400 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Schedule Release</span>
+                </button>
+
+                <button
+                  onClick={() => handleSaveChapter("published")}
+                  disabled={isSaving}
                   className="px-4 py-1.5 rounded-xl bg-accent hover:bg-accent-hover text-accent-text text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
                 >
                   <Calendar className="w-3.5 h-3.5" />
-                  <span>Publish Release</span>
+                  <span>{editingChapterId ? "Save & Publish" : "Publish Now"}</span>
                 </button>
               </div>
+            </div>
+
+            {/* Novel, Volume, and Chapter Sequence Configuration */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Novel Selector */}
+              <div>
+                <label className="block text-xs font-semibold text-text-muted mb-1">
+                  Target Serial Work
+                </label>
+                <select
+                  value={selectedBookId}
+                  onChange={(e) => setSelectedBookId(e.target.value)}
+                  className="w-full h-10 px-3 bg-tag border border-border-subtle/50 rounded-xl text-xs text-text-main focus:outline-none focus:border-accent"
+                >
+                  {serials.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Story Volume (Arc) Selector */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-text-muted">Story Arc / Volume</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsVolumeModalOpen(true)}
+                    className="text-[11px] text-accent font-semibold hover:underline cursor-pointer"
+                  >
+                    + New Arc
+                  </button>
+                </div>
+                <select
+                  value={selectedVolumeId}
+                  onChange={(e) => setSelectedVolumeId(e.target.value)}
+                  className="w-full h-10 px-3 bg-tag border border-border-subtle/50 rounded-xl text-xs text-text-main focus:outline-none focus:border-accent"
+                >
+                  <option value="">No Volume / Standalone</option>
+                  {volumes.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      Vol. {v.volume_number}: {v.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Consecutive Chapter Number */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-text-muted">
+                    Chapter Number (Consecutive)
+                  </label>
+                  <span className="text-[11px] text-text-muted">Next: #{nextConsecutiveChapter}</span>
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  value={draftChapterNum}
+                  onChange={(e) => setDraftChapterNum(parseInt(e.target.value, 10) || 1)}
+                  className="w-full h-10 px-3 bg-tag border border-border-subtle/50 rounded-xl text-xs text-text-main focus:outline-none focus:border-accent"
+                />
+              </div>
+            </div>
+
+            {/* Scheduled Date/Time Option */}
+            <div className="p-3.5 rounded-xl bg-tag/40 border border-border-subtle/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-accent" />
+                <div>
+                  <span className="text-xs font-bold text-text-main block">
+                    Scheduled Publication (Optional)
+                  </span>
+                  <span className="text-[11px] text-text-muted">
+                    Pick a future date &amp; time. Deckle will automatically unlock this chapter to readers.
+                  </span>
+                </div>
+              </div>
+
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="h-9 px-3 bg-card border border-border-subtle rounded-lg text-xs text-text-main focus:outline-none focus:border-accent"
+              />
             </div>
 
             {/* Chapter Title Input */}
@@ -339,7 +948,7 @@ export default function AuthorStudioPage() {
               type="text"
               value={draftTitle}
               onChange={(e) => setDraftTitle(e.target.value)}
-              placeholder="Chapter Title..."
+              placeholder="Chapter Title (e.g. Whispers of the Azure Lotus)..."
               className="w-full text-xl sm:text-2xl font-serif font-bold text-text-main bg-transparent focus:outline-none border-b border-border-subtle/30 pb-2"
             />
 
@@ -347,9 +956,9 @@ export default function AuthorStudioPage() {
             <textarea
               value={draftContent}
               onChange={(e) => setDraftContent(e.target.value)}
-              rows={12}
-              placeholder="Begin typing your chapter..."
-              className="w-full bg-tag/40 border border-border-subtle/30 rounded-xl p-4 font-serif text-base text-text-main leading-relaxed focus:outline-none focus:border-accent transition-colors"
+              rows={14}
+              placeholder="Begin composing your chapter manuscript..."
+              className="w-full bg-tag/40 border border-border-subtle/30 rounded-xl p-4 font-serif text-base text-text-main leading-relaxed focus:outline-none focus:border-accent transition-colors resize-y"
             />
           </div>
         )}
@@ -366,18 +975,108 @@ export default function AuthorStudioPage() {
               Reader Progression &amp; Retention Funnel
             </h3>
             <p className="text-xs text-text-muted">
-              Chapter-by-chapter reader drop-off analysis and peak reading hours.
+              Live serial reading telemetry and weekly reader retention metrics across your published works.
             </p>
-            <div className="h-48 w-full bg-tag/50 rounded-xl flex items-center justify-center text-xs text-text-muted border border-border-subtle/40">
-              Interactive 30-Day Retention Curve Chart
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div className="p-4 rounded-xl bg-tag/50 border border-border-subtle/40">
+                <span className="text-xs text-text-muted block">Total Reader Impressions</span>
+                <span className="font-serif text-2xl font-bold text-accent">
+                  {serials.reduce((acc, s) => acc + (s.views_count || 0), 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="p-4 rounded-xl bg-tag/50 border border-border-subtle/40">
+                <span className="text-xs text-text-muted block">Total Stones Voted</span>
+                <span className="font-serif text-2xl font-bold text-accent">
+                  {totalStonesSum.toLocaleString()}
+                </span>
+              </div>
+              <div className="p-4 rounded-xl bg-tag/50 border border-border-subtle/40">
+                <span className="text-xs text-text-muted block">Completion Rate</span>
+                <span className="font-serif text-2xl font-bold text-accent">84.2%</span>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* ============================================================== */}
-      {/* LAUNCH NEW SERIAL MODAL (WITH NOVEL COVER FRAMING)              */}
-      {/* ============================================================== */}
+      {/* ================= MODAL: CREATE STORY ARC / VOLUME ================= */}
+      {isVolumeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-md bg-card border border-border-subtle rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-border-subtle/50 bg-tag/40">
+              <div className="flex items-center gap-2">
+                <FolderPlus className="w-5 h-5 text-accent" />
+                <h3 className="font-serif text-lg font-bold text-text-main">
+                  Create Story Arc / Volume
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsVolumeModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-tag text-text-muted hover:text-text-main transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateVolume} className="p-6 space-y-4 text-xs">
+              <div className="p-3 bg-tag/60 border border-border-subtle rounded-xl space-y-1">
+                <span className="font-bold text-accent block">
+                  Consecutive Sequencing: Volume {nextConsecutiveVolume}
+                </span>
+                <p className="text-[11px] text-text-muted">
+                  Story arcs follow consecutive volume numbers to preserve chronological canon. Current maximum is Volume {maxExistingVolumeNum}.
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-text-muted uppercase tracking-wider mb-1">
+                  Volume / Arc Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={volumeTitle}
+                  onChange={(e) => setVolumeTitle(e.target.value)}
+                  placeholder="e.g. The Desolate Mountain Awakening"
+                  className="w-full h-10 px-3.5 bg-tag border border-border-subtle rounded-xl text-text-main focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-text-muted uppercase tracking-wider mb-1">
+                  Arc Synopsis (Optional)
+                </label>
+                <textarea
+                  rows={3}
+                  value={volumeDescription}
+                  onChange={(e) => setVolumeDescription(e.target.value)}
+                  placeholder="Summary of this narrative milestone or story arc..."
+                  className="w-full p-3 bg-tag border border-border-subtle rounded-xl text-text-main focus:outline-none focus:border-accent resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border-subtle/50">
+                <button
+                  type="button"
+                  onClick={() => setIsVolumeModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-tag text-text-muted hover:text-text-main font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingVolume}
+                  className="px-5 py-2 rounded-xl bg-accent text-accent-text font-semibold hover:bg-accent-hover transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {creatingVolume ? "Creating..." : `Create Volume ${nextConsecutiveVolume}`}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: LAUNCH NEW SERIAL ================= */}
       {isNewBookModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fadeIn">
           <div className="relative w-full max-w-xl bg-card border border-border-subtle rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -433,78 +1132,93 @@ export default function AuthorStudioPage() {
                 </div>
               </div>
 
-              {/* Title */}
               <div>
-                <label className="block font-semibold text-text-main mb-1">Title</label>
+                <label className="block font-semibold text-text-muted uppercase tracking-wider mb-1">
+                  Serial Novel Title
+                </label>
                 <input
                   type="text"
-                  placeholder="e.g. The Way of the Sunken Citadel"
+                  required
                   value={newBookData.title}
                   onChange={handleTitleChange}
-                  className="w-full px-3.5 py-2.5 bg-tag/60 border border-border-subtle/50 rounded-xl text-text-main font-medium focus:outline-none focus:border-accent text-xs"
-                  required
+                  placeholder="e.g. Battle Through the Heavens"
+                  className="w-full h-10 px-3.5 bg-tag border border-border-subtle rounded-xl text-text-main focus:outline-none focus:border-accent"
                 />
               </div>
 
-              {/* Slug */}
               <div>
-                <label className="block font-semibold text-text-main mb-1">Novel URL Slug</label>
+                <label className="block font-semibold text-text-muted uppercase tracking-wider mb-1">
+                  Unique Slug (URL Identifier)
+                </label>
                 <input
                   type="text"
-                  placeholder="way-of-the-sunken-citadel"
-                  value={newBookData.slug}
-                  onChange={(e) => setNewBookData({ ...newBookData, slug: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-tag/60 border border-border-subtle/50 rounded-xl text-text-main font-mono text-xs focus:outline-none focus:border-accent"
                   required
+                  value={newBookData.slug}
+                  onChange={(e) =>
+                    setNewBookData((prev) => ({
+                      ...prev,
+                      slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-"),
+                    }))
+                  }
+                  placeholder="e.g. battle-through-the-heavens"
+                  className="w-full h-10 px-3.5 bg-tag border border-border-subtle rounded-xl text-text-main font-mono focus:outline-none focus:border-accent"
                 />
               </div>
 
-              {/* Subgenre */}
               <div>
-                <label className="block font-semibold text-text-main mb-1">Primary Subgenre</label>
+                <label className="block font-semibold text-text-muted uppercase tracking-wider mb-1">
+                  Genre Taxonomy
+                </label>
                 <select
                   value={newBookData.genre}
-                  onChange={(e) => setNewBookData({ ...newBookData, genre: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-tag/60 border border-border-subtle/50 rounded-xl text-text-main font-medium focus:outline-none focus:border-accent text-xs"
+                  onChange={(e) =>
+                    setNewBookData((prev) => ({ ...prev, genre: e.target.value }))
+                  }
+                  className="w-full h-10 px-3 bg-tag border border-border-subtle rounded-xl text-text-main focus:outline-none focus:border-accent"
                 >
                   <option value="Epic Fantasy">Epic Fantasy</option>
-                  <option value="Progression Fantasy">Progression Fantasy</option>
-                  <option value="LitRPG">LitRPG &amp; GameLit</option>
+                  <option value="Progression">Progression</option>
+                  <option value="LitRPG">LitRPG</option>
+                  <option value="Cultivation">Cultivation / Xianxia</option>
                   <option value="Urban Fantasy">Urban Fantasy</option>
                   <option value="Sci-Fi">Sci-Fi</option>
-                  <option value="Cyberpunk">Cyberpunk</option>
                   <option value="Dark Fantasy">Dark Fantasy</option>
-                  <option value="Romantasy">Romantasy</option>
+                  <option value="Mystery">Mystery</option>
                 </select>
               </div>
 
-              {/* Description */}
               <div>
-                <label className="block font-semibold text-text-main mb-1">Synopsis</label>
+                <label className="block font-semibold text-text-muted uppercase tracking-wider mb-1">
+                  Synopsis / Editorial Blurb
+                </label>
                 <textarea
                   rows={3}
-                  placeholder="Hook readers with your novel premise..."
                   value={newBookData.description}
-                  onChange={(e) => setNewBookData({ ...newBookData, description: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-tag/60 border border-border-subtle/50 rounded-xl text-text-main font-medium focus:outline-none focus:border-accent text-xs resize-none"
+                  onChange={(e) =>
+                    setNewBookData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="Craft an enticing pitch to hook readers across chapter 1..."
+                  className="w-full p-3 bg-tag border border-border-subtle rounded-xl text-text-main focus:outline-none focus:border-accent resize-none"
                 />
               </div>
 
-              {/* Modal Buttons */}
-              <div className="pt-3 border-t border-border-subtle/40 flex items-center justify-end gap-2.5">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border-subtle/50">
                 <button
                   type="button"
                   onClick={() => setIsNewBookModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-text-muted hover:text-text-main hover:bg-tag transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-tag text-text-muted hover:text-text-main font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={newBookLoading}
-                  className="px-5 py-2 rounded-xl bg-accent hover:bg-accent-hover text-accent-text font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-accent text-accent-text font-semibold hover:bg-accent-hover transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  {newBookLoading ? "Launching..." : "Publish to Catalog"}
+                  {newBookLoading ? "Publishing..." : "Launch Serial"}
                 </button>
               </div>
             </form>
@@ -512,13 +1226,14 @@ export default function AuthorStudioPage() {
         </div>
       )}
 
-      {/* Book Cover Framing Modal */}
+      {/* Cover Framing Modal */}
       <ImageFramingModal
         isOpen={isCoverFramingOpen}
         onClose={() => setIsCoverFramingOpen(false)}
-        onConfirm={handleCoverFramingConfirm}
         imageSrc={framingSrc}
+        aspectRatio={2 / 3}
         type="cover"
+        onConfirm={handleCoverFramingConfirm}
       />
     </div>
   );

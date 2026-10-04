@@ -5,11 +5,13 @@ import {
   createChapter,
   getTableOfContents,
   getChapterByNumber,
+  findLivePulseChapters,
+  findOfflineBatchChapters,
   softDeleteChapter,
 } from "../model/chapters.model.js";
 import { findBookById } from "../model/books.model.js";
 import { findPersonaById } from "../model/personas.model.js";
-import {findVolumeById} from "../model/volumes.model.js";
+import { findVolumeById } from "../model/volumes.model.js";
 
 // 1. ADD A NEW CHAPTER TO A NOVEL
 export const createNewChapter = asyncHandler(async (req, res) => {
@@ -36,14 +38,15 @@ export const createNewChapter = asyncHandler(async (req, res) => {
   }
 
   if (volume_id) {
-  const volume = await findVolumeById(Number(volume_id));
-  if (!volume) {
-    throw new ApiError(404, "The specified volume does not exist!");
+    const volume = await findVolumeById(Number(volume_id));
+    if (!volume) {
+      throw new ApiError(404, "The specified volume does not exist!");
+    }
+    if (volume.book_id !== Number(book_id)) {
+      throw new ApiError(400, "Forbidden: This volume does not belong to this novel!");
+    }
   }
-  if (volume.book_id !== Number(book_id)) {
-    throw new ApiError(400, "Forbidden: This volume does not belong to this novel!");
-  }
-}
+
   // 3. Automated Word Count Calculation
   const words_count = content.trim().split(/\s+/).length;
 
@@ -63,26 +66,23 @@ export const createNewChapter = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, newChapter, "Chapter created successfully!"));
 });
 
-// 2. GET TABLE OF CONTENTS (Fast: titles & word counts only)
+// 2. GET TABLE OF CONTENTS
 export const getNovelTOC = asyncHandler(async (req, res) => {
   const { bookId } = req.params;
-
-  const chapters = await getTableOfContents(Number(bookId));
-
+  const chapters = await getTableOfContents(Number(bookId), req.user?.id);
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, chapters, "Table of contents fetched successfully!"),
-    );
+    .json(new ApiResponse(200, chapters, "Table of contents fetched successfully!"));
 });
 
-// 3. READ A SINGLE CHAPTER (With full text content)
+// 3. READ A SINGLE CHAPTER (Rich payload with paragraphs, navigation, reading time)
 export const readChapter = asyncHandler(async (req, res) => {
   const { bookId, chapterNumber } = req.params;
 
   const chapter = await getChapterByNumber(
     Number(bookId),
     Number(chapterNumber),
+    req.user?.id
   );
   if (!chapter) {
     throw new ApiError(404, "Chapter not found or not published yet!");
@@ -90,12 +90,34 @@ export const readChapter = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, chapter, "Chapter content fetched successfully!"),
-    );
+    .json(new ApiResponse(200, chapter, "Chapter content fetched successfully!"));
 });
 
-// 4. SOFT DELETE A CHAPTER
+// 4. LIVE SERIAL PULSE (4 most recent published chapters)
+export const getLivePulse = asyncHandler(async (req, res) => {
+  const chapters = await findLivePulseChapters();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, chapters, "Live serial pulse fetched successfully!"));
+});
+
+// 5. OFFLINE BATCH DUMP FOR INDEXEDDB
+export const getOfflineBatch = asyncHandler(async (req, res) => {
+  const { bookId } = req.params;
+  const { start_chapter = 1, limit = 50 } = req.query;
+
+  const chapters = await findOfflineBatchChapters(
+    Number(bookId),
+    start_chapter,
+    limit,
+  );
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, chapters, "Offline chapter batch fetched successfully!"));
+});
+
+// 6. SOFT DELETE A CHAPTER
 export const deleteChapter = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { book_id } = req.body;
@@ -122,7 +144,5 @@ export const deleteChapter = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, deletedChapter, "Chapter deleted successfully!"),
-    );
+    .json(new ApiResponse(200, deletedChapter, "Chapter deleted successfully!"));
 });

@@ -90,7 +90,30 @@ export default function AccountSettingsPage() {
   const [showNewPw, setShowNewPw] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(
+    currentUser?.two_factor_enabled || false
+  );
+
+  useEffect(() => {
+    if (currentUser?.two_factor_enabled !== undefined) {
+      setTwoFactorEnabled(Boolean(currentUser.two_factor_enabled));
+    }
+  }, [currentUser]);
+
+  const handleToggle2FA = async () => {
+    const nextState = !twoFactorEnabled;
+    try {
+      await userService.toggle2FA(nextState);
+      setTwoFactorEnabled(nextState);
+      showToast(
+        nextState
+          ? "2-Step verification enabled successfully"
+          : "2-Step verification disabled"
+      );
+    } catch (err) {
+      showToast(err.message || "Failed to update 2-step verification");
+    }
+  };
 
   // Framing Modal State
   const [framingModalOpen, setFramingModalOpen] = useState(false);
@@ -166,39 +189,72 @@ export default function AccountSettingsPage() {
     }
   };
 
-  // Active Sessions Mockup
-  const [sessions, setSessions] = useState([
-    {
-      id: "session-1",
-      device: "Windows PC • Chrome 129",
-      location: "New York, USA",
-      ip: "192.0.2.45",
-      isCurrent: true,
-      lastActive: "Active Now",
-      icon: Laptop,
-    },
-    {
-      id: "session-2",
-      device: "Apple iPhone 15 Pro • Safari iOS 18",
-      location: "New York, USA",
-      ip: "198.51.100.12",
-      isCurrent: false,
-      lastActive: "2 days ago",
-      icon: Smartphone,
-    },
-  ]);
+  // Active Sessions from Backend API
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
 
-  const handleRevokeSession = (sessionId) => {
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-    showToast("Session revoked. That device has been signed out.");
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSessions() {
+      setSessionsLoading(true);
+      try {
+        const data = await userService.getSessions();
+        if (isMounted) {
+          const mapped = (data || []).map((s) => {
+            const devName = s.device_name || "Desktop Browser";
+            const isMobile =
+              devName.toLowerCase().includes("mobile") ||
+              devName.toLowerCase().includes("iphone") ||
+              devName.toLowerCase().includes("android");
+            return {
+              id: s.id,
+              device: devName,
+              location: s.ip_address || "127.0.0.1",
+              ip: s.ip_address || "127.0.0.1",
+              isCurrent: Boolean(s.is_current),
+              lastActive: s.last_active
+                ? new Date(s.last_active).toLocaleString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "Active Now",
+              icon: isMobile ? Smartphone : Laptop,
+            };
+          });
+          setSessions(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load sessions:", err);
+      } finally {
+        if (isMounted) setSessionsLoading(false);
+      }
+    }
+    loadSessions();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleRevokeSession = async (sessionId) => {
+    try {
+      await userService.revokeSession(sessionId);
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      showToast("Session revoked. That device has been signed out.");
+    } catch (err) {
+      showToast(err.message || "Failed to revoke session");
+    }
   };
 
   const handleRevokeAllOtherSessions = async () => {
     try {
       await userService.revokeOtherSessions();
-    } catch (_) {}
-    setSessions((prev) => prev.filter((s) => s.isCurrent));
-    showToast("All other active devices signed out.");
+      setSessions((prev) => prev.filter((s) => s.isCurrent));
+      showToast("All other active devices signed out.");
+    } catch (err) {
+      showToast(err.message || "Failed to revoke sessions");
+    }
   };
 
   // Data Export
@@ -786,14 +842,7 @@ export default function AccountSettingsPage() {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setTwoFactorEnabled(!twoFactorEnabled);
-                    showToast(
-                      twoFactorEnabled
-                        ? "2-Step verification disabled"
-                        : "2-Step verification enabled"
-                    );
-                  }}
+                  onClick={handleToggle2FA}
                   className={`w-12 h-6.5 rounded-full transition-colors relative cursor-pointer ${
                     twoFactorEnabled ? "bg-accent" : "bg-tag border border-border-subtle"
                   }`}
@@ -829,46 +878,56 @@ export default function AccountSettingsPage() {
               </div>
 
               <div className="space-y-3 pt-2">
-                {sessions.map((sess) => {
-                  const DeviceIcon = sess.icon;
-                  return (
-                    <div
-                      key={sess.id}
-                      className="p-4 bg-tag/40 border border-border-subtle/50 rounded-xl flex items-center justify-between gap-4 text-xs"
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-xl bg-card border border-border-subtle flex items-center justify-center text-accent shrink-0">
-                          <DeviceIcon className="w-5 h-5" />
-                        </div>
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-text-main">
-                              {sess.device}
-                            </span>
-                            {sess.isCurrent && (
-                              <span className="text-[10px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.2 rounded-full font-bold">
-                                This device
-                              </span>
-                            )}
+                {sessionsLoading ? (
+                  <div className="p-6 text-center text-xs text-text-muted">
+                    Loading active sessions...
+                  </div>
+                ) : sessions.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-text-muted bg-tag/30 rounded-xl border border-border-subtle/40">
+                    No active sessions recorded.
+                  </div>
+                ) : (
+                  sessions.map((sess) => {
+                    const DeviceIcon = sess.icon;
+                    return (
+                      <div
+                        key={sess.id}
+                        className="p-4 bg-tag/40 border border-border-subtle/50 rounded-xl flex items-center justify-between gap-4 text-xs"
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-10 h-10 rounded-xl bg-card border border-border-subtle flex items-center justify-center text-accent shrink-0">
+                            <DeviceIcon className="w-5 h-5" />
                           </div>
-                          <p className="text-[11px] text-text-muted">
-                            {sess.location} • {sess.lastActive}
-                          </p>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-text-main">
+                                {sess.device}
+                              </span>
+                              {sess.isCurrent && (
+                                <span className="text-[10px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.2 rounded-full font-bold">
+                                  This device
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-text-muted">
+                              {sess.location} • {sess.lastActive}
+                            </p>
+                          </div>
                         </div>
-                      </div>
 
-                      {!sess.isCurrent && (
-                        <button
-                          type="button"
-                          onClick={() => handleRevokeSession(sess.id)}
-                          className="px-3 py-1 bg-card hover:bg-tag border border-border-subtle text-text-muted hover:text-red-500 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                        >
-                          Sign out
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+                        {!sess.isCurrent && (
+                          <button
+                            type="button"
+                            onClick={() => handleRevokeSession(sess.id)}
+                            className="px-3 py-1 bg-card hover:bg-tag border border-border-subtle text-text-muted hover:text-red-500 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                          >
+                            Sign out
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>

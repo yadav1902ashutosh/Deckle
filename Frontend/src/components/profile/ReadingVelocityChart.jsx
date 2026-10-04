@@ -1,21 +1,66 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TrendingUp, Sparkles, Award } from "lucide-react";
+import userService from "../../services/userService/userService";
 
-export default function ReadingVelocityChart({
-  days = [
-    { day: "Mon", words: 54000, label: "54k", mins: 42, height: "h-12" },
-    { day: "Tue", words: 78000, label: "78k", mins: 58, height: "h-16" },
-    { day: "Wed", words: 92000, label: "92k", mins: 74, height: "h-20" },
-    { day: "Thu", words: 61000, label: "61k", mins: 48, height: "h-14" },
-    { day: "Fri", words: 45000, label: "45k", mins: 35, height: "h-10" },
-    { day: "Sat", words: 110000, label: "110k", mins: 92, height: "h-24", isPeak: true },
-    { day: "Sun", words: 85000, label: "85k", mins: 65, height: "h-18" },
-  ],
-}) {
+export default function ReadingVelocityChart({ days: propDays = null }) {
   const [hoveredDay, setHoveredDay] = useState(null);
+  const [chartDays, setChartDays] = useState(propDays || []);
+  const [loading, setLoading] = useState(!propDays);
 
-  const totalWords = days.reduce((acc, d) => acc + d.words, 0);
-  const totalMins = days.reduce((acc, d) => acc + d.mins, 0);
+  useEffect(() => {
+    if (propDays) {
+      setChartDays(propDays);
+      return;
+    }
+
+    let isMounted = true;
+    async function loadVelocity() {
+      try {
+        const raw = await userService.getReadingVelocity();
+        if (isMounted && Array.isArray(raw) && raw.length > 0) {
+          const maxWords = Math.max(...raw.map((r) => Number(r.words) || 0), 1000);
+          const mapped = raw.map((r) => {
+            const words = Number(r.words) || 0;
+            const mins = Number(r.minutes) || 0;
+            const shortDay = r.date
+              ? new Date(r.date).toLocaleDateString("en-US", { weekday: "short" })
+              : r.day_label || "Day";
+            const percentHeight = Math.max(12, Math.round((words / maxWords) * 100));
+            return {
+              day: shortDay,
+              words,
+              mins,
+              label: words >= 1000 ? `${(words / 1000).toFixed(0)}k` : `${words}`,
+              heightPercent: percentHeight,
+              isPeak: words === maxWords && words > 0,
+            };
+          });
+          setChartDays(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to fetch reading velocity:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadVelocity();
+    return () => {
+      isMounted = false;
+    };
+  }, [propDays]);
+
+  const days = chartDays.length > 0 ? chartDays : [
+    { day: "Mon", words: 0, label: "0", mins: 0, heightPercent: 15 },
+    { day: "Tue", words: 0, label: "0", mins: 0, heightPercent: 15 },
+    { day: "Wed", words: 0, label: "0", mins: 0, heightPercent: 15 },
+    { day: "Thu", words: 0, label: "0", mins: 0, heightPercent: 15 },
+    { day: "Fri", words: 0, label: "0", mins: 0, heightPercent: 15 },
+    { day: "Sat", words: 0, label: "0", mins: 0, heightPercent: 15 },
+    { day: "Sun", words: 0, label: "0", mins: 0, heightPercent: 15 },
+  ];
+
+  const totalWords = days.reduce((acc, d) => acc + (d.words || 0), 0);
+  const totalMins = days.reduce((acc, d) => acc + (d.mins || 0), 0);
   const totalHours = (totalMins / 60).toFixed(1);
 
   return (
@@ -87,13 +132,14 @@ export default function ReadingVelocityChart({
                 {/* Vertical bar */}
                 <div className="w-full h-24 flex items-end">
                   <div
-                    className={`w-full rounded-t-lg transition-all duration-300 ${item.height} ${
+                    className={`w-full rounded-t-lg transition-all duration-300 ${item.height || ""} ${
                       item.isPeak
                         ? "bg-accent shadow-xs"
                         : isHovered
                         ? "bg-accent/80"
                         : "bg-accent/25 group-hover:bg-accent/50"
                     }`}
+                    style={item.heightPercent ? { height: `${item.heightPercent}%` } : undefined}
                   />
                 </div>
 

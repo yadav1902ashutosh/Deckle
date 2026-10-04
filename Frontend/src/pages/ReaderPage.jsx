@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, ArrowRight, List, Touchpad, Bookmark, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, List, Touchpad, Bookmark, Check, BookOpen } from "lucide-react";
 import ReaderHeader from "../components/reader/ReaderHeader";
 import ReaderFooter from "../components/reader/ReaderFooter";
 import ReaderSideNav from "../components/reader/ReaderSideNav";
@@ -8,22 +8,15 @@ import ReaderTOCDrawer from "../components/reader/ReaderTOCDrawer";
 import ReaderSettingsModal from "../components/reader/ReaderSettingsModal";
 import ReaderToast from "../components/reader/ReaderToast";
 import bookService from "../services/bookService/bookService";
+import chapterService from "../services/chapterService/chapterService";
+import readingHistoryService from "../services/readingHistoryService/readingHistoryService";
 import { DECKLE_THEMES, getActiveTheme, applyTheme } from "../utils/themeConfig";
-
-// Sample chapter directory for TOC
-const MOCK_TOC_CHAPTERS = [
-  { number: 1, title: "Prologue: The Awakening", words: "3.2k" },
-  { number: 2, title: "Chapter 2: First Resonances", words: "3.4k" },
-  { number: 3, title: "Chapter 3: The Broken Seal", words: "3.8k" },
-  { number: 4, title: "Chapter 4: Across the Threshold", words: "4.1k" },
-];
 
 export default function ReaderPage() {
   const { slug = "", chapterNum = "1" } = useParams();
   const navigate = useNavigate();
 
   const currentCh = parseInt(chapterNum, 10) || 1;
-  const totalChapters = 100;
 
   // Preferences State
   const [activeTheme, setActiveTheme] = useState(getActiveTheme());
@@ -41,33 +34,84 @@ export default function ReaderPage() {
 
   const toastTimerRef = useRef(null);
 
-  // Live novel data from API
-  const [currentNovel, setCurrentNovel] = useState({
-    slug: slug,
-    title: slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-    author_name: "Deckle Author",
-  });
+  // Live novel and chapter data from API
+  const [bookData, setBookData] = useState(null);
+  const [chapterData, setChapterData] = useState(null);
+  const [tocChapters, setTocChapters] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Consolidated novel details, TOC & chapter loader
   useEffect(() => {
     let isMounted = true;
-    if (slug) {
-      bookService
-        .getBookBySlug(slug)
-        .then((data) => {
-          if (isMounted && data) {
-            setCurrentNovel({
-              slug: data.slug,
-              title: data.title,
-              author_name: data.author_name || "Deckle Author",
-            });
+    if (!slug) return;
+
+    setLoading(true);
+    setError(null);
+
+    async function loadReaderData() {
+      try {
+        // 1. Fetch novel details if not already loaded or if slug changed
+        let currentBook = bookData;
+        const isSameBook =
+          currentBook &&
+          (currentBook.slug?.toLowerCase() === slug.toLowerCase() ||
+            String(currentBook.id) === String(slug));
+
+        if (!isSameBook) {
+          currentBook = await bookService.getBookBySlug(slug);
+          if (!isMounted) return;
+          setBookData(currentBook);
+
+          // Fetch Table of Contents
+          try {
+            const toc = await chapterService.getNovelTOC(currentBook.id);
+            if (isMounted) {
+              setTocChapters(Array.isArray(toc) ? toc : []);
+            }
+          } catch (tocErr) {
+            console.warn("Failed to fetch TOC:", tocErr);
           }
-        })
-        .catch(() => {});
+        }
+
+        if (!currentBook?.id) {
+          throw new Error("Novel could not be located");
+        }
+
+        // 2. Fetch chapter content by number
+        const chapter = await chapterService.readChapter(currentBook.id, currentCh);
+        if (!isMounted) return;
+        setChapterData(chapter);
+
+        // Auto-sync reading progress with backend
+        readingHistoryService
+          .syncProgress({
+            book_id: currentBook.id,
+            chapter_id: chapter?.id,
+            chapter_number: currentCh,
+            scroll_percentage: 0.0,
+            words_count: chapter?.words_count || 0,
+          })
+          .catch(() => {});
+      } catch (err) {
+        console.error("Reader load error:", err);
+        if (isMounted) {
+          setError(err.message || "Failed to load chapter");
+          setChapterData(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
     }
+
+    loadReaderData();
+
     return () => {
       isMounted = false;
     };
-  }, [slug]);
+  }, [slug, currentCh]);
 
   const showToast = (message, icon = "info") => {
     setToast({ message, icon, visible: true });
@@ -77,7 +121,7 @@ export default function ReaderPage() {
     }, 2400);
   };
 
-  // Synchronize Theme with root document and other components
+  // Synchronize Theme
   useEffect(() => {
     const current = getActiveTheme();
     setActiveTheme(current);
@@ -125,25 +169,27 @@ export default function ReaderPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentCh]);
+  }, [currentCh, chapterData]);
 
   const handleNavigatePrev = () => {
-    if (currentCh > 1) {
-      const prevCh = currentCh - 1;
-      navigate(`/book/${slug}/chapter/${prevCh}`);
-      showToast(`Navigating to Chapter ${prevCh}`, "arrow_back");
+    if (chapterData?.navigation?.prev) {
+      navigate(`/book/${slug}/chapter/${chapterData.navigation.prev.chapter_number}`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (currentCh > 1) {
+      navigate(`/book/${slug}/chapter/${currentCh - 1}`);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const handleNavigateNext = () => {
-    if (currentCh < totalChapters) {
-      const nextCh = currentCh + 1;
-      navigate(`/book/${slug}/chapter/${nextCh}`);
-      showToast(`Navigating to Chapter ${nextCh}`, "arrow_forward");
+    if (chapterData?.navigation?.next) {
+      navigate(`/book/${slug}/chapter/${chapterData.navigation.next.chapter_number}`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (currentCh < (tocChapters.length || 100)) {
+      navigate(`/book/${slug}/chapter/${currentCh + 1}`);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
-      showToast("Reached final chapter! Series completed.", "auto_stories");
+      showToast("Reached final available chapter!", "auto_stories");
     }
   };
 
@@ -152,16 +198,32 @@ export default function ReaderPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleToggleBookmark = () => {
-    setIsBookmarked((prev) => {
-      const next = !prev;
-      showToast(next ? "Book saved to reading shelf" : "Removed from shelf", "bookmark");
-      return next;
-    });
+  const handleToggleBookmark = async () => {
+    if (!bookData?.id) return;
+    const next = !isBookmarked;
+    setIsBookmarked(next);
+    showToast(next ? "Book saved to reading shelf" : "Removed from shelf", "bookmark");
+
+    try {
+      await readingHistoryService.updateBookshelf({
+        book_id: bookData.id,
+        is_bookmarked: next,
+      });
+    } catch {
+      setIsBookmarked(!next);
+    }
   };
 
   const currentThemeObj = DECKLE_THEMES.find((t) => t.id === activeTheme);
   const isDarkMode = currentThemeObj?.isDark ?? false;
+
+  const totalChaptersCount = Math.max(tocChapters.length, 1);
+  const paragraphs =
+    chapterData?.paragraphs && chapterData.paragraphs.length > 0
+      ? chapterData.paragraphs
+      : chapterData?.content
+      ? [chapterData.content]
+      : [];
 
   return (
     <div
@@ -172,11 +234,11 @@ export default function ReaderPage() {
       <ReaderHeader
         visible={controlsVisible}
         bookSlug={slug}
-        bookTitle={currentNovel.title}
+        bookTitle={bookData?.title || slug}
         chapterNum={currentCh}
-        chapterVolume="Final Volume"
-        progressText="100% Series Climax"
-        estReadingTime="~18 min"
+        chapterVolume={chapterData?.volume_title || "Volume 1"}
+        progressText={`${Math.round((currentCh / totalChaptersCount) * 100)}% Progress`}
+        estReadingTime={`~${chapterData?.estimated_reading_minutes || 15} min`}
         activeTheme={activeTheme}
         onSelectTheme={handleSelectTheme}
         onToggleTOC={() => {
@@ -191,11 +253,11 @@ export default function ReaderPage() {
         onToggleBookmark={handleToggleBookmark}
       />
 
-      {/* 2. Floating Side Arrows (ixdzs .read-pre & .read-next) */}
+      {/* 2. Floating Side Arrows */}
       <ReaderSideNav
         controlsVisible={controlsVisible}
-        canNavigatePrev={currentCh > 1}
-        canNavigateNext={currentCh < totalChapters}
+        canNavigatePrev={Boolean(chapterData?.navigation?.prev || currentCh > 1)}
+        canNavigateNext={Boolean(chapterData?.navigation?.next || currentCh < totalChaptersCount)}
         onNavigatePrev={handleNavigatePrev}
         onNavigateNext={handleNavigateNext}
       />
@@ -206,7 +268,6 @@ export default function ReaderPage() {
       {/* 4. Main Literary Reading Body */}
       <div
         onClick={(e) => {
-          // Toggle controls if clicking reading canvas (outside buttons, inputs, links)
           if (
             e.target.closest("button") ||
             e.target.closest("a") ||
@@ -219,176 +280,178 @@ export default function ReaderPage() {
         className="cursor-pointer min-h-screen pt-16 sm:pt-20 pb-32 px-4 sm:px-6"
       >
         <div className="w-full max-w-3xl mx-auto cursor-default pointer-events-auto">
-          {/* Subtle Navigation Tip Bar */}
-          <div className="text-center pt-3 pb-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-sans text-text-muted bg-tag/60 border border-border-subtle/50 hover:bg-tag transition-colors">
-              <Touchpad className="w-3.5 h-3.5" />
-              <span>
-                Click anywhere or press Space to toggle toolbar • Use ← / → arrow keys to switch chapters
-              </span>
-            </span>
-          </div>
-
-          {/* Chapter Heading Banner */}
-          <header className="text-center pb-8 pt-4">
-            <p className="text-[11px] font-bold text-accent uppercase tracking-widest mb-2 font-sans">
-              Final Volume • Epilogue
-            </p>
-            <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-snug">
-              Chapter {currentCh}: The Road to Emperor — Character Biographies (Part 2)
-            </h1>
-            <div className="mt-3 flex items-center justify-center flex-wrap gap-2.5 text-xs text-text-muted font-sans">
-              <span>{currentNovel.author_name}</span>
-              <span>•</span>
-              <span>4,120 Words</span>
-              <span>•</span>
-              <span>18 min read</span>
-              <span>•</span>
-              <span className="text-accent font-semibold">Completed Book</span>
+          {loading ? (
+            <div className="py-24 text-center space-y-6">
+              <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="space-y-1">
+                <h2 className="font-serif text-xl font-bold text-text-main">
+                  Loading Chapter {currentCh}...
+                </h2>
+                <p className="text-text-muted text-xs font-sans">
+                  {bookData?.title ? bookData.title : "Retrieving novel manuscript"}
+                </p>
+              </div>
+              <div className="max-w-md mx-auto space-y-3 pt-6 opacity-30 animate-pulse">
+                <div className="h-3.5 bg-border-subtle rounded w-3/4 mx-auto" />
+                <div className="h-3.5 bg-border-subtle rounded w-5/6 mx-auto" />
+                <div className="h-3.5 bg-border-subtle rounded w-2/3 mx-auto" />
+              </div>
             </div>
-          </header>
-
-          {/* Subtle Section Divider Ornament */}
-          <div className="flex items-center justify-center gap-3 my-8 text-border-subtle">
-            <span className="h-px w-16 bg-border-subtle/60" />
-            <span className="font-serif text-xl text-accent font-bold">§</span>
-            <span className="h-px w-16 bg-border-subtle/60" />
-          </div>
-
-          {/* Literary Manuscript Body */}
-          <article
-            className="space-y-6 transition-all duration-150"
-            style={{
-              fontFamily:
-                fontFamily === "serif"
-                  ? "'Newsreader', serif"
-                  : "'Plus Jakarta Sans', sans-serif",
-              fontSize: `${fontSize}px`,
-              lineHeight: `${fontSize * 2.05}px`,
-              textAlign: textAlign,
-            }}
-          >
-            {/* Section 06: Medusa */}
-            <div className="py-1">
-              <h2 className="font-serif text-xl sm:text-2xl italic font-bold text-accent mb-3">
-                06. Medusa (Cai Lin) — The Oasis in the Scorched Sands
+          ) : !chapterData ? (
+            <div className="py-24 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-tag text-text-muted mx-auto flex items-center justify-center">
+                <BookOpen className="w-8 h-8" />
+              </div>
+              <h2 className="font-serif text-2xl font-bold text-text-main">
+                {tocChapters.length === 0 ? "No Chapters Released Yet" : "Chapter Not Found"}
               </h2>
-              <p className={isLiteraryIndent ? "article-p" : ""}>
-                Some people once told me that “an oasis will eventually emerge in the desert,” but I know that’s only because they have never stepped foot into the cruel heart of the Tagor Desert.
+              <p className="text-text-muted text-sm max-w-md mx-auto">
+                {error ||
+                  (tocChapters.length === 0
+                    ? "This serial novel has not released any published chapters yet."
+                    : `Chapter ${currentCh} could not be located in this novel's table of contents.`)}
               </p>
-              <p className={isLiteraryIndent ? "article-p" : ""}>
-                This is a sovereign domain of endless yellow dust. The boundless dunes roll outward until they touch the sky, making it impossible to fathom where the sands end and the heavens awaken. An old elder once remarked: a single grain of sand is an entire world; and yet within that world, a speck of dust can bring forth an extinction-level calamity. For our Snake-People tribe, existence itself was that eternal calamity.
-              </p>
-              <p className={isLiteraryIndent ? "article-p" : ""}>
-                The desolate desert, majestic and severe, wore the identical emotionless mask as the cruel queen masters who reared me in childhood. Since the dawn of my consciousness, I was taught that sentiment is weakness and compassion is venom. In the deepest memories of my youth, there was only the scorching fury of dawn and the marrow-chilling frost of the desert midnight. We slithered upon rocks, thirsty for blood, guarding against both human conquerors and our own treacherous instincts.
-              </p>
-              <p className={isLiteraryIndent ? "article-p" : ""}>
-                The <strong className="text-accent font-semibold">Azure Lotus Earth Core Flame</strong> was never just a mystical flame; it was the sole pivot upon which the destiny of my entire race spun. Only by plunging my serpentine flesh into the incinerating fury of that Primordial Heavenly Flame—only by enduring the agonizing transformation into the legendary Seven-Colored Sky-Devouring Python—could I forge the strength needed to lead my people out of this wretched wasteland.
-              </p>
+              <div className="pt-2 flex items-center justify-center gap-3">
+                <Link
+                  to={`/book/${slug}`}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-accent-text text-xs font-semibold hover:bg-accent-hover transition-colors shadow-xs"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Return to Novel Details</span>
+                </Link>
+                {tocChapters.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setTocOpen(true)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-card border border-border-subtle text-text-main text-xs font-semibold hover:bg-tag transition-colors shadow-xs"
+                  >
+                    <List className="w-4 h-4" />
+                    <span>View Chapters ({tocChapters.length})</span>
+                  </button>
+                )}
+              </div>
             </div>
+          ) : (
+            <>
+              {/* Subtle Navigation Tip Bar */}
+              <div className="text-center pt-3 pb-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-sans text-text-muted bg-tag/60 border border-border-subtle/50 hover:bg-tag transition-colors">
+                  <Touchpad className="w-3.5 h-3.5" />
+                  <span>
+                    Click anywhere or press Space to toggle toolbar • Use ← / → arrow keys to switch chapters
+                  </span>
+                </span>
+              </div>
 
-            {/* Context Lore Card */}
-            <div className="my-6 p-4 rounded-xl bg-tag/70 border-l-4 border-accent text-sm leading-relaxed border border-border-subtle shadow-xs">
-              <span className="font-bold text-text-main block mb-1 font-sans text-xs uppercase tracking-wider">
-                Manuscript Lore: The Azure Lotus & Seven-Colored Python
-              </span>
-              <p className="text-xs text-text-muted">
-                Ranked 19th among Heavenly Flames. During the desert ritual transformation, Medusa survived total spiritual combustion to fuse with the ancient Nine-Colored Serpentine God, forever binding her soul matrix with Xiao Yan.
-              </p>
-            </div>
+              {/* Chapter Heading Banner */}
+              <header className="text-center pb-8 pt-4">
+                <p className="text-[11px] font-bold text-accent uppercase tracking-widest mb-2 font-sans">
+                  {chapterData?.volume_title || "Serial Chronicles"}
+                </p>
+                <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-snug">
+                  Chapter {currentCh}: {chapterData?.title || "Reading Manuscript"}
+                </h1>
+                <div className="mt-3 flex items-center justify-center flex-wrap gap-2.5 text-xs text-text-muted font-sans">
+                  <span>{bookData?.author_name || "Author"}</span>
+                  <span>•</span>
+                  <span>{chapterData?.words_count ? `${chapterData.words_count} Words` : "Serial Edition"}</span>
+                  <span>•</span>
+                  <span>{chapterData?.estimated_reading_minutes ? `~${chapterData.estimated_reading_minutes} min read` : "Standard reading"}</span>
+                  <span>•</span>
+                  <span className="text-accent font-semibold">{bookData?.status || "Ongoing"}</span>
+                </div>
+              </header>
 
-            <p className={isLiteraryIndent ? "article-p" : ""}>
-              I will never forget the youth who broke into my shrine that day. Covered in ash, fragile as a dried reed in the wind, with an absurdly gigantic heavy ruler strapped across his back. His eyes carried an unyielding stubbornness that no Dou Huang would ever dare display before my throne.
-            </p>
+              {/* Subtle Section Divider Ornament */}
+              <div className="flex items-center justify-center gap-3 my-8 text-border-subtle">
+                <span className="h-px w-16 bg-border-subtle/60" />
+                <span className="font-serif text-xl text-accent font-bold">§</span>
+                <span className="h-px w-16 bg-border-subtle/60" />
+              </div>
 
-            {/* Dialogue Blockquote */}
-            <blockquote className="my-6 pl-5 py-2 border-l-4 border-accent font-serif text-lg italic text-accent font-medium bg-accent/5 rounded-r-xl">
-              “Xiao Yan, remember this well: you belong to me. Every breath in your chest, every step you take on the Emperor’s Road. I will never forget what you did to me in that searing subterranean cavern.”
-            </blockquote>
+              {/* Lore Context Tags if present */}
+              {chapterData?.lore_context && chapterData.lore_context.length > 0 && (
+                <div className="my-6 p-4 rounded-xl bg-tag/70 border-l-4 border-accent text-sm leading-relaxed border border-border-subtle shadow-xs">
+                  <span className="font-bold text-text-main block mb-1 font-sans text-xs uppercase tracking-wider">
+                    Chapter Lore &amp; Annotations
+                  </span>
+                  <div className="space-y-1">
+                    {chapterData.lore_context.map((lore, idx) => (
+                      <p key={idx} className="text-xs text-text-muted">
+                        <strong className="text-accent">{lore.term}:</strong> {lore.definition}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            <p className={isLiteraryIndent ? "article-p" : ""}>
-              He called me Queen; he called me Cai Lin. He fought across continents, battered and bloodied, building an empire just to offer our child a cradle beneath a gentle sky. The cruel desert had finally granted me its only true oasis—not of water and palms, but of a quiet, warm hearth.
-            </p>
+              {/* Literary Manuscript Body */}
+              <article
+                className="space-y-6 transition-all duration-150"
+                style={{
+                  fontFamily:
+                    fontFamily === "serif"
+                      ? "'Newsreader', serif"
+                      : "'Plus Jakarta Sans', sans-serif",
+                  fontSize: `${fontSize}px`,
+                  lineHeight: `${fontSize * 2.05}px`,
+                  textAlign: textAlign,
+                }}
+              >
+                {paragraphs.length > 0 ? (
+                  paragraphs.map((p, idx) => (
+                    <p key={idx} className={isLiteraryIndent ? "article-p" : ""}>
+                      {p}
+                    </p>
+                  ))
+                ) : (
+                  <div className="py-12 text-center text-text-muted italic text-sm">
+                    This chapter has no text content published yet.
+                  </div>
+                )}
+              </article>
 
-            {/* Asterism Divider */}
-            <div className="flex justify-center items-center gap-2 py-6 text-accent/60 text-sm">
-              <span>•</span>
-              <span>•</span>
-              <span>•</span>
-            </div>
+              {/* 5. End of Chapter Navigation Block */}
+              <div className="mt-16 pt-8 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={handleNavigatePrev}
+                  disabled={!chapterData?.navigation?.prev && currentCh <= 1}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-card hover:bg-tag text-text-main font-semibold text-xs transition-colors flex items-center justify-center gap-2 border border-border-subtle shadow-xs cursor-pointer disabled:opacity-40"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Ch. {chapterData?.navigation?.prev?.chapter_number || currentCh - 1}: Previous</span>
+                </button>
 
-            {/* Section 07: Ya Fei */}
-            <div className="py-1">
-              <h2 className="font-serif text-xl sm:text-2xl italic font-bold text-accent mb-3">
-                07. Ya Fei — The Silk Merchant of the Jia Ma Empire
-              </h2>
-              <p className={isLiteraryIndent ? "article-p" : ""}>
-                In the Jia Ma Empire, when it comes to the flow of coin and trade, our Mittel family was second to none. Yet money alone has never bought freedom in a realm ruled by Dou Qi monarchs. I was trained to smile, to cajole, to turn men’s greed into financial leverage while maintaining the icy poise of a porcelain sculpture.
-              </p>
-              <p className={isLiteraryIndent ? "article-p" : ""}>
-                Then walked in an awkward boy cloaked in black linen, demanding the auction of basic Foundation Elixirs. Everyone saw a destitute alchemist’s apprentice; I saw the fire that would inevitably set the entire continent ablaze. I made my gamble. Today, the Mittel Auction House spans the boundless Central Plains, but the proudest contract I ever negotiated was trusting the young master of the Xiao Clan when he had nothing to offer but his pride.
-              </p>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setTocOpen(true)}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-card hover:bg-tag text-text-main font-semibold text-xs transition-colors flex items-center justify-center gap-2 border border-border-subtle shadow-xs cursor-pointer"
+                >
+                  <List className="w-4 h-4" />
+                  <span>Table of Contents</span>
+                </button>
 
-            {/* Asterism Divider */}
-            <div className="flex justify-center items-center gap-2 py-6 text-accent/60 text-sm">
-              <span>•</span>
-              <span>•</span>
-              <span>•</span>
-            </div>
-
-            {/* Section 08: Little Fairy Doctor */}
-            <div className="py-1">
-              <h2 className="font-serif text-xl sm:text-2xl italic font-bold text-accent mb-3">
-                08. Little Fairy Doctor (Xiao Yi Xian) — The Poison Orchid
-              </h2>
-              <p className={isLiteraryIndent ? "article-p" : ""}>
-                Born with the Woeful Poison Body, I was destined to bring misfortune wherever I walked, and in misfortune I expected to drown. To love is to poison; to embrace is to corrode. That was the eternal decree carved into my spiritual meridian.
-              </p>
-              <p className={isLiteraryIndent ? "article-p" : ""}>
-                Yet, in the quiet hills of the Magic Beast Mountain Range, someone roasted fish for me over an open hearth without asking what venom coursed through my veins. Meeting Xiao Yan in this life was like waking into an incandescent, tranquil dream. Even when the entire world fled from my poisonous aura, his palm remained outstretched, warm and unyielding. The Emperor’s road is endless and lonely, but looking out across the mountain pass today, the wind smells of sweet herbal tea.
-              </p>
-            </div>
-          </article>
-
-          {/* 5. End of Chapter Block (ixdzs classic turners) */}
-          <div className="mt-16 pt-8 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={handleNavigatePrev}
-              disabled={currentCh <= 1}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-card hover:bg-tag text-text-main font-semibold text-xs transition-colors flex items-center justify-center gap-2 border border-border-subtle shadow-xs cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Ch. {currentCh - 1}: Biographies (Pt 1)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setTocOpen(true)}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-card hover:bg-tag text-text-main font-semibold text-xs transition-colors flex items-center justify-center gap-2 border border-border-subtle shadow-xs cursor-pointer"
-            >
-              <List className="w-4 h-4" />
-              <span>Table of Contents</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleNavigateNext}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-accent text-accent-text font-semibold text-xs hover:bg-accent-hover transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-            >
-              <span>The Great Ruler (Next Novel)</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+                <button
+                  type="button"
+                  onClick={handleNavigateNext}
+                  disabled={!chapterData?.navigation?.next && currentCh >= totalChaptersCount}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-accent text-accent-text font-semibold text-xs hover:bg-accent-hover transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-40"
+                >
+                  <span>Ch. {chapterData?.navigation?.next?.chapter_number || currentCh + 1}: Next</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* 6. Bottom Floating Reader Toolbar (ixdzs .read-opt-footer) */}
+      {/* 6. Bottom Floating Reader Toolbar */}
       <ReaderFooter
         visible={controlsVisible}
         currentChapter={currentCh}
-        totalChapters={totalChapters}
+        totalChapters={totalChaptersCount}
         fontSize={fontSize}
         isDarkMode={isDarkMode}
         onNavigatePrev={handleNavigatePrev}
@@ -410,9 +473,13 @@ export default function ReaderPage() {
       <ReaderTOCDrawer
         isOpen={tocOpen}
         onClose={() => setTocOpen(false)}
-        bookTitle={currentNovel.title}
+        bookTitle={bookData?.title || slug}
         currentChapterNum={currentCh}
-        chapters={MOCK_TOC_CHAPTERS}
+        chapters={tocChapters.map((c) => ({
+          number: c.chapter_number,
+          title: c.title,
+          words: c.words_count ? `${(c.words_count / 1000).toFixed(1)}k` : "Standard",
+        }))}
         onSelectChapter={(num) => handleProgressChange(num)}
       />
 

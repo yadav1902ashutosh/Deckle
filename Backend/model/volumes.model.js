@@ -39,6 +39,25 @@ export async function createVolume({
   cover_image,
 }) {
   try {
+    // Check existing max volume number to enforce consecutive ordering
+    const existing = await sql`
+      SELECT COALESCE(MAX(volume_number), 0) AS max_vol
+      FROM volumes
+      WHERE book_id = ${book_id} AND deleted_at IS NULL;
+    `;
+    const maxVol = Number(existing[0]?.max_vol || 0);
+    const targetVolNum =
+      volume_number !== undefined && volume_number !== null && volume_number !== ""
+        ? Number(volume_number)
+        : maxVol + 1;
+
+    if (targetVolNum !== maxVol + 1) {
+      throw new ApiError(
+        400,
+        `Volume numbers must be consecutive. Current maximum is Volume ${maxVol}. The next volume must be Volume ${maxVol + 1}.`
+      );
+    }
+
     const result = await sql`
       INSERT INTO volumes (
         book_id,
@@ -49,7 +68,7 @@ export async function createVolume({
       )
       VALUES (
         ${book_id},
-        ${volume_number},
+        ${targetVolNum},
         ${title},
         ${description || null},
         ${cover_image || null}
@@ -61,9 +80,10 @@ export async function createVolume({
     if (error.code === "23505") {
       throw new ApiError(
         409,
-        `Volume number ${volume_number} already exists for this book!`
+        `Volume number already exists for this book!`
       );
     }
+    if (error instanceof ApiError) throw error;
     throw new ApiError(500, `Database error creating volume: ${error.message}`);
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import HeroSpotlight from "../components/home/HeroSpotlight";
 import FilterBar from "../components/home/FilterBar";
 import BookCard from "../components/books/BookCard";
@@ -12,11 +12,15 @@ import bookService from "../services/bookService/bookService";
 import { LayoutGrid, List, AlertCircle, RefreshCw, PenTool } from "lucide-react";
 import { Link } from "react-router-dom";
 
-// Backwards-compatible empty export for any legacy references
-export const STITCH_CATALOG = [];
-
 export default function HomePage() {
   const [books, setBooks] = useState([]);
+  const [featuredBooks, setFeaturedBooks] = useState([]);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalNovels: 0,
+    displayRange: "0 - 0",
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -25,15 +29,60 @@ export default function HomePage() {
   const [activeSort, setActiveSort] = useState("Most Popular (Monthly Activity)");
   const [activeScope, setActiveScope] = useState("All Lengths");
   const [activeFrequency, setActiveFrequency] = useState("All Release Rhythms");
-  const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState("grid");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Map user-friendly sort label to API sort parameter
+  const resolveSortParam = (label) => {
+    switch (label) {
+      case "Latest Updated Chapters":
+        return "updated";
+      case "Top Rated (4.8+)":
+        return "rating";
+      case "Scale (Word Count)":
+        return "scale";
+      case "Rising Stars":
+        return "newest";
+      default:
+        return "popular";
+    }
+  };
 
   const fetchBooks = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await bookService.getBooks();
-      setBooks(Array.isArray(data) ? data : []);
+
+      const [catalogRes, featuredRes] = await Promise.all([
+        bookService.getBooks({
+          genre: activeGenre,
+          status: activeStatus,
+          sort: resolveSortParam(activeSort),
+          page: currentPage,
+          limit: 12,
+        }),
+        bookService.getFeaturedBooks().catch(() => []),
+      ]);
+
+      if (catalogRes && catalogRes.books) {
+        setBooks(catalogRes.books);
+        setPagination(catalogRes.pagination || {
+          currentPage,
+          totalPages: 1,
+          totalNovels: catalogRes.books.length,
+          displayRange: `1 - ${catalogRes.books.length}`,
+        });
+      } else if (Array.isArray(catalogRes)) {
+        setBooks(catalogRes);
+        setPagination({
+          currentPage,
+          totalPages: Math.max(1, Math.ceil(catalogRes.length / 12)),
+          totalNovels: catalogRes.length,
+          displayRange: `1 - ${catalogRes.length}`,
+        });
+      }
+
+      setFeaturedBooks(Array.isArray(featuredRes) ? featuredRes : []);
     } catch (err) {
       console.error("Error loading books catalog:", err);
       setError(err.message || "Failed to load serial works from server.");
@@ -44,50 +93,18 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchBooks();
-  }, []);
-
-  const filteredCatalog = useMemo(() => {
-    if (!books || books.length === 0) return [];
-
-    return books.filter((book) => {
-      // Genre filter matching tags, genre_slug, or genre_name
-      if (activeGenre && activeGenre !== "all") {
-        const targetGenre = activeGenre.toLowerCase().replace(/[\s&]+/g, "-");
-        const genreSlug = (book.genre_slug || "").toLowerCase();
-        const genreName = (book.genre_name || "").toLowerCase().replace(/[\s&]+/g, "-");
-
-        let matchesGenre = genreSlug.includes(targetGenre) || genreName.includes(targetGenre);
-
-        if (!matchesGenre && Array.isArray(book.tags)) {
-          matchesGenre = book.tags.some((tag) => {
-            const slug = tag.toLowerCase().replace(/[\s&]+/g, "-");
-            return slug === targetGenre || slug.includes(targetGenre) || targetGenre.includes(slug);
-          });
-        }
-
-        if (!matchesGenre) return false;
-      }
-
-      // Status filter
-      if (activeStatus && activeStatus !== "Any") {
-        if ((book.status || "").toLowerCase() !== activeStatus.toLowerCase()) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [books, activeGenre, activeStatus]);
+  }, [activeGenre, activeStatus, activeSort, currentPage]);
 
   const handleResetFilters = () => {
     setActiveGenre("all");
     setActiveStatus("Any");
-    setActiveSort("Trending Stories");
+    setActiveSort("Most Popular (Monthly Activity)");
     setActiveScope("All Lengths");
     setActiveFrequency("All Release Rhythms");
+    setCurrentPage(1);
   };
 
-  const featuredBook = books.length > 0 ? books[0] : null;
+  const featuredBook = featuredBooks.length > 0 ? featuredBooks[0] : books[0] || null;
 
   return (
     <div className="w-full flex flex-col space-y-8">
@@ -102,18 +119,27 @@ export default function HomePage() {
       <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 space-y-8">
         <FilterBar
           activeGenre={activeGenre}
-          onSelectGenre={setActiveGenre}
+          onSelectGenre={(g) => {
+            setActiveGenre(g);
+            setCurrentPage(1);
+          }}
           activeStatus={activeStatus}
-          onSelectStatus={setActiveStatus}
+          onSelectStatus={(s) => {
+            setActiveStatus(s);
+            setCurrentPage(1);
+          }}
           activeSort={activeSort}
-          onSelectSort={setActiveSort}
+          onSelectSort={(s) => {
+            setActiveSort(s);
+            setCurrentPage(1);
+          }}
           activeScope={activeScope}
           onSelectScope={setActiveScope}
           activeFrequency={activeFrequency}
           onSelectFrequency={setActiveFrequency}
           onResetFilters={handleResetFilters}
-          totalNovels={filteredCatalog.length}
-          displayRange={`1 - ${filteredCatalog.length}`}
+          totalNovels={pagination.totalNovels}
+          displayRange={pagination.displayRange}
         />
 
         {/* 3. Main Content Area: Asymmetric 12-Column Grid */}
@@ -129,7 +155,7 @@ export default function HomePage() {
                 <span className="text-xs bg-tag text-text-muted px-2 py-0.5 rounded border border-border-subtle font-medium">
                   {loading
                     ? "Loading..."
-                    : `${filteredCatalog.length} ${filteredCatalog.length === 1 ? "Work" : "Works"}`}
+                    : `${pagination.totalNovels} ${pagination.totalNovels === 1 ? "Work" : "Works"}`}
                 </span>
               </div>
 
@@ -192,7 +218,7 @@ export default function HomePage() {
                   <BookCardSkeleton key={i} />
                 ))}
               </div>
-            ) : filteredCatalog.length > 0 ? (
+            ) : books.length > 0 ? (
               <div
                 className={`grid gap-5 ${
                   viewMode === "grid"
@@ -200,7 +226,7 @@ export default function HomePage() {
                     : "grid-cols-1"
                 }`}
               >
-                {filteredCatalog.map((book) => (
+                {books.map((book) => (
                   <BookCard key={book.id} book={book} />
                 ))}
               </div>
@@ -214,36 +240,24 @@ export default function HomePage() {
                     No Serials Found
                   </h3>
                   <p className="text-text-muted text-xs max-w-md mx-auto">
-                    {books.length === 0
-                      ? "No serial stories are currently published in the catalog. Be the first author to publish in Author Studio!"
-                      : "No serial stories match your active genre and status filters."}
+                    No serial stories match your active genre and status filters.
                   </p>
                 </div>
-                {books.length === 0 ? (
-                  <Link
-                    to="/studio"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent text-accent-text text-xs font-semibold hover:bg-accent-hover transition-colors"
-                  >
-                    <PenTool className="w-3.5 h-3.5" />
-                    <span>Publish a Serial</span>
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleResetFilters}
-                    className="px-4 py-2 rounded-lg bg-accent text-accent-text text-xs font-semibold cursor-pointer hover:bg-accent-hover transition-colors"
-                  >
-                    Clear Filters
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="px-4 py-2 rounded-lg bg-accent text-accent-text text-xs font-semibold cursor-pointer hover:bg-accent-hover transition-colors"
+                >
+                  Clear Filters
+                </button>
               </div>
             )}
 
             {/* Catalog Pagination Bar */}
-            {!loading && filteredCatalog.length > 0 && (
+            {!loading && pagination.totalPages > 1 && (
               <CatalogPagination
-                currentPage={currentPage}
-                totalPages={Math.max(1, Math.ceil(filteredCatalog.length / 10))}
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
                 onPageChange={setCurrentPage}
               />
             )}
@@ -258,7 +272,10 @@ export default function HomePage() {
             <LiveSerialPulse books={books} loading={loading} />
 
             {/* Widget 3: Trending Motifs */}
-            <TrendingMotifs />
+            <TrendingMotifs onSelectTag={(t) => {
+              setActiveGenre(t);
+              setCurrentPage(1);
+            }} />
 
             {/* Widget 4: Reader Engagement / Weekly Reading Goal */}
             <ReadingGoalWidget />

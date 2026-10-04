@@ -97,11 +97,118 @@ async function revokeOtherSessions() {
   return data.data;
 }
 
+/**
+ * 5. Fetch user settings
+ */
+async function getSettings() {
+  const response = await fetch(`${BASE_URL}/settings`, {
+    method: "GET",
+    headers: getAuthHeaders(true),
+    credentials: "include",
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Failed to fetch user settings");
+  return data.data;
+}
+
+/**
+ * 6. Update user settings
+ */
+async function updateSettings(settings) {
+  const response = await fetch(`${BASE_URL}/settings`, {
+    method: "PATCH",
+    headers: getAuthHeaders(true),
+    credentials: "include",
+    body: JSON.stringify(settings),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Failed to update user settings");
+  return data.data;
+}
+
+/**
+ * 7. Fetch 7-day reading velocity
+ */
+async function getReadingVelocity() {
+  const response = await fetch(`${BASE_URL}/reading-velocity`, {
+    method: "GET",
+    headers: getAuthHeaders(true),
+    credentials: "include",
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Failed to fetch reading velocity");
+  return data.data || [];
+}
+
+/**
+ * 8. Fetch genre affinity
+ */
+async function getGenreAffinity() {
+  const response = await fetch(`${BASE_URL}/genre-affinity`, {
+    method: "GET",
+    headers: getAuthHeaders(true),
+    credentials: "include",
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Failed to fetch genre affinity");
+  return data.data || [];
+}
+
+/**
+ * 9. Fetch active sessions list
+ */
+async function getSessions() {
+  const response = await fetch(`${BASE_URL}/sessions`, {
+    method: "GET",
+    headers: getAuthHeaders(true),
+    credentials: "include",
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Failed to fetch active sessions");
+  return data.data || [];
+}
+
+/**
+ * 10. Revoke a single session
+ */
+async function revokeSession(id) {
+  const response = await fetch(`${BASE_URL}/sessions/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(true),
+    credentials: "include",
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Failed to revoke session");
+  return data.data;
+}
+
+/**
+ * 11. Toggle 2FA
+ */
+async function toggle2FA(enabled) {
+  const response = await fetch(`${BASE_URL}/2fa/toggle`, {
+    method: "POST",
+    headers: getAuthHeaders(true),
+    credentials: "include",
+    body: JSON.stringify({ enabled }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Failed to update 2FA status");
+  return data.data;
+}
+
 const userService = {
   getCurrentUser,
   updateProfile,
   changePassword,
   revokeOtherSessions,
+  getSettings,
+  updateSettings,
+  getReadingVelocity,
+  getGenreAffinity,
+  getSessions,
+  revokeSession,
+  toggle2FA,
 };
 
 export default userService;

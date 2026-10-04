@@ -1,73 +1,97 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   MessageSquare,
-  Flame,
   Award,
   Users,
   Sparkles,
-  TrendingUp,
-  Share2,
   Heart,
-  Send,
+  Plus,
+  X,
 } from "lucide-react";
-
-const FORUM_THREADS = [
-  {
-    id: 1,
-    book: "Battle Through the Heavens",
-    bookSlug: "battle-through-the-heavens",
-    title: "Who was Xiao Yan's greatest mentor: Yao Lao or his own stubborn dao heart?",
-    author: "GrandmasterVance",
-    authorTier: "Tier 8 Elder",
-    replies: 142,
-    upvotes: 498,
-    time: "2 hours ago",
-    tags: ["Character Analysis", "Dao Debate"],
-    snippet: "Looking back at the entire 1663 chapters, Yao Lao gave him the Heavenly Flame technique, but Xiao Yan's refusal to surrender at the Misty Cloud Sect was what actually shaped him...",
-  },
-  {
-    id: 2,
-    book: "Lord of the Mysteries",
-    bookSlug: "lord-of-the-mysteries",
-    title: "The Fool's Tarot Club: Ranking the Tarot Card holders by pure danger quotient",
-    author: "MoonlightScholar",
-    authorTier: "Tier 6 Scholar",
-    replies: 89,
-    upvotes: 312,
-    time: "4 hours ago",
-    tags: ["Tarot Club", "Power Scaling"],
-    snippet: "Miss Justice grows into an terrifying spectator, but The World's unhinged sequence 3 marionette mechanics are unmatched in psychological dread...",
-  },
-  {
-    id: 3,
-    book: "How Did I Become Invincible?",
-    slug: "how-did-i-become-invincible",
-    title: "Top 5 funniest inverted cheat encounters in Volume 4",
-    author: "DaoistPotato",
-    authorTier: "Tier 5 Reader",
-    replies: 56,
-    upvotes: 184,
-    time: "Yesterday",
-    tags: ["Comedy", "Volume 4"],
-    snippet: "When the sect master used the Nine Heavens Heavenly Thunder formation thinking he was executing Lin Fan, but only ended up giving him a free rank jump...",
-  },
-];
+import communityService from "../services/communityService/communityService";
+import { useSelector } from "react-redux";
 
 export default function CommunityPage() {
+  const [threads, setThreads] = useState([]);
+  const [scholars, setScholars] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
-  const [upvotes, setUpvotes] = useState({});
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newContent, setNewContent] = useState("");
+  const [newCategory, setNewCategory] = useState("theory");
+  const [newTags, setNewTags] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleUpvote = (id) => {
-    setUpvotes((prev) => ({
-      ...prev,
-      [id]: (prev[id] || 0) + 1,
-    }));
+  const { status: isLoggedIn } = useSelector((state) => state.auth);
+
+  const fetchDiscourse = async (cat = "all") => {
+    try {
+      setLoading(true);
+      const [threadsData, scholarsData] = await Promise.all([
+        communityService.getThreads({ category: cat }),
+        communityService.getTopScholars().catch(() => []),
+      ]);
+      setThreads(Array.isArray(threadsData) ? threadsData : []);
+      setScholars(Array.isArray(scholarsData) ? scholarsData : []);
+    } catch (err) {
+      console.error("Failed to load community agora:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDiscourse(activeCategory);
+  }, [activeCategory]);
+
+  const handleUpvote = async (id) => {
+    try {
+      const res = await communityService.upvoteThread(id);
+      setThreads((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, upvotes: res.upvotes_count } : t
+        )
+      );
+    } catch (err) {
+      alert(err.message || "Please sign in to upvote discussions");
+    }
+  };
+
+  const handleCreateThread = async (e) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !newContent.trim()) return;
+
+    try {
+      setSubmitting(true);
+      const tagsArray = newTags
+        .split(",")
+        .map((t) => t.trim().replace(/^#/, ""))
+        .filter(Boolean);
+
+      await communityService.createThread({
+        title: newTitle.trim(),
+        content: newContent.trim(),
+        category: newCategory,
+        tags: tagsArray,
+      });
+
+      setIsDialogOpen(false);
+      setNewTitle("");
+      setNewContent("");
+      setNewTags("");
+      fetchDiscourse(activeCategory);
+    } catch (err) {
+      alert(err.message || "Failed to publish discourse");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="w-full min-h-screen bg-page text-text-main transition-colors pb-16">
-      {/* Full-Width Expansive Container (Matching Home Page) */}
+      {/* Full-Width Expansive Container */}
       <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 pt-6 flex flex-col gap-6">
         
         {/* Header Hero Banner */}
@@ -89,7 +113,13 @@ export default function CommunityPage() {
 
           <div className="flex flex-col sm:flex-row gap-3 z-10 shrink-0">
             <button
-              onClick={() => alert("New Discourse Thread dialog opened")}
+              onClick={() => {
+                if (!isLoggedIn) {
+                  alert("Please sign in to participate in reader discussions.");
+                  return;
+                }
+                setIsDialogOpen(true);
+              }}
               className="px-4 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-semibold shadow-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               <MessageSquare className="w-4 h-4" />
@@ -100,42 +130,54 @@ export default function CommunityPage() {
 
         {/* Filter Pills */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-          {["All Discussions", "Theory Crafting", "Power Rankings", "Dao Debates", "Fan Translations"].map((cat, i) => (
+          {[
+            { id: "all", label: "All Discussions" },
+            { id: "theory", label: "Theory Crafting" },
+            { id: "rankings", label: "Power Rankings" },
+            { id: "dao", label: "Dao Debates" },
+            { id: "translations", label: "Fan Translations" },
+          ].map((cat) => (
             <button
-              key={i}
-              onClick={() => setActiveCategory(cat.toLowerCase())}
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                i === 0
+                activeCategory === cat.id
                   ? "bg-accent text-white shadow-xs"
                   : "bg-tag hover:bg-card text-text-muted hover:text-text-main"
               }`}
             >
-              {cat}
+              {cat.label}
             </button>
           ))}
         </div>
 
-        {/* 12-Column Layout (Matching Home Page) */}
+        {/* 12-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* ================= LEFT: Thread Feed (8 Columns) ================= */}
           <div className="lg:col-span-8 flex flex-col gap-3.5">
-            {FORUM_THREADS.map((thread) => {
-              const currentVotes = thread.upvotes + (upvotes[thread.id] || 0);
-              return (
+            {loading ? (
+              <div className="py-16 text-center text-xs text-text-muted bg-card rounded-2xl border border-border-subtle/40">
+                Loading community threads...
+              </div>
+            ) : threads.length > 0 ? (
+              threads.map((thread) => (
                 <article
                   key={thread.id}
                   className="bg-card/75 hover:bg-card border border-border-subtle/50 rounded-2xl p-4 sm:p-5 shadow-xs transition-all flex flex-col gap-3 group"
                 >
                   <div className="flex items-center justify-between text-xs text-text-muted">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-accent">{thread.book}</span>
-                      <span>•</span>
-                      <span>By {thread.author}</span>
+                      {thread.book && (
+                        <>
+                          <span className="font-semibold text-accent">{thread.book}</span>
+                          <span>•</span>
+                        </>
+                      )}
+                      <span>By {thread.author || "Reader"}</span>
                       <span className="px-1.5 py-0.2 rounded bg-tag text-[10px] font-medium text-text-muted">
-                        {thread.authorTier}
+                        {thread.authorTier || "Tier 5 Scholar"}
                       </span>
                     </div>
-                    <span>{thread.time}</span>
                   </div>
 
                   <div>
@@ -143,17 +185,18 @@ export default function CommunityPage() {
                       {thread.title}
                     </h3>
                     <p className="text-xs sm:text-sm text-text-muted mt-1 leading-relaxed line-clamp-2">
-                      {thread.snippet}
+                      {thread.snippet || thread.content}
                     </p>
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-border-subtle/30 text-xs">
                     <div className="flex items-center gap-1.5">
-                      {thread.tags.map((t, tidx) => (
-                        <span key={tidx} className="px-2 py-0.5 rounded-md bg-tag text-text-muted text-[11px]">
-                          #{t}
-                        </span>
-                      ))}
+                      {Array.isArray(thread.tags) &&
+                        thread.tags.map((t, tidx) => (
+                          <span key={tidx} className="px-2 py-0.5 rounded-md bg-tag text-text-muted text-[11px]">
+                            #{t}
+                          </span>
+                        ))}
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -162,18 +205,28 @@ export default function CommunityPage() {
                         className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-tag hover:bg-card text-text-muted hover:text-accent font-semibold transition-colors cursor-pointer"
                       >
                         <Heart className="w-3.5 h-3.5 text-accent" />
-                        <span>{currentVotes}</span>
+                        <span>{thread.upvotes || 0}</span>
                       </button>
 
                       <div className="flex items-center gap-1 text-text-muted">
                         <MessageSquare className="w-3.5 h-3.5" />
-                        <span>{thread.replies}</span>
+                        <span>{thread.replies || 0}</span>
                       </div>
                     </div>
                   </div>
                 </article>
-              );
-            })}
+              ))
+            ) : (
+              <div className="py-16 text-center text-xs text-text-muted bg-card rounded-2xl border border-border-subtle/40 space-y-3">
+                <p>No active discussions found under this category.</p>
+                <button
+                  onClick={() => setIsDialogOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-accent text-white text-xs font-semibold cursor-pointer"
+                >
+                  Start First Discourse
+                </button>
+              </div>
+            )}
           </div>
 
           {/* ================= RIGHT: Community Sidebar (4 Columns) ================= */}
@@ -191,38 +244,128 @@ export default function CommunityPage() {
               </div>
 
               <div className="flex flex-col gap-2.5 pt-1">
-                {[
-                  { name: "GrandmasterVance", tier: "Tier 8 Elder", karma: "14,820", rank: 1 },
-                  { name: "MoonlightScholar", tier: "Tier 6 Scholar", karma: "9,420", rank: 2 },
-                  { name: "DaoistPotato", tier: "Tier 5 Reader", karma: "6,810", rank: 3 },
-                  { name: "CelestialInk", tier: "Tier 5 Reader", karma: "4,210", rank: 4 },
-                ].map((s) => (
-                  <div key={s.name} className="flex items-center justify-between text-xs p-2 rounded-xl bg-tag/50">
+                {scholars.map((s, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs p-2 rounded-xl bg-tag/50">
                     <div className="flex items-center gap-2">
                       <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold flex items-center justify-center text-[10px]">
-                        {s.rank}
+                        {s.rank || idx + 1}
                       </span>
                       <span className="font-medium text-text-main">{s.name}</span>
                     </div>
-                    <span className="font-mono text-accent font-semibold">{s.karma} pts</span>
+                    <span className="font-mono text-accent font-semibold">{s.karma}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Discourse Rules */}
+            {/* Sanctum Etiquette */}
             <div className="bg-card border border-border-subtle/50 rounded-2xl p-5 shadow-xs flex flex-col gap-2 text-xs text-text-muted">
               <div className="flex items-center gap-1.5 font-semibold text-text-main">
                 <Sparkles className="w-4 h-4 text-accent" />
                 <span>Sanctum Etiquette</span>
               </div>
               <p className="leading-relaxed">
-                Tag spoilers with spoiler tags, respect opposing cultivation theories, and cite chapter numbers whenever comparing power feats.
+                Tag spoilers with spoiler tags, respect opposing cultivation theories, and cite chapter numbers whenever comparing feats.
               </p>
             </div>
           </aside>
         </div>
       </div>
+
+      {/* Start Discourse Modal */}
+      {isDialogOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-card border border-border-subtle/50 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-border-subtle/30">
+              <h3 className="font-serif text-lg font-semibold text-text-main">
+                Initiate Discourse
+              </h3>
+              <button
+                onClick={() => setIsDialogOpen(false)}
+                className="text-text-muted hover:text-text-main cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateThread} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-text-muted mb-1">
+                  Topic Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="e.g. Dissecting the Sequence 4 potion transformation..."
+                  className="w-full h-10 px-3 bg-tag border border-border-subtle/50 rounded-xl text-xs text-text-main focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-muted mb-1">
+                  Category
+                </label>
+                <select
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  className="w-full h-10 px-3 bg-tag border border-border-subtle/50 rounded-xl text-xs text-text-main focus:outline-none focus:border-accent"
+                >
+                  <option value="theory">Theory Crafting</option>
+                  <option value="rankings">Power Rankings</option>
+                  <option value="dao">Dao Debates</option>
+                  <option value="translations">Fan Translations</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-muted mb-1">
+                  Discourse Body
+                </label>
+                <textarea
+                  required
+                  rows={5}
+                  value={newContent}
+                  onChange={(e) => setNewContent(e.target.value)}
+                  placeholder="Elaborate your observations, cite chapters, and open discussion..."
+                  className="w-full p-3 bg-tag border border-border-subtle/50 rounded-xl text-xs text-text-main focus:outline-none focus:border-accent resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-muted mb-1">
+                  Tags (comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={newTags}
+                  onChange={(e) => setNewTags(e.target.value)}
+                  placeholder="Cultivation, Character Analysis, Volume 2"
+                  className="w-full h-10 px-3 bg-tag border border-border-subtle/50 rounded-xl text-xs text-text-main focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDialogOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-tag text-xs font-semibold text-text-muted hover:text-text-main cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 rounded-xl bg-accent text-white text-xs font-semibold cursor-pointer hover:bg-accent-hover transition-colors disabled:opacity-50"
+                >
+                  {submitting ? "Publishing..." : "Publish Thread"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

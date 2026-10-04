@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   MessageSquare,
@@ -8,12 +8,20 @@ import {
   ArrowRight,
   TrendingUp,
 } from "lucide-react";
+import bookService from "../../services/bookService/bookService";
 
-export default function CommunityBento() {
+export default function CommunityBento({ book = null, bookSlug = "" }) {
   const [tipsCount, setTipsCount] = useState(842);
   const [hasTipped, setHasTipped] = useState(false);
-  const [votesCount, setVotesCount] = useState(38910);
+  const [votesCount, setVotesCount] = useState(book?.power_stones_count || 38910);
   const [hasVoted, setHasVoted] = useState(false);
+  const [voting, setVoting] = useState(false);
+
+  useEffect(() => {
+    if (book?.power_stones_count !== undefined) {
+      setVotesCount(Number(book.power_stones_count));
+    }
+  }, [book?.power_stones_count]);
 
   const handleTip = () => {
     if (!hasTipped) {
@@ -22,10 +30,21 @@ export default function CommunityBento() {
     }
   };
 
-  const handleVote = () => {
-    if (!hasVoted) {
+  const handleVote = async () => {
+    if (hasVoted || voting) return;
+    const targetSlug = bookSlug || book?.slug;
+    if (!targetSlug) return;
+    setVoting(true);
+    try {
+      const res = await bookService.votePowerStone(targetSlug);
+      setVotesCount(res?.power_stones_count ?? (votesCount + 1));
+      setHasVoted(true);
+    } catch (err) {
+      console.warn("Power stone voting fallback:", err);
       setVotesCount((prev) => prev + 1);
       setHasVoted(true);
+    } finally {
+      setVoting(false);
     }
   };
 

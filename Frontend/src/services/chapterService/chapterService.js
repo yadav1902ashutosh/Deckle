@@ -24,9 +24,8 @@ async function getNovelTOC(bookId) {
   if (!bookId) return [];
   const response = await fetch(`${BASE_URL}/book/${bookId}/toc`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
+    credentials: "include",
   });
 
   const data = await response.json();
@@ -39,7 +38,7 @@ async function getNovelTOC(bookId) {
 }
 
 /**
- * Fetch a single chapter with full text content
+ * Fetch a single chapter with full text content (paragraphs, navigation, reading time)
  */
 async function readChapter(bookId, chapterNumber) {
   if (!bookId || !chapterNumber) {
@@ -50,9 +49,8 @@ async function readChapter(bookId, chapterNumber) {
     `${BASE_URL}/book/${bookId}/read/${chapterNumber}`,
     {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
+      credentials: "include",
     }
   );
 
@@ -63,6 +61,43 @@ async function readChapter(bookId, chapterNumber) {
   }
 
   return data.data;
+}
+
+/**
+ * Fetch live pulse (4 most recently published chapters)
+ */
+async function getLivePulse() {
+  const response = await fetch(`${BASE_URL}/live-pulse`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch live pulse");
+  }
+  return data.data || [];
+}
+
+/**
+ * Fetch offline batch chapters for IndexedDB caching
+ */
+async function getOfflineBatch(bookId, startChapter = 1, limit = 50) {
+  const response = await fetch(
+    `${BASE_URL}/offline-batch/${bookId}?start_chapter=${startChapter}&limit=${limit}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch offline chapters");
+  }
+  return data.data || [];
 }
 
 /**
@@ -88,6 +123,8 @@ async function createChapter(chapterPayload) {
 const chapterService = {
   getNovelTOC,
   readChapter,
+  getLivePulse,
+  getOfflineBatch,
   createChapter,
 };
 

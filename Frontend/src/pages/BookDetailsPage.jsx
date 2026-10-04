@@ -134,18 +134,25 @@ export default function BookDetailsPage() {
         </nav>
 
         {/* 2. Novel Editorial Dossier Hero */}
-        <BookHero book={bookData} />
+        <BookHero
+          book={{
+            ...bookData,
+            totalChapters: chapters.length,
+            latestChapterNum: chapters[chapters.length - 1]?.chapter_number || 0,
+            latestChapterTitle: chapters[chapters.length - 1]?.title || "",
+          }}
+        />
 
         {/* 3. Granular Table of Contents / Chapter Directory */}
         <ChapterDirectory
           bookId={bookData.id}
           bookSlug={bookData.slug}
           chapters={chapters}
-          totalChapters={chapters.length || 1}
+          totalChapters={chapters.length}
         />
 
         {/* 4. Reader Community & Discussions */}
-        <CommunityBento bookSlug={bookData.slug} />
+        <CommunityBento bookSlug={bookData.slug} book={bookData} />
 
         {/* 5. Algorithmic Recommendations */}
         <RelatedRecommendations

@@ -12,7 +12,14 @@ import {
   clearUserRefreshToken,
   findUserWithPasswordById,
   updateUserProfile,
-  updateUserPassword
+  updateUserPassword,
+  getUserSettings,
+  updateUserSettings,
+  getUserReadingVelocity,
+  getUserGenreAffinity,
+  getUserSessionsList,
+  revokeSessionById,
+  toggleUser2FA,
 } from '../model/users.model.js';
 import { createPersona, findPersonasByUserId } from '../model/personas.model.js';
 import { getFallbackAvatar, getFallbackBanner } from '../utils/imageReference.js';
@@ -23,7 +30,6 @@ async function generateAccessAndRefreshTokens(user_id, email, role) {
     throw new ApiError(500, "JWT secrets are missing in .env!");
   }
 
-  // 1. Generate access token (15 mins)
   const access_token = jwt.sign(
     {
       id: user_id,
@@ -36,7 +42,6 @@ async function generateAccessAndRefreshTokens(user_id, email, role) {
     }
   );
 
-  // 2. Generate refresh token (7 days)
   const refresh_token = jwt.sign(
     {
       id: user_id,
@@ -47,34 +52,19 @@ async function generateAccessAndRefreshTokens(user_id, email, role) {
     }
   );
 
-  if (!access_token || !refresh_token) {
-    throw new ApiError(500, "Something went wrong while creating access and refresh tokens");
-  }
-
   return { access_token, refresh_token };
 }
 
-// 2. REGISTER USER (3-Field Registration: username, email, password)
+// 2. REGISTER USER
 export const registerUser = asyncHandler(async (req, res) => {
-  // Security & Architecture: role is strictly SYSTEM-DEFINED ('reader' on creation), never client-defined.
   const { username, email, password, full_name, gender, dob, avatar_url, banner_url } = req.body;
 
-  // Validation: Only username, email, and password are required
-  if (
-    !username?.trim() ||
-    !email?.trim() ||
-    !password?.trim()
-  ) {
-    throw new ApiError(
-      400,
-      "Username, email, and password are required!",
-    );
+  if (!username?.trim() || !email?.trim() || !password?.trim()) {
+    throw new ApiError(400, "Username, email, and password are required!");
   }
 
-  // Format clean username (e.g. remove leading '@')
   const cleanUsername = username.replace(/^@/, "").toLowerCase().trim();
 
-  // Check unique constraints
   const existingEmail = await findUserByEmail(email.toLowerCase().trim());
   if (existingEmail) {
     throw new ApiError(409, "User with this email already exists!");
@@ -84,7 +74,6 @@ export const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "Username is already taken!");
   }
 
-  // Hash password
   let hashedPassword;
   try {
     const salt = await bcrypt.genSalt(10);
@@ -98,20 +87,18 @@ export const registerUser = asyncHandler(async (req, res) => {
   const resolvedAvatar = avatar_url?.trim() || getFallbackAvatar(cleanUsername);
   const resolvedBanner = banner_url?.trim() || getFallbackBanner(cleanUsername);
 
-  // 1. Create the user account with system-defined 'reader' role
   const newUser = await createUser({
     full_name: resolvedFullName,
     username: cleanUsername,
     email: email.toLowerCase().trim(),
     password: hashedPassword,
-    role: "reader", // System-defined default role
+    role: "reader",
     gender: gender || null,
     dob: dob || null,
     avatar_url: resolvedAvatar,
     banner_url: resolvedBanner,
   });
 
-  // 2. Automatically generate their initial Default Persona
   const defaultPersona = await createPersona({
     user_id: newUser.id,
     display_name: resolvedDisplayName,
@@ -121,6 +108,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     banner_url: resolvedBanner,
     is_default: true,
   });
+
   return res
     .status(201)
     .json(
@@ -132,13 +120,11 @@ export const registerUser = asyncHandler(async (req, res) => {
     );
 });
 
-// 3. LOGIN USER (Accepts Email OR Username)
+// 3. LOGIN USER
 export const loginUser = asyncHandler(async (req, res) => {
+  const { email, username, password } = req.body;
 
-  const {email, username, password } = req.body;
-
-  if(!password?.trim() || (!email?.trim() && !username?.trim()))
-  {
+  if (!password?.trim() || (!email?.trim() && !username?.trim())) {
     throw new ApiError(400, "Password and either email or username is required");
   }
 
@@ -161,11 +147,11 @@ export const loginUser = asyncHandler(async (req, res) => {
     user.id,
     user.email,
     user.role
-  )
+  );
 
   await updateUserRefreshToken(user.id, refresh_token);
 
-  const personas = await   findPersonasByUserId(user.id);
+  const personas = await findPersonasByUserId(user.id);
 
   const cookieOptions = {
     httpOnly: true,
@@ -173,29 +159,27 @@ export const loginUser = asyncHandler(async (req, res) => {
     sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
   };
 
-  // Remove password and refresh_token so they are never exposed in the response
   const { password: _, refresh_token: __, ...safeUser } = user;
 
- return res
-   .status(200)
-   .cookie("accessToken", access_token, cookieOptions)
-   .cookie("refreshToken", refresh_token, cookieOptions)
-   .json(
-     new ApiResponse(
-       200,
-       {
-         user: safeUser,
-         personas,
-         accessToken: access_token,
-         refreshToken: refresh_token,
-       },
-       "User logged in successfully!",
-     ),
-   );
-})
+  return res
+    .status(200)
+    .cookie("accessToken", access_token, cookieOptions)
+    .cookie("refreshToken", refresh_token, cookieOptions)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: safeUser,
+          personas,
+          accessToken: access_token,
+          refreshToken: refresh_token,
+        },
+        "User logged in successfully!",
+      ),
+    );
+});
 
-
-//4.LOGOUT USER
+// 4. LOGOUT USER
 export const logoutUser = asyncHandler(async (req, res) => {
   await clearUserRefreshToken(req.user.id);
 
@@ -205,16 +189,15 @@ export const logoutUser = asyncHandler(async (req, res) => {
     sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
   };
 
-    return res
-      .status(200)
-      .clearCookie("accessToken", cookieOptions)
-      .clearCookie("refreshToken", cookieOptions)
-      .json(new ApiResponse(200, {}, "User logged out successfully!"));
-})
+  return res
+    .status(200)
+    .clearCookie("accessToken", cookieOptions)
+    .clearCookie("refreshToken", cookieOptions)
+    .json(new ApiResponse(200, {}, "User logged out successfully!"));
+});
 
-
-//5.  GET CURRENT USER
-export const getCurrentUser = asyncHandler(async(req, res) => {
+// 5. GET CURRENT USER
+export const getCurrentUser = asyncHandler(async (req, res) => {
   const personas = await findPersonasByUserId(req.user.id);
 
   return res
@@ -306,4 +289,62 @@ export const revokeOtherSessions = asyncHandler(async (req, res) => {
         "All other active sessions revoked successfully"
       )
     );
+});
+
+// 9. GET USER SETTINGS
+export const getSettings = asyncHandler(async (req, res) => {
+  const settings = await getUserSettings(req.user.id);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, settings, "User settings fetched successfully"));
+});
+
+// 10. UPDATE USER SETTINGS
+export const updateSettings = asyncHandler(async (req, res) => {
+  const updated = await updateUserSettings(req.user.id, req.body);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updated, "User settings updated successfully"));
+});
+
+// 11. GET READING VELOCITY (7-day daily activity)
+export const getReadingVelocity = asyncHandler(async (req, res) => {
+  const velocity = await getUserReadingVelocity(req.user.id);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, velocity, "Reading velocity fetched successfully"));
+});
+
+// 12. GET GENRE AFFINITY
+export const getGenreAffinity = asyncHandler(async (req, res) => {
+  const affinity = await getUserGenreAffinity(req.user.id);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, affinity, "Genre affinity fetched successfully"));
+});
+
+// 13. GET USER SESSIONS
+export const getSessions = asyncHandler(async (req, res) => {
+  const sessions = await getUserSessionsList(req.user.id);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, sessions, "User sessions fetched successfully"));
+});
+
+// 14. REVOKE A SINGLE SESSION
+export const revokeSession = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await revokeSessionById(req.user.id, Number(id));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Session revoked successfully"));
+});
+
+// 15. TOGGLE 2FA
+export const toggle2FA = asyncHandler(async (req, res) => {
+  const { enabled } = req.body;
+  const result = await toggleUser2FA(req.user.id, enabled);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, result, "Two-factor authentication updated"));
 });

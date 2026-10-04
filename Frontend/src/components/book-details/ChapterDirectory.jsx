@@ -130,14 +130,42 @@ export default function ChapterDirectory({
         words: ch.words_count ? `${ch.words_count.toLocaleString()} words` : "~3,000 words",
         date: ch.published_at ? new Date(ch.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Recent",
         status: idx === 0 ? "current" : "unread",
+        volume_number: ch.volume_number,
+        volume_title: ch.volume_title,
       }));
     }
     return [];
   }, [chapters]);
 
+  // Dynamic Volume list
+  const volumeOptions = useMemo(() => {
+    const list = [{ id: "all", name: "All Chapters" }];
+    const seen = new Set();
+    if (Array.isArray(chapters)) {
+      chapters.forEach((ch) => {
+        if (ch.volume_number && !seen.has(ch.volume_number)) {
+          seen.add(ch.volume_number);
+          list.push({
+            id: `vol-${ch.volume_number}`,
+            volume_number: ch.volume_number,
+            name: ch.volume_title ? `Vol. ${ch.volume_number}: ${ch.volume_title}` : `Volume ${ch.volume_number}`,
+          });
+        }
+      });
+    }
+    return list;
+  }, [chapters]);
+
   // Filtered & Sorted Chapters
   const filteredChapters = useMemo(() => {
     let result = [...sourceChapters];
+
+    if (activeVolume !== "all") {
+      const selectedVol = volumeOptions.find((v) => v.id === activeVolume);
+      if (selectedVol && selectedVol.volume_number) {
+        result = result.filter((ch) => ch.volume_number === selectedVol.volume_number);
+      }
+    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -153,7 +181,7 @@ export default function ChapterDirectory({
     }
 
     return result;
-  }, [sourceChapters, searchQuery, sortOrder]);
+  }, [sourceChapters, activeVolume, volumeOptions, searchQuery, sortOrder]);
 
   const handleJumpSubmit = (e) => {
     e.preventDefault();
@@ -183,25 +211,27 @@ export default function ChapterDirectory({
           </div>
 
           {/* Volume Navigation Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 no-scrollbar">
-            {VOLUMES.map((vol) => {
-              const isActive = activeVolume === vol.id;
-              return (
-                <button
-                  key={vol.id}
-                  type="button"
-                  onClick={() => setActiveVolume(vol.id)}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors cursor-pointer border ${
-                    isActive
-                      ? "bg-accent text-accent-text border-accent shadow-xs"
-                      : "bg-tag hover:bg-page text-text-muted hover:text-text-main border-border-subtle"
-                  }`}
-                >
-                  {vol.name}
-                </button>
-              );
-            })}
-          </div>
+          {volumeOptions.length > 1 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 no-scrollbar">
+              {volumeOptions.map((vol) => {
+                const isActive = activeVolume === vol.id;
+                return (
+                  <button
+                    key={vol.id}
+                    type="button"
+                    onClick={() => setActiveVolume(vol.id)}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors cursor-pointer border ${
+                      isActive
+                        ? "bg-accent text-accent-text border-accent shadow-xs"
+                        : "bg-tag hover:bg-page text-text-muted hover:text-text-main border-border-subtle"
+                    }`}
+                  >
+                    {vol.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* 2. Filter, Search & Sort Sub-Bar */}
@@ -349,7 +379,10 @@ export default function ChapterDirectory({
       <div className="pt-4 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-muted">
         <span>
           Showing chapters{" "}
-          <strong className="text-text-main">1 - 12</strong> of{" "}
+          <strong className="text-text-main">
+            {filteredChapters.length === 0 ? "0" : `1 - ${filteredChapters.length}`}
+          </strong>{" "}
+          of{" "}
           <strong className="text-text-main">
             {totalChapters.toLocaleString()}
           </strong>
