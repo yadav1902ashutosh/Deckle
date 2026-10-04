@@ -10,12 +10,45 @@ import {
   BookmarkPlus,
   Share2,
 } from "lucide-react";
+import { HeroSpotlightSkeleton } from "../common/Skeletons";
 
-export default function HeroSpotlight() {
+export default function HeroSpotlight({ book, loading = false }) {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
+  if (loading) {
+    return <HeroSpotlightSkeleton />;
+  }
+
+  if (!book) {
+    return null;
+  }
+
+  const {
+    id,
+    slug = "",
+    title = "Untitled Series",
+    author_name = "Deckle Author",
+    author_handle = "",
+    cover_image = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600",
+    rating = "4.9",
+    reviewsCount = "1.2k",
+    wordCount = "450k",
+    views_count = 0,
+    tags = ["Speculative Fiction", "Original"],
+    description = "No synopsis available yet.",
+    status = "ongoing",
+  } = book;
+
+  const cleanHandle =
+    author_handle ||
+    author_name.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/^_+|_+$/g, "");
+
+  const bookUrl = `/book/${slug || id}`;
+  const readUrl = `/book/${slug || id}/chapter/1`;
+  const authorUrl = `/author/@${cleanHandle}`;
+
   return (
-    <section className="relative w-full overflow-hidden bg-card border-b border-border-subtle shadow-sm transition-colors duration-200">
+    <section className="relative w-full overflow-hidden bg-card border-b border-border-subtle shadow-xs transition-colors duration-200">
       {/* Ambient artistic aura backdrop */}
       <div className="absolute -top-24 -right-20 w-96 h-96 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-1/3 w-80 h-80 rounded-full bg-accent/5 blur-2xl pointer-events-none" />
@@ -23,17 +56,21 @@ export default function HeroSpotlight() {
       <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 py-8 lg:py-10 relative z-10">
         <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
           {/* Novel Cover Canvas with Tactile Edge */}
-          <Link to="/book/heavenly-tribulation" className="relative flex-shrink-0 group block cursor-pointer">
+          <Link to={bookUrl} className="relative flex-shrink-0 group block cursor-pointer">
             <div className="w-64 h-88 sm:w-72 sm:h-96 rounded-lg overflow-hidden shadow-xl bg-card-white border border-border-subtle relative transform transition-transform duration-300 group-hover:scale-[1.02]">
               <img
                 className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMCoXg0A2-Yo0mTXKJJii1soqngrcK74BYMhb3W9Hupryd0v7ZDbOxVmKOIW_jA_Ac0Z5IgN0M3AIpZ4pllzzgthPHoVsFEetKEkJn4HRDenrnEvoi3zAMYXoCt550fGyqy23yP4c2VlVHiZ0py8Whk5RLMrCpiLF5KPIzA05z4bi5Ex8XbmLzPS-DCXEAvK1Vh0_7srfY8kv73m2wdknUCMCC9pQKg6-OTfX6XpkDKEmjoF576NTn"
-                alt="Heavenly Tribulation web novel cover"
+                src={cover_image}
+                alt={`${title} cover`}
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600";
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-60" />
               <span className="absolute top-3 left-3 bg-accent text-accent-text text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
-                Editor's Pinnacle Choice
+                Editor's Choice
               </span>
             </div>
             {/* Tactile spine/page shadow illusion underneath */}
@@ -45,25 +82,30 @@ export default function HeroSpotlight() {
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
                 <span className="uppercase tracking-widest text-accent font-semibold">
-                  Weekly Serial Crown
+                  Featured Series
                 </span>
                 <span>•</span>
-                <span>Updated 18 minutes ago</span>
+                <span className="capitalize">{status}</span>
                 <span>•</span>
                 <span className="bg-tag px-2 py-0.5 rounded text-text-main font-medium border border-border-subtle">
-                  Chapter 2,418 Live
+                  Live Serial
                 </span>
               </div>
-              <Link to="/book/heavenly-tribulation" className="block group">
+
+              <Link to={bookUrl} className="block group">
                 <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-text-main tracking-tight font-medium group-hover:text-accent transition-colors">
-                  Heavenly Tribulation
+                  {title}
                 </h1>
               </Link>
+
               <p className="text-sm text-text-muted font-medium">
                 By{" "}
-                <span className="text-text-main underline decoration-border-subtle hover:text-accent cursor-pointer transition-colors">
-                  Fleeting Dreams (飘渺梦)
-                </span>
+                <Link
+                  to={authorUrl}
+                  className="text-text-main underline decoration-border-subtle hover:text-accent cursor-pointer transition-colors"
+                >
+                  {author_name}
+                </Link>
               </p>
             </div>
 
@@ -71,75 +113,58 @@ export default function HeroSpotlight() {
             <div className="flex flex-wrap items-center gap-4 sm:gap-6 py-1">
               <div className="flex items-center gap-1.5 bg-tag px-3 py-1.5 rounded-lg border border-border-subtle">
                 <Star className="w-4 h-4 text-accent fill-accent" />
-                <span className="text-sm font-bold text-text-main">9.8</span>
-                <span className="text-xs text-text-muted">/ 10 (14.2k reviews)</span>
+                <span className="text-sm font-bold text-text-main">{rating || "4.9"}</span>
+                <span className="text-xs text-text-muted">
+                  ({reviewsCount || "1.2k"} ratings)
+                </span>
               </div>
               <div className="flex items-center gap-1.5 text-text-muted text-sm">
                 <BookOpen className="w-4 h-4 text-accent" />
-                <span className="font-semibold text-text-main">24.9M</span>
+                <span className="font-semibold text-text-main">{wordCount || "Serial"}</span>
                 <span className="text-xs">Words</span>
               </div>
               <div className="flex items-center gap-1.5 text-text-muted text-sm">
                 <Users className="w-4 h-4 text-accent" />
-                <span className="font-semibold text-text-main">44.0K</span>
-                <span className="text-xs">Active Readers</span>
+                <span className="font-semibold text-text-main">
+                  {views_count ? views_count.toLocaleString() : "Active"}
+                </span>
+                <span className="text-xs">Readers</span>
               </div>
               <div className="flex items-center gap-1.5 text-text-muted text-sm">
                 <TrendingUp className="w-4 h-4 text-accent" />
-                <span className="font-semibold text-accent">Rank #1</span>
-                <span className="text-xs">Eastern Xianxia</span>
+                <span className="font-semibold text-accent">Spotlight #1</span>
               </div>
             </div>
 
             {/* Synopses Excerpt */}
             <p className="text-sm sm:text-base text-text-muted max-w-3xl line-clamp-3 leading-relaxed">
-              Born without spiritual roots into an era of dying celestial courts,
-              Shen Wuyue discovered the Nine Nether Furnace buried beneath his
-              ancestral graveyard. When the heavens decree your doom before your
-              first breath, true immortality is forged not in obedience to the
-              cosmos, but by consuming the very tribulation lightning sent to
-              obliterate your soul...
+              {description}
             </p>
 
             {/* Interactive Genre Tags */}
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <button
-                type="button"
-                className="bg-tag hover:bg-border-subtle text-text-main text-xs px-3 py-1 rounded transition-colors cursor-pointer border border-border-subtle"
-              >
-                #GhostCultivation
-              </button>
-              <button
-                type="button"
-                className="bg-tag hover:bg-border-subtle text-text-main text-xs px-3 py-1 rounded transition-colors cursor-pointer border border-border-subtle"
-              >
-                #Reincarnation
-              </button>
-              <button
-                type="button"
-                className="bg-tag hover:bg-border-subtle text-text-main text-xs px-3 py-1 rounded transition-colors cursor-pointer border border-border-subtle"
-              >
-                #AncientArtifact
-              </button>
-              <button
-                type="button"
-                className="bg-tag hover:bg-border-subtle text-text-main text-xs px-3 py-1 rounded transition-colors cursor-pointer border border-border-subtle"
-              >
-                #DecisiveMC
-              </button>
+              {Array.isArray(tags) &&
+                tags.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-tag text-text-main text-xs px-3 py-1 rounded border border-border-subtle font-mono"
+                  >
+                    #{tag}
+                  </span>
+                ))}
               <span className="text-xs text-text-muted ml-2 italic">
-                Tier 4 Immortal Canon
+                Serialized on Deckle
               </span>
             </div>
 
             {/* CTA Controls */}
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <Link
-                to="/book/heavenly-tribulation/chapter/1"
+                to={readUrl}
                 className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-accent-text px-6 py-3 rounded-lg text-sm font-medium shadow-sm transition-all hover:shadow-md cursor-pointer"
               >
                 <Play className="w-4 h-4 fill-current" />
-                <span>Start Reading Ch. 1</span>
+                <span>Start Reading</span>
               </Link>
               <button
                 type="button"
@@ -155,14 +180,14 @@ export default function HeroSpotlight() {
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  navigator.clipboard?.writeText(window.location.origin + bookUrl);
+                }}
                 className="p-3 rounded-lg bg-tag text-text-muted hover:text-text-main hover:bg-border-subtle border border-border-subtle transition-colors cursor-pointer"
                 title="Share Novel"
               >
                 <Share2 className="w-4 h-4" />
               </button>
-              <span className="text-text-muted text-xs italic pl-1 hidden sm:inline">
-                Free reading tier available up to Chapter 120
-              </span>
             </div>
           </div>
         </div>

@@ -2,16 +2,18 @@ import React from "react";
 import { Tag } from "lucide-react";
 
 const MOTIFS = [
-  { tag: "#DecisiveHero", featured: false },
-  { tag: "#ImmortalBones", featured: true },
-  { tag: "#CheatSystem", featured: false },
-  { tag: "#SectBuilding", featured: false },
-  { tag: "#AlchemyMaster", featured: false },
-  { tag: "#CautiousProtagonist", featured: false },
-  { tag: "#NonHarem", featured: false },
-  { tag: "#KingdomWars", featured: false },
-  { tag: "#TimeLoop", featured: false },
-  { tag: "#ArtifactSpirit", featured: false },
+  { tag: "#TimeLoop", featured: true },
+  { tag: "#DungeonCrawler", featured: true },
+  { tag: "#HardMagic", featured: false },
+  { tag: "#FoundFamily", featured: true },
+  { tag: "#AntiHero", featured: false },
+  { tag: "#SlowBurn", featured: false },
+  { tag: "#Deckbuilding", featured: false },
+  { tag: "#Grimdark", featured: false },
+  { tag: "#CozyFantasy", featured: false },
+  { tag: "#EnemiesToLovers", featured: false },
+  { tag: "#CyberAugments", featured: false },
+  { tag: "#Investigative", featured: false },
 ];
 
 export default function TrendingMotifs() {

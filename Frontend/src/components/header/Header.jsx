@@ -16,6 +16,7 @@ import {
   Compass,
   Palette,
   Settings,
+  Shield,
   LogOut,
   LogIn,
   ChevronDown,
@@ -27,11 +28,17 @@ import {
   X,
   Layers,
   Flame,
-  Shield,
   History,
   Heart,
   Bookmark,
   ScrollText,
+  Crown,
+  Gamepad2,
+  Building2,
+  Ghost,
+  Rocket,
+  Cpu,
+  Skull,
 } from "lucide-react";
 import DeckleLogo from "../common/DeckleLogo";
 import { DECKLE_THEMES, getActiveTheme, applyTheme } from "../../utils/themeConfig";
@@ -179,11 +186,17 @@ export default function Header() {
   ];
 
   const curatedGenres = [
-    { name: "Progression Fantasy", slug: "progression-fantasy", icon: Flame },
-    { name: "LitRPG & System", slug: "litrpg", icon: Layers },
-    { name: "Cultivation & Xianxia", slug: "cultivation", icon: Sparkles },
-    { name: "Dark Fantasy", slug: "dark-fantasy", icon: Shield },
-    { name: "Eastern Mystery", slug: "eastern-mystery", icon: ScrollText },
+    { name: "Epic Fantasy", slug: "epic-fantasy", icon: Crown },
+    { name: "Fantasy", slug: "fantasy", icon: Sparkles },
+    { name: "Progression", slug: "progression", icon: Flame },
+    { name: "LitRPG", slug: "litrpg", icon: Gamepad2 },
+    { name: "Urban Fantasy", slug: "urban-fantasy", icon: Building2 },
+    { name: "Paranormal", slug: "paranormal", icon: Ghost },
+    { name: "Sci-Fi", slug: "sci-fi", icon: Rocket },
+    { name: "Cyberpunk", slug: "cyberpunk", icon: Cpu },
+    { name: "Dark Fantasy", slug: "dark-fantasy", icon: Skull },
+    { name: "Mystery", slug: "mystery", icon: Search },
+    { name: "Romantasy", slug: "romantasy", icon: Heart },
   ];
 
   const currentThemeObj =
@@ -381,13 +394,13 @@ export default function Header() {
                       {/* VIEW 1: MAIN MENU */}
                       {profileSubmenu === "main" && (
                         <div>
-                          {/* Active Persona Profile Dossier Card */}
+                          {/* Master Parent Account Dossier Card */}
                           <div className="p-3.5 border-b border-border-subtle/50 flex items-start gap-3 bg-tag/30">
                             <div className="w-10 h-10 rounded-full bg-accent overflow-hidden shrink-0 flex items-center justify-center text-accent-text font-semibold text-sm border border-border-subtle/40 shadow-xs">
                               {avatarUrl ? (
                                 <img
                                   src={avatarUrl}
-                                  alt=""
+                                  alt={currentUser?.username || "Avatar"}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     e.currentTarget.style.display = "none";
@@ -400,51 +413,42 @@ export default function Header() {
                               )}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="font-semibold text-text-main text-sm truncate">
-                                {activePersona?.display_name ||
-                                  currentUser?.full_name ||
-                                  currentUser?.username ||
-                                  "Reader"}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-semibold text-text-main text-sm truncate">
+                                  {currentUser?.full_name || currentUser?.username || "Account Holder"}
+                                </span>
+                                <span className="text-[9px] uppercase font-bold text-accent bg-accent/10 px-1.5 py-0.2 rounded border border-accent/20">
+                                  {currentUser?.role || "reader"}
+                                </span>
                               </div>
                               <div className="text-[11px] text-text-muted truncate font-mono">
-                                @
-                                {activePersona?.handle ||
-                                  currentUser?.username ||
-                                  "reader"}
+                                @{currentUser?.username || "user"}
                               </div>
                               <div className="text-[11px] text-text-muted truncate mt-0.5">
                                 {currentUser?.email || "reader@decklenovel.com"}
                               </div>
-                              <Link
-                                to="/profile"
-                                onClick={() => setUserMenuOpen(false)}
-                                className="inline-block text-[11px] text-accent hover:underline font-semibold mt-1"
-                              >
-                                View reading profile →
-                              </Link>
+                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                <Link
+                                  to="/profile"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="text-[11px] text-accent hover:underline font-semibold"
+                                >
+                                  Reading Profile →
+                                </Link>
+                                <span className="text-text-muted text-[10px]">•</span>
+                                <Link
+                                  to="/account"
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="text-[11px] text-text-muted hover:text-text-main font-medium underline underline-offset-2"
+                                >
+                                  Manage Account
+                                </Link>
+                              </div>
                             </div>
                           </div>
 
                           <div className="py-1">
-                            {/* YouTube-style Channel/Persona Switcher Option */}
-                            <button
-                              type="button"
-                              onClick={() => setProfileSubmenu("personas")}
-                              className="w-full px-3.5 py-2.5 flex items-center justify-between text-text-main hover:bg-tag transition-colors text-xs font-medium cursor-pointer"
-                            >
-                              <div className="flex items-center gap-2.5">
-                                <Users className="w-4 h-4 text-accent" />
-                                <span>Switch Persona / Pen Name</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-text-muted text-[11px]">
-                                <span className="bg-tag px-1.5 py-0.5 rounded border border-border-subtle/50 text-[10px]">
-                                  {personaList.length}
-                                </span>
-                                <ChevronRight className="w-3.5 h-3.5" />
-                              </div>
-                            </button>
-
-                            {/* Author Studio (YouTube Studio equivalent) */}
+                            {/* Author Studio Gateway (Creator Channel & Pen Names) */}
                             <Link
                               to="/studio"
                               onClick={() => setUserMenuOpen(false)}
@@ -455,8 +459,18 @@ export default function Header() {
                                 <span>Author Studio</span>
                               </div>
                               <span className="text-[10px] uppercase font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded">
-                                Scribe
+                                Studio
                               </span>
+                            </Link>
+
+                            {/* Reading Profile & Preferences */}
+                            <Link
+                              to="/profile"
+                              onClick={() => setUserMenuOpen(false)}
+                              className="w-full px-3.5 py-2.5 flex items-center gap-2.5 text-text-main hover:bg-tag transition-colors text-xs font-medium"
+                            >
+                              <BookOpen className="w-4 h-4 text-accent" />
+                              <span>Reading Preferences &amp; Shelf</span>
                             </Link>
                           </div>
 
@@ -487,14 +501,19 @@ export default function Header() {
                               </div>
                             </button>
 
-                            {/* Profile & Account Settings */}
+                            {/* Parent Account Settings (Google Account style) */}
                             <Link
-                              to="/profile"
+                              to="/account"
                               onClick={() => setUserMenuOpen(false)}
-                              className="w-full px-3.5 py-2.5 flex items-center gap-2.5 text-text-main hover:bg-tag transition-colors text-xs font-medium"
+                              className="w-full px-3.5 py-2.5 flex items-center justify-between text-text-main hover:bg-tag transition-colors text-xs font-medium"
                             >
-                              <Settings className="w-4 h-4 text-accent" />
-                              <span>Profile &amp; Settings</span>
+                              <div className="flex items-center gap-2.5">
+                                <Shield className="w-4 h-4 text-accent" />
+                                <span>Parent Account Settings</span>
+                              </div>
+                              <span className="text-[10px] text-text-muted bg-tag px-1.5 py-0.5 rounded border border-border-subtle/50 font-mono">
+                                Root
+                              </span>
                             </Link>
                           </div>
 

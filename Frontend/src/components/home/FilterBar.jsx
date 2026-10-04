@@ -9,38 +9,46 @@ import {
 } from "lucide-react";
 
 export const GENRE_PILLS = [
-  { id: "all", label: "All Genres (14,892)" },
-  { id: "xuanhuan", label: "Xuanhuan & Eastern Fantasy" },
-  { id: "xianxia", label: "Xianxia & Cultivation" },
-  { id: "urban", label: "Urban Supernatural" },
-  { id: "historical", label: "Historical Military" },
-  { id: "cyber-dao", label: "Sci-Fi & Cyber Dao" },
+  { id: "all", label: "All Genres" },
+  { id: "epic-fantasy", label: "Epic Fantasy" },
+  { id: "fantasy", label: "Fantasy" },
+  { id: "progression", label: "Progression" },
+  { id: "litrpg", label: "LitRPG" },
+  { id: "urban-fantasy", label: "Urban Fantasy" },
+  { id: "paranormal", label: "Paranormal" },
+  { id: "sci-fi", label: "Sci-Fi" },
+  { id: "cyberpunk", label: "Cyberpunk" },
+  { id: "dark-fantasy", label: "Dark Fantasy" },
+  { id: "horror", label: "Horror" },
+  { id: "mystery", label: "Mystery" },
+  { id: "romantasy", label: "Romantasy" },
+  { id: "romance", label: "Romance" },
 ];
 
-export const STATUS_OPTIONS = ["Any", "Ongoing", "Completed", "Fast Update"];
+export const STATUS_OPTIONS = ["Any", "Ongoing", "Completed", "Hiatus"];
 
 export const SORT_CANON_OPTIONS = [
-  "Most Popular (Monthly Activity)",
+  "Trending Stories",
+  "Top Rated (4.8+)",
   "Latest Updated Chapters",
-  "Reader Editorial Rating (9.0+)",
-  "Epic Scale (Words > 5,000,000)",
-  "New Releases (Past 30 Days)",
+  "Most Popular",
+  "Rising Stars",
 ];
 
 export const SCOPE_OPTIONS = [
   "All Lengths",
-  "< 1,000,000 (Novella / Short Serial)",
-  "1,000,000 - 3,000,000 (Medium Epoch)",
-  "3,000,000 - 7,000,000 (Standard Saga)",
-  "> 7,000,000 Words (Titan Monolith)",
+  "Short Serial (< 100k words)",
+  "Standard Novel (100k - 300k)",
+  "Extended Saga (300k - 800k)",
+  "Epic Series (800k+ words)",
 ];
 
 export const RELEASE_RHYTHM_OPTIONS = [
   "All Release Rhythms",
-  "Daily 2+ Chapters Guaranteed",
-  "Daily 1 Chapter",
+  "Daily Updates",
   "3-5 Chapters Weekly",
-  "Author Hiatus Alert Filtered",
+  "Weekly Releases",
+  "Completed Series",
 ];
 
 export default function FilterBar({

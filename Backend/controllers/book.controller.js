@@ -8,6 +8,7 @@ import {
   softDeleteBook,
 } from "../model/books.model.js";
 import { findPersonaById } from "../model/personas.model.js";
+import { promoteUserToWriter } from "../model/users.model.js";
 import { getFallbackBookCover } from "../utils/imageReference.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
@@ -76,6 +77,11 @@ export const createNewBook = asyncHandler(async (req, res) => {
     status: status || "ongoing",
     tags: parsedTags,
   });
+
+  // System-defined role promotion: if user is currently a 'reader', automatically promote to 'writer'
+  if (req.user?.role === "reader") {
+    await promoteUserToWriter(req.user.id);
+  }
 
   return res
     .status(201)

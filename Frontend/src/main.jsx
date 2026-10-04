@@ -22,6 +22,8 @@ import RankingsPage from "./pages/RankingsPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import CommunityPage from "./pages/CommunityPage.jsx";
 import AuthorStudioPage from "./pages/AuthorStudioPage.jsx";
+import AuthorChannelPage from "./pages/AuthorChannelPage.jsx";
+import AccountSettingsPage from "./pages/AccountSettingsPage.jsx";
 
 // Router Object Configuration
 const router = createBrowserRouter([
@@ -58,12 +60,28 @@ const router = createBrowserRouter([
         element: <ProfilePage />,
       },
       {
+        path: 'account',
+        element: <AccountSettingsPage />,
+      },
+      {
+        path: 'settings/account',
+        element: <AccountSettingsPage />,
+      },
+      {
         path: 'community',
         element: <CommunityPage />,
       },
       {
         path: 'studio',
         element: <AuthorStudioPage />,
+      },
+      {
+        path: 'author/:handle',
+        element: <AuthorChannelPage />,
+      },
+      {
+        path: 'channel/:handle',
+        element: <AuthorChannelPage />,
       },
     ]
   },

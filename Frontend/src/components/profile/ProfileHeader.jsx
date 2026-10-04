@@ -1,18 +1,20 @@
 import React from "react";
-import { User, Edit3, Settings, Download, Calendar, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
+import { User, Edit3, Settings, Download, Calendar, ExternalLink, ShieldCheck, Users } from "lucide-react";
 
 export default function ProfileHeader({
   user = {
-    name: "Julian Thorne",
-    handle: "daoreader",
-    email: "j.thorne@archive.read",
-    role: "Senior Scholar",
-    tier: "Tier 7",
-    memberSince: "October 2023",
+    name: "Arthur Vance",
+    handle: "arthur_vance",
+    email: "arthur.vance@decklenovel.com",
+    role: "Serial Author",
+    tier: "Author",
+    memberSince: "October 2026",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400",
   },
   onEditProfile = () => {},
   onManageAccount = () => {},
+  onManagePersona = () => {},
   onExportArchive = () => {},
 }) {
   return (
@@ -38,8 +40,8 @@ export default function ProfileHeader({
                 {user.name?.charAt(0)?.toUpperCase() || "R"}
               </div>
             )}
-            <div className="absolute -bottom-1 -right-1 bg-accent text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-xs">
-              {user.tier}
+            <div className="absolute -bottom-1 -right-1 bg-accent text-accent-text text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-xs">
+              {user.tier || "Active"}
             </div>
           </div>
 
@@ -49,7 +51,7 @@ export default function ProfileHeader({
                 {user.name}
               </h1>
               <span className="bg-tag border border-border-subtle/40 text-text-muted text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                {user.role}
+                {user.role || "Reader"}
               </span>
             </div>
 
@@ -61,13 +63,14 @@ export default function ProfileHeader({
 
             <div className="flex items-center gap-1.5 mt-2 text-text-muted text-xs">
               <Calendar className="w-3.5 h-3.5 text-accent" />
-              <span>Bibliophile member since {user.memberSince}</span>
+              <span>Member since {user.memberSince}</span>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
+
           <button
             onClick={onEditProfile}
             className="flex items-center gap-1.5 px-3 py-2 bg-tag hover:bg-card border border-border-subtle/50 text-text-main text-xs font-semibold rounded-xl transition-colors shadow-2xs cursor-pointer"
@@ -76,17 +79,17 @@ export default function ProfileHeader({
             <span>Edit Profile</span>
           </button>
 
-          <button
-            onClick={onManageAccount}
+          <Link
+            to="/account"
             className="flex items-center gap-1.5 px-3 py-2 bg-tag hover:bg-card border border-border-subtle/50 text-text-main text-xs font-semibold rounded-xl transition-colors shadow-2xs cursor-pointer"
           >
-            <Settings className="w-3.5 h-3.5 text-accent" />
+            <ShieldCheck className="w-3.5 h-3.5 text-accent" />
             <span>Manage Account</span>
-          </button>
+          </Link>
 
           <button
             onClick={onExportArchive}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-semibold rounded-xl transition-colors shadow-2xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-accent hover:bg-accent-hover text-accent-text text-xs font-semibold rounded-xl transition-colors shadow-2xs cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export Archive</span>

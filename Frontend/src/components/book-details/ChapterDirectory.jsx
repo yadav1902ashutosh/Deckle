@@ -109,19 +109,35 @@ export const VOLUMES = [
 ];
 
 export default function ChapterDirectory({
-  bookSlug = "heavenly-tribulation",
-  totalChapters = 9568,
+  bookSlug = "",
+  bookId = null,
+  chapters = [],
+  totalChapters = 0,
 }) {
-  const [activeVolume, setActiveVolume] = useState("vol-1");
+  const [activeVolume, setActiveVolume] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("asc"); // 'asc' or 'desc'
   const [currentPage, setCurrentPage] = useState(1);
   const [jumpInput, setJumpInput] = useState("");
   const [showJumpModal, setShowJumpModal] = useState(false);
 
+  // Normalize chapters list: prefer live chapters prop, fallback to empty array
+  const sourceChapters = useMemo(() => {
+    if (Array.isArray(chapters) && chapters.length > 0) {
+      return chapters.map((ch, idx) => ({
+        number: ch.chapter_number ?? ch.number ?? idx + 1,
+        title: ch.title || `Chapter ${ch.chapter_number || idx + 1}`,
+        words: ch.words_count ? `${ch.words_count.toLocaleString()} words` : "~3,000 words",
+        date: ch.published_at ? new Date(ch.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Recent",
+        status: idx === 0 ? "current" : "unread",
+      }));
+    }
+    return [];
+  }, [chapters]);
+
   // Filtered & Sorted Chapters
   const filteredChapters = useMemo(() => {
-    let result = [...SAMPLE_CHAPTERS];
+    let result = [...sourceChapters];
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -137,7 +153,7 @@ export default function ChapterDirectory({
     }
 
     return result;
-  }, [searchQuery, sortOrder]);
+  }, [sourceChapters, searchQuery, sortOrder]);
 
   const handleJumpSubmit = (e) => {
     e.preventDefault();
@@ -245,8 +261,9 @@ export default function ChapterDirectory({
       </div>
 
       {/* 3. Chapter Directory Grid (Expansive multi-column responsive layout) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3 py-5">
-        {filteredChapters.map((chapter) => {
+      {filteredChapters.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3 py-5">
+          {filteredChapters.map((chapter) => {
           const isRead = chapter.status === "read";
           const isCurrent = chapter.status === "current";
 
@@ -320,7 +337,13 @@ export default function ChapterDirectory({
             </Link>
           );
         })}
-      </div>
+        </div>
+      ) : (
+        <div className="py-12 text-center text-xs text-text-muted space-y-1">
+          <p className="font-semibold text-text-main text-sm">No Chapters Released Yet</p>
+          <p>Chapters published in Author Studio will be indexed here.</p>
+        </div>
+      )}
 
       {/* 4. Directory Pagination / Range Indicator */}
       <div className="pt-4 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-muted">

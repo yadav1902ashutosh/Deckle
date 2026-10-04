@@ -9,7 +9,10 @@ import {
   findUserByUsername,
   findUserById,
   updateUserRefreshToken,
-  clearUserRefreshToken
+  clearUserRefreshToken,
+  findUserWithPasswordById,
+  updateUserProfile,
+  updateUserPassword
 } from '../model/users.model.js';
 import { createPersona, findPersonasByUserId } from '../model/personas.model.js';
 import { getFallbackAvatar, getFallbackBanner } from '../utils/imageReference.js';
@@ -53,7 +56,8 @@ async function generateAccessAndRefreshTokens(user_id, email, role) {
 
 // 2. REGISTER USER (3-Field Registration: username, email, password)
 export const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, password, full_name, role, gender, dob, avatar_url, banner_url } = req.body;
+  // Security & Architecture: role is strictly SYSTEM-DEFINED ('reader' on creation), never client-defined.
+  const { username, email, password, full_name, gender, dob, avatar_url, banner_url } = req.body;
 
   // Validation: Only username, email, and password are required
   if (
@@ -94,13 +98,13 @@ export const registerUser = asyncHandler(async (req, res) => {
   const resolvedAvatar = avatar_url?.trim() || getFallbackAvatar(cleanUsername);
   const resolvedBanner = banner_url?.trim() || getFallbackBanner(cleanUsername);
 
-  // 1. Create the user account
+  // 1. Create the user account with system-defined 'reader' role
   const newUser = await createUser({
     full_name: resolvedFullName,
     username: cleanUsername,
     email: email.toLowerCase().trim(),
     password: hashedPassword,
-    role: role || "reader",
+    role: "reader", // System-defined default role
     gender: gender || null,
     dob: dob || null,
     avatar_url: resolvedAvatar,
@@ -221,5 +225,85 @@ export const getCurrentUser = asyncHandler(async(req, res) => {
         { user: req.user, personas },
         "Current user profile fetched successfully!",
       ),
+    );
+});
+
+// 6. UPDATE MASTER USER PROFILE
+export const updateProfile = asyncHandler(async (req, res) => {
+  const { full_name, avatar_url, banner_url, gender, dob } = req.body;
+
+  const updatedUser = await updateUserProfile(req.user.id, {
+    full_name: full_name !== undefined ? full_name : null,
+    avatar_url: avatar_url !== undefined ? avatar_url : null,
+    banner_url: banner_url !== undefined ? banner_url : null,
+    gender: gender !== undefined ? gender : null,
+    dob: dob !== undefined ? dob : null,
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { user: updatedUser }, "Master profile updated successfully")
+    );
+});
+
+// 7. CHANGE MASTER USER PASSWORD
+export const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword?.trim() || !newPassword?.trim()) {
+    throw new ApiError(400, "Current and new password are required");
+  }
+
+  if (newPassword.trim().length < 6) {
+    throw new ApiError(400, "New password must be at least 6 characters long");
+  }
+
+  const user = await findUserWithPasswordById(req.user.id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Current password is incorrect");
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+  await updateUserPassword(req.user.id, hashedPassword);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
+});
+
+// 8. REVOKE OTHER SESSIONS
+export const revokeOtherSessions = asyncHandler(async (req, res) => {
+  const { access_token, refresh_token } = await generateAccessAndRefreshTokens(
+    req.user.id,
+    req.user.email,
+    req.user.role
+  );
+
+  await updateUserRefreshToken(req.user.id, refresh_token);
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", access_token, cookieOptions)
+    .cookie("refreshToken", refresh_token, cookieOptions)
+    .json(
+      new ApiResponse(
+        200,
+        { accessToken: access_token, refreshToken: refresh_token },
+        "All other active sessions revoked successfully"
+      )
     );
 });

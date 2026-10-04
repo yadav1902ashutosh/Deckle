@@ -175,3 +175,67 @@ export async function softDeleteUser(user_id) {
     throw new ApiError(500, `Database error soft-deleting user: ${error.message}`);
   }
 }
+
+// 9. FIND USER WITH PASSWORD BY ID
+export async function findUserWithPasswordById(id) {
+  try {
+    const result = await sql`
+      SELECT * FROM users
+      WHERE id = ${id} AND deleted_at IS NULL;
+    `;
+    return result[0] || null;
+  } catch (error) {
+    throw new ApiError(500, `Database error searching user: ${error.message}`);
+  }
+}
+
+// 10. UPDATE USER PROFILE (MASTER ACCOUNT)
+export async function updateUserProfile(id, { full_name, avatar_url, banner_url, gender, dob }) {
+  try {
+    const result = await sql`
+      UPDATE users
+      SET
+        full_name = COALESCE(${full_name}, full_name),
+        avatar_url = COALESCE(${avatar_url}, avatar_url),
+        banner_url = COALESCE(${banner_url}, banner_url),
+        gender = COALESCE(${gender}, gender),
+        dob = COALESCE(${dob}, dob)
+      WHERE id = ${id} AND deleted_at IS NULL
+      RETURNING id, full_name, username, email, role, gender, dob, avatar_url, banner_url, created_at;
+    `;
+    return result[0] || null;
+  } catch (error) {
+    throw new ApiError(500, `Database error updating user profile: ${error.message}`);
+  }
+}
+
+// 11. UPDATE USER PASSWORD
+export async function updateUserPassword(id, hashedPassword) {
+  try {
+    const result = await sql`
+      UPDATE users
+      SET password = ${hashedPassword}
+      WHERE id = ${id} AND deleted_at IS NULL
+      RETURNING id, username, email;
+    `;
+    return result[0] || null;
+  } catch (error) {
+    throw new ApiError(500, `Database error updating password: ${error.message}`);
+  }
+}
+
+// 12. PROMOTE USER TO WRITER (SYSTEM-DEFINED ROLE PROMOTION)
+export async function promoteUserToWriter(user_id) {
+  try {
+    const result = await sql`
+      UPDATE users
+      SET role = 'writer'
+      WHERE id = ${user_id} AND role = 'reader' AND deleted_at IS NULL
+      RETURNING id, username, role;
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error("Database error promoting user role to writer:", error);
+    return null;
+  }
+}

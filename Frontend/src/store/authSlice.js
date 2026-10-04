@@ -39,6 +39,22 @@ const authSlice = createSlice({
     setActivePersona: (state, action) => {
       state.activePersona = action.payload;
     },
+    setPersonas: (state, action) => {
+      state.personas = action.payload || [];
+    },
+    addPersona: (state, action) => {
+      if (!state.personas) state.personas = [];
+      state.personas.push(action.payload);
+      if (!state.activePersona) {
+        state.activePersona = action.payload;
+      }
+    },
+    removePersona: (state, action) => {
+      state.personas = state.personas.filter((p) => p.id !== action.payload);
+      if (state.activePersona?.id === action.payload) {
+        state.activePersona = state.personas[0] || null;
+      }
+    },
     updateActivePersona: (state, action) => {
       if (state.activePersona) {
         state.activePersona = {
@@ -55,6 +71,13 @@ const authSlice = createSlice({
   },
 });
 
-export const { login, logout, setActivePersona, updateActivePersona } =
-  authSlice.actions;
+export const {
+  login,
+  logout,
+  setActivePersona,
+  setPersonas,
+  addPersona,
+  removePersona,
+  updateActivePersona,
+} = authSlice.actions;
 export default authSlice.reducer;

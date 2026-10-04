@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useSearchParams } from "react-router-dom";
 import ProfileHeader from "../components/profile/ProfileHeader";
 import ReadingMetricsRow from "../components/profile/ReadingMetricsRow";
 import ThemePresetMatrix from "../components/profile/ThemePresetMatrix";
@@ -27,15 +28,26 @@ import {
   BookOpen,
   Calendar,
   Lock,
+  Users,
 } from "lucide-react";
 
 export default function ProfilePage() {
   const dispatch = useDispatch();
+  const [searchParams, setSearchParams] = useSearchParams();
   const authStatus = useSelector((state) => state.auth?.status);
   const currentUser = useSelector((state) => state.auth?.user || state.auth?.userData);
   const activePersona = useSelector((state) => state.auth?.activePersona);
 
-  const [activeTab, setActiveTab] = useState("preferences"); // preferences | stats | shelf | security | storage
+  const initialTab = searchParams.get("tab") || "preferences";
+  const [activeTab, setActiveTab] = useState(initialTab); // preferences | stats | shelf | security | storage
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["preferences", "stats", "shelf", "security", "storage"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
   const [activeTheme, setActiveTheme] = useState(getActiveTheme());
   const [fontFamily, setFontFamily] = useState("serif");
   const [fontSize, setFontSize] = useState(18);
@@ -45,7 +57,7 @@ export default function ProfilePage() {
   // Local overrides when user edits profile via modal
   const [localProfile, setLocalProfile] = useState(null);
 
-  // Dynamic user dossier computed from activePersona / currentUser
+  // Dynamic user dossier computed from root parent currentUser
   const user = useMemo(() => {
     if (localProfile) return localProfile;
 
@@ -58,25 +70,33 @@ export default function ProfilePage() {
 
     return {
       name:
-        activePersona?.display_name ||
         currentUser?.full_name ||
         currentUser?.username ||
-        "Julian Thorne",
-      handle: activePersona?.handle || currentUser?.username || "daoreader",
+        "Reader",
+      handle: currentUser?.username || "reader",
       email: currentUser?.email || "reader@decklenovel.com",
       role:
-        currentUser?.role === "writer" ? "Grand Author" : "Senior Scholar",
-      tier: "Tier 1",
+        currentUser?.role === "developer"
+          ? "System Developer"
+          : currentUser?.role === "admin"
+          ? "Platform Admin"
+          : currentUser?.role === "writer"
+          ? "Serial Author"
+          : "Avid Reader",
+      tier:
+        currentUser?.role === "writer"
+          ? "Author"
+          : currentUser?.role === "developer" || currentUser?.role === "admin"
+          ? "Staff"
+          : "Reader",
       memberSince: memberDate,
-      bio:
-        activePersona?.bio ||
-        "Seeker of forgotten scriptures, celestial dao archives, and late-night serialized chapters.",
+      bio: "Avid explorer of serial web literature.",
       avatar:
-        activePersona?.avatar_url ||
         currentUser?.avatar_url ||
+        currentUser?.avatar ||
         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400",
     };
-  }, [currentUser, activePersona, localProfile]);
+  }, [currentUser, localProfile]);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -228,10 +248,6 @@ export default function ProfilePage() {
         <ProfileHeader
           user={user}
           onEditProfile={() => setIsEditModalOpen(true)}
-          onManageAccount={() => {
-            setActiveTab("security");
-            showToast("Switched to Account Security");
-          }}
           onExportArchive={() => showToast("Exporting library archive (JSON/EPUB)...")}
         />
 
@@ -242,12 +258,12 @@ export default function ProfilePage() {
           engagementHours={engagementHours}
         />
 
-        {/* Segmented Hub Navigation Bar */}
+        {/* Segmented Hub Navigation Bar (Strictly Personal Reading Setup) */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 border-b border-border-subtle/30">
           {[
             { id: "preferences", name: "Reading Preferences", icon: Sliders },
-            { id: "stats", name: "Profile & Statistics", icon: BarChart3 },
-            { id: "shelf", name: "Bookshelf & History", icon: BookMarked },
+            { id: "stats", name: "Reading Activity & Stats", icon: BarChart3 },
+            { id: "shelf", name: "Bookshelf & Shelf", icon: BookMarked },
             { id: "security", name: "Account Security", icon: Shield },
             { id: "storage", name: "Offline Storage", icon: Cloud },
           ].map((tab) => {
@@ -259,7 +275,7 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   isActive
-                    ? "bg-card text-accent border border-border-subtle/50 shadow-2xs"
+                    ? "bg-card text-accent border border-border-subtle/50 shadow-2xs font-bold"
                     : "text-text-muted hover:text-text-main hover:bg-tag/50"
                 }`}
               >
@@ -319,7 +335,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Tab 2: Profile & Deep Statistics */}
+        {/* Tab 3: Profile & Deep Statistics */}
         {activeTab === "stats" && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-fadeIn">
             <div className="lg:col-span-7 flex flex-col gap-6">
@@ -335,10 +351,10 @@ export default function ProfilePage() {
                 </div>
                 <div className="space-y-3 text-xs">
                   {[
-                    { genre: "Xianxia & Cultivation Dao", pct: 45, count: "18 Serials" },
-                    { genre: "Mystery & Eldritch Horror", pct: 28, count: "12 Serials" },
-                    { genre: "Historical Fantasy & Scribe Lore", pct: 17, count: "6 Serials" },
-                    { genre: "Modern LitRPG & Progression", pct: 10, count: "4 Serials" },
+                    { genre: "Epic Fantasy", pct: 40, count: "16 Serials" },
+                    { genre: "Progression & LitRPG", pct: 30, count: "12 Serials" },
+                    { genre: "Dark Fantasy & Horror", pct: 18, count: "7 Serials" },
+                    { genre: "Urban Fantasy & Mystery", pct: 12, count: "5 Serials" },
                   ].map((g) => (
                     <div key={g.genre} className="space-y-1">
                       <div className="flex justify-between font-medium">

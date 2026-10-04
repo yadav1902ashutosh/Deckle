@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import HeroSpotlight from "../components/home/HeroSpotlight";
 import FilterBar from "../components/home/FilterBar";
 import BookCard from "../components/books/BookCard";
@@ -7,157 +7,19 @@ import RankingsSidebar from "../components/home/RankingsSidebar";
 import LiveSerialPulse from "../components/home/LiveSerialPulse";
 import TrendingMotifs from "../components/home/TrendingMotifs";
 import ReadingGoalWidget from "../components/home/ReadingGoalWidget";
-import { LayoutGrid, List } from "lucide-react";
+import { BookCardSkeleton, HeroSpotlightSkeleton } from "../components/common/Skeletons";
+import bookService from "../services/bookService/bookService";
+import { LayoutGrid, List, AlertCircle, RefreshCw, PenTool } from "lucide-react";
+import { Link } from "react-router-dom";
 
-// Exact 8 Curated Serials from Stitch Design
-export const STITCH_CATALOG = [
-  {
-    id: "1",
-    slug: "battle-through-the-heavens",
-    title: "Battle Through the Heavens",
-    author_name: "Tiancan Tudou (天蚕土豆)",
-    cover_image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCxQ6JTnU9iddzuCaRDfCxeR33Kf5RBRnWnvKflDyE9r4SbpTKJs8_vOyxL7zPCVW4FbMolNyuTXmzP4t86GlIlAlllRLfeuZuWzhH8lCh5Sc78R712sJJHqJoRoKPqDrKRsSpe2UHJw0jOCR-aTBG7yE_OzSEtHChu5rTxiwZTMXhWj7lejEtKtD5GKHOO2nfJI64TuXE4h-miMPEpMG9x0UkmChbs-Pu1QvcUEdyXJ_O90Ty-Hj5i",
-    badge: "Classic",
-    rating: "9.6",
-    reviewsCount: "112k",
-    wordCount: "7.1M",
-    status: "completed",
-    description:
-      "Here, there is no magic; only Dou Qi that has trained to its zenith! The fall of a genius into an outcast, until the ring upon his finger awakened...",
-    latest_chapter_title: "Ch. 1648: Flame Emperor (Final)",
-    latest_chapter_time: "Archived",
-    tags: ["Xuanhuan", "Eastern Fantasy"],
-  },
-  {
-    id: "2",
-    slug: "how-did-i-become-invincible",
-    title: "How Did I Become Invincible?",
-    author_name: "Xinfeng (新丰)",
-    cover_image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCdTstXXl9AgAbge-_Wiz_BLwjloKp6QcjdIYtpQQwFnvWo3erR_NfIy-9NW12IowsuT5GpvjGP9GG6zsyfM0id0EL5wfGm3kzVr-U3JEOLPVg-WShtMQUnT5ZxDNtTxc3hD7VBGcrd03Zp3fTq13ntDcVGqJkbafS1y2tkjLbuo6WDtzG0uVa1X4-1jw-ZWWzfylRo20qlwC9dxaQreM-LPZMooefhDLvzZceelBebtVwRYjk5h7qf",
-    badge: "Hot",
-    rating: "9.4",
-    reviewsCount: "38k",
-    wordCount: "1.05M",
-    status: "ongoing",
-    description:
-      "I was clearly just an ordinary disciple doing morning drills. Why does everyone gaze upon me like an ancient primordial god descending?",
-    latest_chapter_title: "Ch. 412: The Grand Supreme Senior",
-    latest_chapter_time: "2h ago",
-    tags: ["Cultivation", "Comedy"],
-  },
-  {
-    id: "3",
-    slug: "xuanhuang-ding",
-    title: "Xuanhuang Ding",
-    author_name: "Nine Cauldron Master (九鼎散人)",
-    cover_image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCtKRpLkYMEZZNoBv-Yur6mctP2Lxi8FXtVzox13H21pjvDSiHMvNWVJUwkXk_kD1CDzB6M_5sk-tR1qYBVXQBKqUFqEhFdNsQAiQ5GOduFLILq75OqdPg184XPtS2IQSHt4BL0qboHNRXJ5cdPjQRWd8xv1Ei7kw2Rfj3dERMMq0iwbQjoU2LVblaPQXWyIshWbavF6beBK_5lH3FJwMbH5cUsj37rSkoAxAsmkq3OlTmnlRLhYYSL",
-    badge: null,
-    rating: "9.7",
-    reviewsCount: "64k",
-    wordCount: "6.2M",
-    status: "ongoing",
-    description:
-      "A single wisp of Mother Qi can crush a stellar galaxy. With the primal cauldron inside his Dantian, he refines myriad worlds into celestial pills.",
-    latest_chapter_title: "Ch. 1892: Smelting the Star River",
-    latest_chapter_time: "5h ago",
-    tags: ["Xianxia", "Cultivation"],
-  },
-  {
-    id: "4",
-    slug: "green-mountain",
-    title: "Green Mountain",
-    author_name: "Mao Ni (猫腻)",
-    cover_image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAUamZzYpipWQW7qwat3EUv7d2qWK3PY-g_jeSwRE765pVscX4PcyymEmeQ5heseIdmPWu5bWqSHBCJ7WG_WKHDhTUs0o-HCtz7zacUwoKOv8yJiMFBAvieqaMhCqFq1OXapo12ixJuSwF66iUkiAXl1IM4iDZGuzgDPNP_3bbr0ofO6zu6w0HITUPcvv3kbsf7MBqADTsF5060YeNMqUO5fc0w8pp7TJp2jf8e_vuKFDSA8GLyu9vv",
-    badge: null,
-    rating: "9.8",
-    reviewsCount: "92k",
-    wordCount: "3.3M",
-    status: "completed",
-    description:
-      "Across three lives and endless snows upon the ninth peak, the Path of Ascension was never meant to escape mortality, but to face it without regret.",
-    latest_chapter_title: "Epilogue: The Pine Stood Quiet",
-    latest_chapter_time: "Archived",
-    tags: ["Cultivation", "Philosophical"],
-  },
-  {
-    id: "5",
-    slug: "cornflower-witch",
-    title: "Cornflower Witch",
-    author_name: "Sable Quill (黑羽)",
-    cover_image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuC1dnk1CuYP4guZzfjOb2o1xs1OoraKLlJRJDhme2QpzmlESmo7HkTfglXofZQoYSGxfiTVJIHiwXQ7cnUzef73KwXcMc4BVNHMPvL-g5Wc-WcYVVazGbCRMtcxplOtY_DJnLZct2PYAfbHh0vobO2D8mzSKpa3KPiHjQ6_jZE3et1aLjoA023HJT60pVRpE3shI43y89k15gkEkuA99CGhy-wdEiSTKE1wjbv4LzhwbwPdouBHXaXp",
-    badge: "Supernatural",
-    rating: "9.5",
-    reviewsCount: "29k",
-    wordCount: "2.4M",
-    status: "ongoing",
-    description:
-      "Transmigrated as an apothecary's illegitimate apprentice in a gaslit metropolis where Eldritch horrors whisper through church gargoyles...",
-    latest_chapter_title: "Ch. 784: The Glass Bell Sings",
-    latest_chapter_time: "1d ago",
-    tags: ["Urban Supernatural"],
-  },
-  {
-    id: "6",
-    slug: "nine-revolutions-devouring-heaven",
-    title: "Nine Revolutions Devouring Heaven",
-    author_name: "Dragon Sovereign (龙君)",
-    cover_image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDh4kxlnK0m3Sxj7slPu1A8WViXQNDUgHm5jSqDvfto6DimoA20z4ZDPwoAlz2XSGqcuuUfkQtugkdOboaNongG3OGUTEInmpp0HlTJ7PQKxu2V1eFczB9OkyZ4vDFrX_xV4B9EePVTgkGB5DHc02z3yMBVqXE8ORRsW0APu2jV4LKiCkK-IhDEPiX-REIned6X0woJj-lbH3qUjd4VbfUL8B1gYmCvlBJsnAhAVgZpp72lPvoaFlJj",
-    badge: null,
-    rating: "9.3",
-    reviewsCount: "78k",
-    wordCount: "10.5M",
-    status: "ongoing",
-    description:
-      "Devour earth, devour heaven, devour reincarnation itself! When the divine sects betrayed him, Chu Yan woke the ancestral beast inside his bloodline.",
-    latest_chapter_title: "Ch. 3420: Dragon Gate Ascension",
-    latest_chapter_time: "3h ago",
-    tags: ["Xuanhuan", "Action"],
-  },
-  {
-    id: "7",
-    slug: "asura-martial-god",
-    title: "Asura Martial God",
-    author_name: "Kindhearted Bee (善良的蜜蜂)",
-    cover_image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuANv0aavfUQBk6ooJbbC6uHPbtAeQ76yGTnHENYHTORN8qMQXE8qNj_8kgoyHskarsa879WiPOuIkm2u2VfMnwJyIeUWeEuUwVFbkTo4vxPrisPRTsrMzHGHSxLYic-WZ8CgCCHWunU6gzeld-vcAlsa3_TAj5fffqbSypWhR3xuA-cv2MUZ3jYNY253afIUSCpLrqigESm2p_tzwEwTOryJm8N5n8qAbtdxHOzhFq_mk37XaGTRZ4s",
-    badge: "Titan",
-    rating: "9.1",
-    reviewsCount: "145k",
-    wordCount: "22.2M",
-    status: "ongoing",
-    description:
-      "Even if I am deemed a demon by the nine heavens, the lightning inside my blood shall illuminate every dark corner of this continent!",
-    latest_chapter_title: "Ch. 5891: The True Ancestral Land",
-    latest_chapter_time: "42m ago",
-    tags: ["Eastern Xianxia", "Action"],
-  },
-  {
-    id: "8",
-    slug: "mortals-journey",
-    title: "Mortal's Journey to Immortality",
-    author_name: "Wang Yu (忘语)",
-    cover_image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDmmIXB0oW32-5bcOt7TpCp6s1ArPN48bXoCQTXFlOFWMARIzfBS9ox7hXvefy7aoa2dxRtwsJPsaHrO4IscdrkCNpNYU_hamIlURE3iOw3xH8Ckyh1V47T8fslengIBn_Tv6tImldh9g_o1mD35XSd1upznnDweRPSG3gN44Sv50Bg0jvohMpsjAXB7dWqDlEOFx8nsKYXZw7rn7qpoveRmbyTNaKxDAbZNVZ_Rm5glHBYxK7d6OJZ",
-    badge: "Monument",
-    rating: "9.9",
-    reviewsCount: "210k",
-    wordCount: "7.4M",
-    status: "completed",
-    description:
-      "A poor, ordinary village youth named Han Li joins a small sect in jianghu by chance. Though his aptitude is mediocre, he strives toward immortality with caution...",
-    latest_chapter_title: "Epilogue: The Vast Immortal Realm",
-    latest_chapter_time: "Archived",
-    tags: ["Cultivation", "Classic"],
-  },
-];
+// Backwards-compatible empty export for any legacy references
+export const STITCH_CATALOG = [];
 
 export default function HomePage() {
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [activeGenre, setActiveGenre] = useState("all");
   const [activeStatus, setActiveStatus] = useState("Any");
   const [activeSort, setActiveSort] = useState("Most Popular (Monthly Activity)");
@@ -166,18 +28,75 @@ export default function HomePage() {
   const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
   const [currentPage, setCurrentPage] = useState(1);
 
+  const fetchBooks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await bookService.getBooks();
+      setBooks(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error loading books catalog:", err);
+      setError(err.message || "Failed to load serial works from server.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBooks();
+  }, []);
+
+  const filteredCatalog = useMemo(() => {
+    if (!books || books.length === 0) return [];
+
+    return books.filter((book) => {
+      // Genre filter matching tags, genre_slug, or genre_name
+      if (activeGenre && activeGenre !== "all") {
+        const targetGenre = activeGenre.toLowerCase().replace(/[\s&]+/g, "-");
+        const genreSlug = (book.genre_slug || "").toLowerCase();
+        const genreName = (book.genre_name || "").toLowerCase().replace(/[\s&]+/g, "-");
+
+        let matchesGenre = genreSlug.includes(targetGenre) || genreName.includes(targetGenre);
+
+        if (!matchesGenre && Array.isArray(book.tags)) {
+          matchesGenre = book.tags.some((tag) => {
+            const slug = tag.toLowerCase().replace(/[\s&]+/g, "-");
+            return slug === targetGenre || slug.includes(targetGenre) || targetGenre.includes(slug);
+          });
+        }
+
+        if (!matchesGenre) return false;
+      }
+
+      // Status filter
+      if (activeStatus && activeStatus !== "Any") {
+        if ((book.status || "").toLowerCase() !== activeStatus.toLowerCase()) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [books, activeGenre, activeStatus]);
+
   const handleResetFilters = () => {
     setActiveGenre("all");
     setActiveStatus("Any");
-    setActiveSort("Most Popular (Monthly Activity)");
+    setActiveSort("Trending Stories");
     setActiveScope("All Lengths");
     setActiveFrequency("All Release Rhythms");
   };
 
+  const featuredBook = books.length > 0 ? books[0] : null;
+
   return (
     <div className="w-full flex flex-col space-y-8">
       {/* 1. Editorial Spotlight / Featured Serial Hero */}
-      <HeroSpotlight />
+      {loading ? (
+        <HeroSpotlightSkeleton />
+      ) : featuredBook ? (
+        <HeroSpotlight book={featuredBook} loading={false} />
+      ) : null}
 
       {/* 2. Discovery Canvas & Multi-facet Filter System */}
       <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 space-y-8">
@@ -193,8 +112,8 @@ export default function HomePage() {
           activeFrequency={activeFrequency}
           onSelectFrequency={setActiveFrequency}
           onResetFilters={handleResetFilters}
-          totalNovels={1420}
-          displayRange="1 - 8"
+          totalNovels={filteredCatalog.length}
+          displayRange={`1 - ${filteredCatalog.length}`}
         />
 
         {/* 3. Main Content Area: Asymmetric 12-Column Grid */}
@@ -208,7 +127,9 @@ export default function HomePage() {
                   Curated Serial Works
                 </h2>
                 <span className="text-xs bg-tag text-text-muted px-2 py-0.5 rounded border border-border-subtle font-medium">
-                  Catalog Feed
+                  {loading
+                    ? "Loading..."
+                    : `${filteredCatalog.length} ${filteredCatalog.length === 1 ? "Work" : "Works"}`}
                 </span>
               </div>
 
@@ -241,34 +162,100 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 2-Column Catalog Cards Layout */}
-            <div
-              className={`grid gap-5 ${
-                viewMode === "grid"
-                  ? "grid-cols-1 sm:grid-cols-2"
-                  : "grid-cols-1"
-              }`}
-            >
-              {STITCH_CATALOG.map((book) => (
-                <BookCard key={book.id} book={book} />
-              ))}
-            </div>
+            {/* Error banner if network fails */}
+            {error && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between text-xs text-red-500">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+                <button
+                  onClick={fetchBooks}
+                  className="flex items-center gap-1 font-semibold hover:underline cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Retry</span>
+                </button>
+              </div>
+            )}
+
+            {/* Loading Skeletons */}
+            {loading ? (
+              <div
+                className={`grid gap-5 ${
+                  viewMode === "grid"
+                    ? "grid-cols-1 sm:grid-cols-2"
+                    : "grid-cols-1"
+                }`}
+              >
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <BookCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : filteredCatalog.length > 0 ? (
+              <div
+                className={`grid gap-5 ${
+                  viewMode === "grid"
+                    ? "grid-cols-1 sm:grid-cols-2"
+                    : "grid-cols-1"
+                }`}
+              >
+                {filteredCatalog.map((book) => (
+                  <BookCard key={book.id} book={book} />
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 text-center bg-card rounded-2xl border border-border-subtle space-y-4">
+                <div className="w-12 h-12 rounded-full bg-tag flex items-center justify-center mx-auto text-text-muted">
+                  <PenTool className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-serif text-lg font-semibold text-text-main">
+                    No Serials Found
+                  </h3>
+                  <p className="text-text-muted text-xs max-w-md mx-auto">
+                    {books.length === 0
+                      ? "No serial stories are currently published in the catalog. Be the first author to publish in Author Studio!"
+                      : "No serial stories match your active genre and status filters."}
+                  </p>
+                </div>
+                {books.length === 0 ? (
+                  <Link
+                    to="/studio"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent text-accent-text text-xs font-semibold hover:bg-accent-hover transition-colors"
+                  >
+                    <PenTool className="w-3.5 h-3.5" />
+                    <span>Publish a Serial</span>
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="px-4 py-2 rounded-lg bg-accent text-accent-text text-xs font-semibold cursor-pointer hover:bg-accent-hover transition-colors"
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Catalog Pagination Bar */}
-            <CatalogPagination
-              currentPage={currentPage}
-              totalPages={124}
-              onPageChange={setCurrentPage}
-            />
+            {!loading && filteredCatalog.length > 0 && (
+              <CatalogPagination
+                currentPage={currentPage}
+                totalPages={Math.max(1, Math.ceil(filteredCatalog.length / 10))}
+                onPageChange={setCurrentPage}
+              />
+            )}
           </div>
 
           {/* ================= RIGHT: Sidebar Widgets (4 Columns) ================= */}
           <aside className="lg:col-span-4 space-y-6">
             {/* Widget 1: Real-Time Power Rankings (Top 10) */}
-            <RankingsSidebar />
+            <RankingsSidebar books={books} loading={loading} />
 
             {/* Widget 2: Live Serial Pulse */}
-            <LiveSerialPulse />
+            <LiveSerialPulse books={books} loading={loading} />
 
             {/* Widget 3: Trending Motifs */}
             <TrendingMotifs />

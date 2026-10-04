@@ -7,25 +7,23 @@ import ReaderSideNav from "../components/reader/ReaderSideNav";
 import ReaderTOCDrawer from "../components/reader/ReaderTOCDrawer";
 import ReaderSettingsModal from "../components/reader/ReaderSettingsModal";
 import ReaderToast from "../components/reader/ReaderToast";
-import { STITCH_CATALOG } from "./HomePage";
+import bookService from "../services/bookService/bookService";
 import { DECKLE_THEMES, getActiveTheme, applyTheme } from "../utils/themeConfig";
 
 // Sample chapter directory for TOC
 const MOCK_TOC_CHAPTERS = [
-  { number: 1658, title: "Battle in the Chaotic Realm", words: "3.9k" },
-  { number: 1659, title: "Final War of Flame", words: "3.8k" },
-  { number: 1660, title: "Flame Emperor Ascends", words: "4.5k" },
-  { number: 1661, title: "Ten Years Later", words: "4.1k" },
-  { number: 1662, title: "Character Biographies (Part 1)", words: "5.2k" },
-  { number: 1663, title: "The Road to Emperor — Biographies (Part 2)", words: "4.1k" },
+  { number: 1, title: "Prologue: The Awakening", words: "3.2k" },
+  { number: 2, title: "Chapter 2: First Resonances", words: "3.4k" },
+  { number: 3, title: "Chapter 3: The Broken Seal", words: "3.8k" },
+  { number: 4, title: "Chapter 4: Across the Threshold", words: "4.1k" },
 ];
 
 export default function ReaderPage() {
-  const { slug = "battle-through-the-heavens", chapterNum = "1663" } = useParams();
+  const { slug = "", chapterNum = "1" } = useParams();
   const navigate = useNavigate();
 
-  const currentCh = parseInt(chapterNum, 10) || 1663;
-  const totalChapters = 1663;
+  const currentCh = parseInt(chapterNum, 10) || 1;
+  const totalChapters = 100;
 
   // Preferences State
   const [activeTheme, setActiveTheme] = useState(getActiveTheme());
@@ -43,12 +41,33 @@ export default function ReaderPage() {
 
   const toastTimerRef = useRef(null);
 
-  // Match novel metadata
-  const currentNovel = STITCH_CATALOG.find((b) => b.slug === slug || b.id === slug) || {
-    slug: "battle-through-the-heavens",
-    title: "Battle Through the Heavens",
-    author_name: "Tiancan Tudou (天蚕土豆)",
-  };
+  // Live novel data from API
+  const [currentNovel, setCurrentNovel] = useState({
+    slug: slug,
+    title: slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    author_name: "Deckle Author",
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    if (slug) {
+      bookService
+        .getBookBySlug(slug)
+        .then((data) => {
+          if (isMounted && data) {
+            setCurrentNovel({
+              slug: data.slug,
+              title: data.title,
+              author_name: data.author_name || "Deckle Author",
+            });
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [slug]);
 
   const showToast = (message, icon = "info") => {
     setToast({ message, icon, visible: true });
