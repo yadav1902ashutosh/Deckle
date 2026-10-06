@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Zap } from "lucide-react";
 import { ListWidgetSkeleton } from "../common/Skeletons";
+import AuthorAvatar from "../common/AuthorAvatar";
 import chapterService from "../../services/chapterService/chapterService";
 
 export default function LiveSerialPulse({ books = [], loading: parentLoading = false }) {
@@ -77,6 +78,17 @@ export default function LiveSerialPulse({ books = [], loading: parentLoading = f
               >
                 {item.book_title || item.title}
               </Link>
+              {item.author_name && (
+                <div className="flex items-center gap-1.5 text-[11px] text-text-muted mt-0.5">
+                  <AuthorAvatar
+                    name={item.author_name}
+                    avatar={item.author_avatar}
+                    handle={item.author_handle}
+                    size="xs"
+                  />
+                  <span className="truncate">{item.author_name}</span>
+                </div>
+              )}
               <p className="text-[11px] text-text-muted truncate mt-0.5">
                 {item.chapter_title || item.title}
               </p>

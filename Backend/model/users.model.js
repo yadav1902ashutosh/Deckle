@@ -210,6 +210,23 @@ export async function clearUserRefreshToken(user_id) {
   }
 }
 
+// 7b. FIND USER WITH REFRESH TOKEN (FOR TOKEN REFRESHING)
+export async function findUserWithRefreshTokenById(id) {
+  try {
+    const result = await sql`
+      SELECT id, full_name, username, email, role, refresh_token, deleted_at
+      FROM users
+      WHERE id = ${id} AND deleted_at IS NULL;
+    `;
+    return result[0] || null;
+  } catch (error) {
+    throw new ApiError(
+      500,
+      `Database error retrieving user refresh token: ${error.message}`
+    );
+  }
+}
+
 // 8. SOFT DELETE USER
 export async function softDeleteUser(user_id) {
   try {

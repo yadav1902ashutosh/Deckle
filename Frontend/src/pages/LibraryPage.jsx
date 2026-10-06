@@ -14,6 +14,7 @@ import {
 import ReadingStatsBanner from "../components/library/ReadingStatsBanner";
 import ActiveReadingHero from "../components/library/ActiveReadingHero";
 import BookshelfList from "../components/library/BookshelfList";
+import AuthorAvatar from "../components/common/AuthorAvatar";
 import readingHistoryService from "../services/readingHistoryService/readingHistoryService";
 
 export default function LibraryPage() {
@@ -40,6 +41,8 @@ export default function LibraryPage() {
         title: b.title,
         slug: b.slug,
         author: b.author_name || "Unknown Author",
+        authorAvatar: b.author_avatar || null,
+        authorHandle: b.author_handle || null,
         coverImage: b.cover_image,
         currentChapterNumber: b.last_chapter_number || 1,
         latestChapterNumber: b.latest_chapter?.chapter_number || b.total_chapters || 1,
@@ -216,6 +219,9 @@ export default function LibraryPage() {
                     ? {
                         title: activeReading.title,
                         slug: activeReading.slug,
+                        author: activeReading.author_name,
+                        authorAvatar: activeReading.author_avatar,
+                        authorHandle: activeReading.author_handle,
                         currentChapterNumber: activeReading.last_chapter_number || 1,
                         currentChapterTitle: activeReading.current_chapter_title || "Chapter in progress",
                         quote: "Deep within the unfolding chronicles, each line carves the journey forward...",
@@ -271,6 +277,17 @@ export default function LibraryPage() {
                       >
                         {item.title}
                       </Link>
+                      {item.author_name && (
+                        <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                          <AuthorAvatar
+                            name={item.author_name}
+                            avatar={item.author_avatar}
+                            handle={item.author_handle}
+                            size="xs"
+                          />
+                          <span>{item.author_name}</span>
+                        </div>
+                      )}
                       <p className="text-xs text-text-muted">
                         Ch. {item.last_chapter_number}: {item.chapter_title || "Latest Read"}
                       </p>

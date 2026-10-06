@@ -1,4 +1,5 @@
 import config from "../../config/config";
+import { fetchWithAuth, refreshAccessToken } from "../apiClient";
 
 // BASE_URL = "http://localhost:8000/api/v1/users"
 const BASE_URL = `${config.apiBaseUrl}/users`;
@@ -31,6 +32,9 @@ async function login(identity, password) {
   // Cross-domain fallback for Netlify <-> Render
   if (data.data?.accessToken) {
     localStorage.setItem("deckle_token", data.data.accessToken);
+  }
+  if (data.data?.refreshToken) {
+    localStorage.setItem("deckle_refresh_token", data.data.refreshToken);
   }
 
   // Returns { user, personas, accessToken, refreshToken }
@@ -88,31 +92,26 @@ async function logout() {
     return data;
   } finally {
     localStorage.removeItem("deckle_token");
+    localStorage.removeItem("deckle-token");
+    localStorage.removeItem("deckle_refresh_token");
+    localStorage.removeItem("deckle-refresh-token");
   }
 }
 
 /**
  * 4. Get Current User profile & personas (Session restoration on page reload)
+ * Uses fetchWithAuth so expired access tokens are automatically refreshed
  */
 async function getCurrentUser() {
-  const token = localStorage.getItem("deckle_token");
-  const headers = {
-    "Content-Type": "application/json",
-  };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${BASE_URL}/current-user`, {
+  const response = await fetchWithAuth(`${BASE_URL}/current-user`, {
     method: "GET",
-    headers,
-    credentials: "include",
   });
 
   const data = await response.json();
 
   if (!response.ok) {
     localStorage.removeItem("deckle_token");
+    localStorage.removeItem("deckle_refresh_token");
     throw new Error(data.message || "Session expired");
   }
 
@@ -124,6 +123,7 @@ const authService = {
   register,
   logout,
   getCurrentUser,
+  refreshAccessToken,
 };
 
 export default authService;

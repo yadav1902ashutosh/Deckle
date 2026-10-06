@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { login } from "../store/authSlice";
@@ -22,6 +22,7 @@ import {
   AlertCircle,
   CheckCircle,
   Sparkles,
+  BookmarkPlus,
 } from "lucide-react";
 
 // Deckle 5-theme design system palettes
@@ -35,18 +36,26 @@ const THEMES = [
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const authStatus = useSelector((state) => state.auth?.status);
+
+  const searchParams = new URLSearchParams(location.search);
+  const isExpired = searchParams.get("expired") === "true" || Boolean(location.state?.expired);
+  const returnUrl = searchParams.get("from") || location.state?.from || "/";
+  const authNotice = isExpired
+    ? "Your session has expired. Please sign in again to continue."
+    : (location.state?.message || "");
 
   // Redirect if already logged in
   React.useEffect(() => {
     if (authStatus) {
-      navigate("/", { replace: true });
+      navigate(returnUrl, { replace: true });
     }
-  }, [authStatus, navigate]);
+  }, [authStatus, navigate, returnUrl]);
 
   // Tab State: true = Sign In, false = Create Account
-  const [isLoginTab, setIsLoginTab] = useState(true);
+  const [isLoginTab, setIsLoginTab] = useState(location.state?.mode !== "signup");
 
   // Password Visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -148,7 +157,7 @@ export default function AuthPage() {
 
       setServerSuccess("Welcome back! Redirecting...");
       setTimeout(() => {
-        navigate("/");
+        navigate(returnUrl, { replace: true });
       }, 700);
     } catch (err) {
       setServerError(
@@ -332,6 +341,12 @@ export default function AuthPage() {
           </div>
 
           {/* Mobile Server Alerts */}
+          {authNotice && (
+            <div className="p-3 rounded-lg bg-accent/10 border border-accent/25 text-accent text-xs flex items-center gap-2">
+              <BookmarkPlus className="w-4 h-4 flex-shrink-0" />
+              <span>{authNotice}</span>
+            </div>
+          )}
           {serverError && (
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -802,6 +817,12 @@ export default function AuthPage() {
               </div>
 
               {/* Feedback Alerts */}
+              {authNotice && (
+                <div className="mb-3 md:mb-4 p-2.5 md:p-3 rounded-lg bg-accent/10 border border-accent/25 text-accent text-xs md:text-sm flex items-center gap-2">
+                  <BookmarkPlus className="w-4 h-4 flex-shrink-0" />
+                  <span>{authNotice}</span>
+                </div>
+              )}
               {serverError && (
                 <div className="mb-3 md:mb-4 p-2.5 md:p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 text-xs md:text-sm flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />

@@ -8,7 +8,8 @@ export default function ProtectedRoute({ children, requiredRole = null }) {
 
   const token =
     localStorage.getItem("deckle_token") ||
-    localStorage.getItem("deckle-token");
+    localStorage.getItem("deckle-token") ||
+    localStorage.getItem("deckle_refresh_token");
 
   // If not logged in and no token present, redirect to login
   if (!status && !token) {

@@ -1,4 +1,5 @@
 import config from "../../config/config";
+import { fetchWithAuth } from "../apiClient";
 
 const BASE_URL = `${config.apiBaseUrl}/studio`;
 
@@ -23,7 +24,7 @@ function getAuthHeaders(isJson = true) {
  * Fetch author's active serial works (with draft counts & stats)
  */
 async function getMySerials() {
-  const response = await fetch(`${BASE_URL}/serials`, {
+  const response = await fetchWithAuth(`${BASE_URL}/serials`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -41,7 +42,7 @@ async function getMySerials() {
  * Fetch all chapters for a book (including drafts)
  */
 async function getBookChapters(bookId) {
-  const response = await fetch(`${BASE_URL}/serials/${bookId}/chapters`, {
+  const response = await fetchWithAuth(`${BASE_URL}/serials/${bookId}/chapters`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -59,7 +60,7 @@ async function getBookChapters(bookId) {
  * Create chapter in studio (draft or published)
  */
 async function createChapter(payload) {
-  const response = await fetch(`${BASE_URL}/chapters`, {
+  const response = await fetchWithAuth(`${BASE_URL}/chapters`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -78,7 +79,7 @@ async function createChapter(payload) {
  * Update chapter in studio
  */
 async function updateChapter(id, payload) {
-  const response = await fetch(`${BASE_URL}/chapters/${id}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/chapters/${id}`, {
     method: "PATCH",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -97,7 +98,7 @@ async function updateChapter(id, payload) {
  * Fetch detailed analytics for a novel
  */
 async function getNovelAnalytics(bookId) {
-  const response = await fetch(`${BASE_URL}/analytics/${bookId}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/analytics/${bookId}`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -115,7 +116,7 @@ async function getNovelAnalytics(bookId) {
  * Toggle channel subscription for persona
  */
 async function toggleSubscription(personaId) {
-  const response = await fetch(`${BASE_URL}/subscribe/${personaId}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/subscribe/${personaId}`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -133,7 +134,7 @@ async function toggleSubscription(personaId) {
  * Get persona channel announcements
  */
 async function getAnnouncements(handle) {
-  const response = await fetch(`${BASE_URL}/announcements/${handle}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/announcements/${handle}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -150,7 +151,7 @@ async function getAnnouncements(handle) {
  * Post persona channel announcement
  */
 async function postAnnouncement(payload) {
-  const response = await fetch(`${BASE_URL}/announcements`, {
+  const response = await fetchWithAuth(`${BASE_URL}/announcements`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -169,7 +170,7 @@ async function postAnnouncement(payload) {
  * Get single studio chapter by id
  */
 async function getChapterById(id) {
-  const response = await fetch(`${BASE_URL}/chapters/${id}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/chapters/${id}`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -187,7 +188,7 @@ async function getChapterById(id) {
  * Delete chapter in studio
  */
 async function deleteChapter(id) {
-  const response = await fetch(`${BASE_URL}/chapters/${id}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/chapters/${id}`, {
     method: "DELETE",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -205,7 +206,7 @@ async function deleteChapter(id) {
  * Fetch volumes for a novel
  */
 async function getVolumes(bookId) {
-  const response = await fetch(`${config.apiBaseUrl}/volumes/book/${bookId}`, {
+  const response = await fetchWithAuth(`${config.apiBaseUrl}/volumes/book/${bookId}`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -223,7 +224,7 @@ async function getVolumes(bookId) {
  * Create a new volume (arc)
  */
 async function createVolume(payload) {
-  const response = await fetch(`${config.apiBaseUrl}/volumes`, {
+  const response = await fetchWithAuth(`${config.apiBaseUrl}/volumes`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -242,7 +243,7 @@ async function createVolume(payload) {
  * Delete a volume
  */
 async function deleteVolume(id) {
-  const response = await fetch(`${config.apiBaseUrl}/volumes/${id}`, {
+  const response = await fetchWithAuth(`${config.apiBaseUrl}/volumes/${id}`, {
     method: "DELETE",
     headers: getAuthHeaders(true),
     credentials: "include",

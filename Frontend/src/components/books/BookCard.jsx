@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { Star, Bookmark, BookOpen } from "lucide-react";
+import { useLibrary } from "../../context/LibraryContext";
+import AuthorAvatar from "../common/AuthorAvatar";
 
 export default function BookCard({ book }) {
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const { isBookmarked, toggleLibrary } = useLibrary();
 
   if (!book) return null;
 
@@ -31,10 +33,10 @@ export default function BookCard({ book }) {
   const bookUrl = `/book/${slug || id}`;
   const authorUrl = `/author/@${cleanHandle}`;
 
-  const toggleBookmark = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsBookmarked((prev) => !prev);
+  const inLibrary = isBookmarked(id);
+
+  const handleBookmarkClick = (e) => {
+    toggleLibrary(book, e);
   };
 
   return (
@@ -74,13 +76,14 @@ export default function BookCard({ book }) {
               </Link>
               <button
                 type="button"
-                onClick={toggleBookmark}
+                onClick={handleBookmarkClick}
                 className="text-text-muted hover:text-accent transition-colors p-1 cursor-pointer flex-shrink-0"
-                title="Bookmark"
+                title={inLibrary ? "In Library" : "Add to Library"}
+                aria-label={inLibrary ? "In Library" : "Add to Library"}
               >
                 <Bookmark
                   className={`w-4 h-4 ${
-                    isBookmarked ? "fill-accent text-accent" : ""
+                    inLibrary ? "fill-accent text-accent" : ""
                   }`}
                 />
               </button>
@@ -88,10 +91,16 @@ export default function BookCard({ book }) {
 
             <Link
               to={authorUrl}
-              className="text-xs text-text-muted hover:text-accent hover:underline truncate block"
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-accent group/author py-0.5 truncate"
               onClick={(e) => e.stopPropagation()}
             >
-              {author_name}
+              <AuthorAvatar
+                name={author_name}
+                avatar={book.author_avatar}
+                handle={cleanHandle}
+                size="xs"
+              />
+              <span className="truncate group-hover/author:underline">{author_name}</span>
             </Link>
 
             {/* Rating */}

@@ -70,7 +70,7 @@ export const getStudioChapterById = asyncHandler(async (req, res) => {
 
 // 4. CREATE STUDIO CHAPTER (Draft, Scheduled, or Publish)
 export const createStudioChapter = asyncHandler(async (req, res) => {
-  const { book_id, volume_id, chapter_number, title, content, status, scheduled_at } = req.body;
+  const { book_id, volume_id, chapter_number, chapter_type, chapter_label, title, content, status, scheduled_at } = req.body;
 
   if (!book_id || !title?.trim() || !content?.trim()) {
     throw new ApiError(400, "book_id, title, and content are required");
@@ -95,6 +95,8 @@ export const createStudioChapter = asyncHandler(async (req, res) => {
       chapter_number !== undefined && chapter_number !== null && chapter_number !== ""
         ? Number(chapter_number)
         : undefined,
+    chapter_type: chapter_type || "regular",
+    chapter_label: chapter_label || null,
     title: title.trim(),
     content: content.trim(),
     words_count,
@@ -110,7 +112,7 @@ export const createStudioChapter = asyncHandler(async (req, res) => {
 // 5. UPDATE STUDIO CHAPTER
 export const updateStudioChapter = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { book_id, title, content, status, volume_id, scheduled_at, chapter_number } = req.body;
+  const { book_id, title, content, status, volume_id, scheduled_at, chapter_number, chapter_type, chapter_label } = req.body;
 
   let targetBookId = book_id;
   if (!targetBookId) {
@@ -138,6 +140,8 @@ export const updateStudioChapter = asyncHandler(async (req, res) => {
     volume_id,
     scheduled_at,
     chapter_number,
+    chapter_type,
+    chapter_label,
   });
 
   if (!updated) {

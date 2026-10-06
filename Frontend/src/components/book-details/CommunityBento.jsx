@@ -9,6 +9,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import bookService from "../../services/bookService/bookService";
+import AuthorAvatar from "../common/AuthorAvatar";
 
 export default function CommunityBento({ book = null, bookSlug = "" }) {
   const [tipsCount, setTipsCount] = useState(842);
@@ -54,9 +55,19 @@ export default function CommunityBento({ book = null, bookSlug = "" }) {
       <div className="bg-card rounded-2xl p-6 border border-border-subtle shadow-sm flex flex-col justify-between transition-colors">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-wider text-accent font-bold">
-              Author's Transmission
-            </span>
+            <div className="flex items-center gap-1.5">
+              {book?.author_name && (
+                <AuthorAvatar
+                  name={book.author_name}
+                  avatar={book.author_avatar}
+                  handle={book.author_handle}
+                  size="xs"
+                />
+              )}
+              <span className="text-[11px] uppercase tracking-wider text-accent font-bold">
+                Author's Transmission
+              </span>
+            </div>
             <span className="text-[11px] text-text-muted">Today 18:30</span>
           </div>
           <h4 className="font-serif text-base font-bold text-text-main">

@@ -116,7 +116,8 @@ export const getActiveBooksFeed = asyncHandler(async (req, res) => {
 
 // 3. GET FEATURED EDITORIAL NOVELS
 export const getFeaturedBooks = asyncHandler(async (req, res) => {
-  const featured = await findFeaturedBooks();
+  const { limit = 20 } = req.query;
+  const featured = await findFeaturedBooks(limit);
   return res
     .status(200)
     .json(new ApiResponse(200, featured, "Featured serials fetched successfully!"));

@@ -222,6 +222,7 @@ export async function getPersonaBookshelf(persona_id, folder = null) {
         b.total_words,
         author.display_name AS author_name,
         author.handle AS author_handle,
+        author.avatar_url AS author_avatar,
         g.name AS genre_name,
         (
           SELECT json_build_object(
@@ -285,6 +286,8 @@ export async function getLibraryStats(persona_id) {
         b.slug,
         b.cover_image,
         p.display_name AS author_name,
+        p.handle AS author_handle,
+        p.avatar_url AS author_avatar,
         (
           SELECT c.title FROM chapters c 
           WHERE c.book_id = b.id AND c.chapter_number = rh.last_chapter_number 
@@ -327,6 +330,7 @@ export async function getPersonaReadingHistory(persona_id, limit = 20) {
         b.status,
         author.display_name AS author_name,
         author.handle AS author_handle,
+        author.avatar_url AS author_avatar,
         g.name AS genre_name,
         (
           SELECT c.title FROM chapters c 

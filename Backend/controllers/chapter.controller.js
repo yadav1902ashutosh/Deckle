@@ -15,13 +15,13 @@ import { findVolumeById } from "../model/volumes.model.js";
 
 // 1. ADD A NEW CHAPTER TO A NOVEL
 export const createNewChapter = asyncHandler(async (req, res) => {
-  const { book_id, volume_id, chapter_number, title, content, status } = req.body;
+  const { book_id, volume_id, chapter_number, chapter_type, chapter_label, title, content, status } = req.body;
 
   // Validation
-  if (!book_id || !chapter_number || !title?.trim() || !content?.trim()) {
+  if (!book_id || !title?.trim() || !content?.trim()) {
     throw new ApiError(
       400,
-      "book_id, chapter_number, title, and content are all required!",
+      "book_id, title, and content are required!",
     );
   }
 
@@ -54,7 +54,12 @@ export const createNewChapter = asyncHandler(async (req, res) => {
   const newChapter = await createChapter({
     book_id: Number(book_id),
     volume_id: volume_id ? Number(volume_id) : null,
-    chapter_number: Number(chapter_number),
+    chapter_number:
+      chapter_number !== undefined && chapter_number !== null && chapter_number !== ""
+        ? Number(chapter_number)
+        : undefined,
+    chapter_type: chapter_type || "regular",
+    chapter_label: chapter_label || null,
     title: title.trim(),
     content: content.trim(),
     words_count,

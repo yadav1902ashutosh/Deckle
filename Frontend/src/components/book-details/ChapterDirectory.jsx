@@ -125,8 +125,10 @@ export default function ChapterDirectory({
   const sourceChapters = useMemo(() => {
     if (Array.isArray(chapters) && chapters.length > 0) {
       return chapters.map((ch, idx) => ({
-        number: ch.chapter_number ?? ch.number ?? idx + 1,
+        number: ch.chapter_number !== undefined && ch.chapter_number !== null ? Number(ch.chapter_number) : (ch.number ?? idx + 1),
         title: ch.title || `Chapter ${ch.chapter_number || idx + 1}`,
+        chapter_type: ch.chapter_type || "regular",
+        chapter_label: ch.chapter_label || null,
         words: ch.words_count ? `${ch.words_count.toLocaleString()} words` : "~3,000 words",
         date: ch.published_at ? new Date(ch.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Recent",
         status: idx === 0 ? "current" : "unread",
@@ -172,7 +174,9 @@ export default function ChapterDirectory({
       result = result.filter(
         (ch) =>
           ch.title.toLowerCase().includes(q) ||
-          ch.number.toString().includes(q)
+          ch.number.toString().includes(q) ||
+          (ch.chapter_label && ch.chapter_label.toLowerCase().includes(q)) ||
+          (ch.chapter_type && ch.chapter_type.toLowerCase().includes(q))
       );
     }
 
@@ -331,17 +335,24 @@ export default function ChapterDirectory({
 
                 {/* Chapter Title & Word Info */}
                 <div className="truncate">
-                  <p
-                    className={`text-xs font-semibold truncate group-hover:text-accent transition-colors ${
-                      isCurrent
-                        ? "text-accent font-bold"
-                        : isRead
-                        ? "text-text-muted"
-                        : "text-text-main"
-                    }`}
-                  >
-                    Ch. {chapter.number}: {chapter.title}
-                  </p>
+                  <div className="flex items-center gap-1.5 truncate">
+                    {chapter.chapter_type && chapter.chapter_type !== "regular" && (
+                      <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/25 shrink-0">
+                        {chapter.chapter_type.replace("_", " ")}
+                      </span>
+                    )}
+                    <p
+                      className={`text-xs font-semibold truncate group-hover:text-accent transition-colors ${
+                        isCurrent
+                          ? "text-accent font-bold"
+                          : isRead
+                          ? "text-text-muted"
+                          : "text-text-main"
+                      }`}
+                    >
+                      {chapter.chapter_label ? `${chapter.chapter_label}: ${chapter.title}` : `Ch. ${chapter.number}: ${chapter.title}`}
+                    </p>
+                  </div>
                   <span
                     className={`text-[10px] ${
                       isCurrent
@@ -464,16 +475,16 @@ export default function ChapterDirectory({
               Jump to Chapter
             </h3>
             <p className="text-xs text-text-muted">
-              Enter a chapter number between 1 and {totalChapters.toLocaleString()}:
+              Enter a chapter number (integers or decimals e.g. 1.5):
             </p>
             <form onSubmit={handleJumpSubmit} className="space-y-3">
               <input
                 type="number"
-                min="1"
-                max={totalChapters}
+                step="any"
+                min="0"
                 value={jumpInput}
                 onChange={(e) => setJumpInput(e.target.value)}
-                placeholder="e.g. 450"
+                placeholder="e.g. 1.5 or 25"
                 className="w-full h-10 px-3 rounded-lg bg-page border border-border-subtle text-text-main text-sm focus:outline-none focus:border-accent"
                 autoFocus
               />

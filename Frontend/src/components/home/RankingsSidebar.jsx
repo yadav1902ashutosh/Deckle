@@ -7,6 +7,7 @@ import {
   Minus,
 } from "lucide-react";
 import { ListWidgetSkeleton } from "../common/Skeletons";
+import AuthorAvatar from "../common/AuthorAvatar";
 
 export default function RankingsSidebar({ books = [], loading = false }) {
   if (loading) {
@@ -18,6 +19,8 @@ export default function RankingsSidebar({ books = [], loading = false }) {
     rank: idx + 1,
     title: b.title,
     author: b.author_name || "Unknown Author",
+    author_handle: b.author_handle || "",
+    author_avatar: b.author_avatar || null,
     votes: b.views_count ? `${b.views_count} reads` : `${b.rating || "4.8"} ★`,
     slug: b.slug || b.id,
     movement: idx === 0 ? "double_up" : idx < 3 ? "up" : "same",
@@ -90,7 +93,13 @@ export default function RankingsSidebar({ books = [], loading = false }) {
                   {item.title}
                 </h4>
                 <div className="flex items-center gap-1.5 text-[11px] text-text-muted truncate">
-                  <span>{item.author}</span>
+                  <AuthorAvatar
+                    name={item.author}
+                    avatar={item.author_avatar}
+                    handle={item.author_handle}
+                    size="xs"
+                  />
+                  <span className="truncate">{item.author}</span>
                   <span>•</span>
                   <span className={item.rank <= 3 ? "text-accent font-semibold" : ""}>
                     {item.votes}

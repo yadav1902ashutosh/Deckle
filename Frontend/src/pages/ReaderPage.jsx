@@ -7,16 +7,18 @@ import ReaderSideNav from "../components/reader/ReaderSideNav";
 import ReaderTOCDrawer from "../components/reader/ReaderTOCDrawer";
 import ReaderSettingsModal from "../components/reader/ReaderSettingsModal";
 import ReaderToast from "../components/reader/ReaderToast";
+import AuthorAvatar from "../components/common/AuthorAvatar";
 import bookService from "../services/bookService/bookService";
 import chapterService from "../services/chapterService/chapterService";
 import readingHistoryService from "../services/readingHistoryService/readingHistoryService";
 import { DECKLE_THEMES, getActiveTheme, applyTheme } from "../utils/themeConfig";
+import { useLibrary } from "../context/LibraryContext";
 
 export default function ReaderPage() {
   const { slug = "", chapterNum = "1" } = useParams();
   const navigate = useNavigate();
 
-  const currentCh = parseInt(chapterNum, 10) || 1;
+  const currentCh = isNaN(parseFloat(chapterNum)) ? 1 : parseFloat(chapterNum);
 
   // Preferences State
   const [activeTheme, setActiveTheme] = useState(getActiveTheme());
@@ -29,7 +31,7 @@ export default function ReaderPage() {
   const [controlsVisible, setControlsVisible] = useState(true);
   const [tocOpen, setTocOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const { isBookmarked: checkBookmarked, toggleLibrary } = useLibrary();
   const [toast, setToast] = useState({ message: "", icon: "info", visible: false });
 
   const toastTimerRef = useRef(null);
@@ -178,6 +180,8 @@ export default function ReaderPage() {
     } else if (currentCh > 1) {
       navigate(`/book/${slug}/chapter/${currentCh - 1}`);
       window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      showToast("You are on the first chapter", "info");
     }
   };
 
@@ -198,20 +202,11 @@ export default function ReaderPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleToggleBookmark = async () => {
-    if (!bookData?.id) return;
-    const next = !isBookmarked;
-    setIsBookmarked(next);
-    showToast(next ? "Book saved to reading shelf" : "Removed from shelf", "bookmark");
+  const isBookmarked = bookData?.id ? checkBookmarked(bookData.id) : false;
 
-    try {
-      await readingHistoryService.updateBookshelf({
-        book_id: bookData.id,
-        is_bookmarked: next,
-      });
-    } catch {
-      setIsBookmarked(!next);
-    }
+  const handleToggleBookmark = () => {
+    if (!bookData) return;
+    toggleLibrary(bookData);
   };
 
   const currentThemeObj = DECKLE_THEMES.find((t) => t.id === activeTheme);
@@ -224,6 +219,9 @@ export default function ReaderPage() {
       : chapterData?.content
       ? [chapterData.content]
       : [];
+  const isHtmlContent = Boolean(
+    chapterData?.content && /<[a-z][\s\S]*>/i.test(chapterData.content)
+  );
 
   return (
     <div
@@ -345,14 +343,31 @@ export default function ReaderPage() {
 
               {/* Chapter Heading Banner */}
               <header className="text-center pb-8 pt-4">
-                <p className="text-[11px] font-bold text-accent uppercase tracking-widest mb-2 font-sans">
-                  {chapterData?.volume_title || "Serial Chronicles"}
-                </p>
+                <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
+                  <p className="text-[11px] font-bold text-accent uppercase tracking-widest font-sans">
+                    {chapterData?.volume_title || "Serial Chronicles"}
+                  </p>
+                  {chapterData?.chapter_type && chapterData?.chapter_type !== "regular" && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/25">
+                      {chapterData.chapter_type.replace("_", " ")}
+                    </span>
+                  )}
+                </div>
                 <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-snug">
-                  Chapter {currentCh}: {chapterData?.title || "Reading Manuscript"}
+                  {chapterData?.chapter_label ? `${chapterData.chapter_label}: ${chapterData.title}` : `Chapter ${currentCh}: ${chapterData?.title || "Reading Manuscript"}`}
                 </h1>
                 <div className="mt-3 flex items-center justify-center flex-wrap gap-2.5 text-xs text-text-muted font-sans">
-                  <span>{bookData?.author_name || "Author"}</span>
+                  <div className="inline-flex items-center gap-1.5">
+                    <AuthorAvatar
+                      name={bookData?.author_name || chapterData?.author_name || "Author"}
+                      avatar={bookData?.author_avatar || chapterData?.author_avatar}
+                      handle={bookData?.author_handle || chapterData?.author_handle}
+                      size="xs"
+                    />
+                    <span className="font-medium text-text-main hover:text-accent transition-colors">
+                      {bookData?.author_name || chapterData?.author_name || "Author"}
+                    </span>
+                  </div>
                   <span>•</span>
                   <span>{chapterData?.words_count ? `${chapterData.words_count} Words` : "Serial Edition"}</span>
                   <span>•</span>
@@ -398,7 +413,12 @@ export default function ReaderPage() {
                   textAlign: textAlign,
                 }}
               >
-                {paragraphs.length > 0 ? (
+                {isHtmlContent ? (
+                  <div
+                    className={`tiptap-reader-content ${isLiteraryIndent ? "literary-indent" : ""}`}
+                    dangerouslySetInnerHTML={{ __html: chapterData.content }}
+                  />
+                ) : paragraphs.length > 0 ? (
                   paragraphs.map((p, idx) => (
                     <p key={idx} className={isLiteraryIndent ? "article-p" : ""}>
                       {p}

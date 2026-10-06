@@ -1,4 +1,5 @@
 import config from "../../config/config";
+import { fetchWithAuth } from "../apiClient";
 
 const BASE_URL = `${config.apiBaseUrl}/users`;
 
@@ -23,7 +24,7 @@ function getAuthHeaders(isJson = true) {
  * 1. Fetch current master user profile + linked personas
  */
 async function getCurrentUser() {
-  const response = await fetch(`${BASE_URL}/current-user`, {
+  const response = await fetchWithAuth(`${BASE_URL}/current-user`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -42,7 +43,7 @@ async function getCurrentUser() {
  * 2. Update master parent account personal info
  */
 async function updateProfile(payload) {
-  const response = await fetch(`${BASE_URL}/profile`, {
+  const response = await fetchWithAuth(`${BASE_URL}/profile`, {
     method: "PATCH",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -62,7 +63,7 @@ async function updateProfile(payload) {
  * 3. Change master account password
  */
 async function changePassword({ currentPassword, newPassword }) {
-  const response = await fetch(`${BASE_URL}/change-password`, {
+  const response = await fetchWithAuth(`${BASE_URL}/change-password`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -82,7 +83,7 @@ async function changePassword({ currentPassword, newPassword }) {
  * 4. Revoke all other active sessions
  */
 async function revokeOtherSessions() {
-  const response = await fetch(`${BASE_URL}/sessions/revoke-others`, {
+  const response = await fetchWithAuth(`${BASE_URL}/sessions/revoke-others`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -101,7 +102,7 @@ async function revokeOtherSessions() {
  * 5. Fetch user settings
  */
 async function getSettings() {
-  const response = await fetch(`${BASE_URL}/settings`, {
+  const response = await fetchWithAuth(`${BASE_URL}/settings`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -115,7 +116,7 @@ async function getSettings() {
  * 6. Update user settings
  */
 async function updateSettings(settings) {
-  const response = await fetch(`${BASE_URL}/settings`, {
+  const response = await fetchWithAuth(`${BASE_URL}/settings`, {
     method: "PATCH",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -130,7 +131,7 @@ async function updateSettings(settings) {
  * 7. Fetch 7-day reading velocity
  */
 async function getReadingVelocity() {
-  const response = await fetch(`${BASE_URL}/reading-velocity`, {
+  const response = await fetchWithAuth(`${BASE_URL}/reading-velocity`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -144,7 +145,7 @@ async function getReadingVelocity() {
  * 8. Fetch genre affinity
  */
 async function getGenreAffinity() {
-  const response = await fetch(`${BASE_URL}/genre-affinity`, {
+  const response = await fetchWithAuth(`${BASE_URL}/genre-affinity`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -158,7 +159,7 @@ async function getGenreAffinity() {
  * 9. Fetch active sessions list
  */
 async function getSessions() {
-  const response = await fetch(`${BASE_URL}/sessions`, {
+  const response = await fetchWithAuth(`${BASE_URL}/sessions`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -172,7 +173,7 @@ async function getSessions() {
  * 10. Revoke a single session
  */
 async function revokeSession(id) {
-  const response = await fetch(`${BASE_URL}/sessions/${id}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/sessions/${id}`, {
     method: "DELETE",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -186,7 +187,7 @@ async function revokeSession(id) {
  * 11. Toggle 2FA
  */
 async function toggle2FA(enabled) {
-  const response = await fetch(`${BASE_URL}/2fa/toggle`, {
+  const response = await fetchWithAuth(`${BASE_URL}/2fa/toggle`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",

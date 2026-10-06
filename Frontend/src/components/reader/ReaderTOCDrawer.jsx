@@ -13,13 +13,21 @@ export default function ReaderTOCDrawer({
   const [isAscending, setIsAscending] = useState(true);
 
   const filteredChapters = useMemo(() => {
-    let list = [...chapters];
+    let list = chapters.map((ch, idx) => ({
+      ...ch,
+      number: ch.chapter_number !== undefined && ch.chapter_number !== null ? Number(ch.chapter_number) : (ch.number ?? idx + 1),
+      title: ch.title || `Chapter ${ch.chapter_number || idx + 1}`,
+      chapter_type: ch.chapter_type || "regular",
+      chapter_label: ch.chapter_label || null,
+    }));
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(
         (ch) =>
           ch.title.toLowerCase().includes(q) ||
-          ch.number.toString().includes(q)
+          ch.number.toString().includes(q) ||
+          (ch.chapter_label && ch.chapter_label.toLowerCase().includes(q)) ||
+          (ch.chapter_type && ch.chapter_type.toLowerCase().includes(q))
       );
     }
     if (!isAscending) {
@@ -96,12 +104,17 @@ export default function ReaderTOCDrawer({
                     : "hover:bg-tag text-text-muted hover:text-text-main border-transparent"
                 }`}
               >
-                <div className="flex items-center gap-2 truncate pr-2">
+                <div className="flex items-center gap-1.5 truncate pr-2">
                   {isCurrent && (
                     <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
                   )}
+                  {ch.chapter_type && ch.chapter_type !== "regular" && (
+                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/25 shrink-0">
+                      {ch.chapter_type.replace("_", " ")}
+                    </span>
+                  )}
                   <span className="truncate">
-                    Ch. {ch.number}: {ch.title}
+                    {ch.chapter_label ? `${ch.chapter_label}: ${ch.title}` : `Ch. ${ch.number}: ${ch.title}`}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-text-muted shrink-0">

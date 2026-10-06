@@ -13,33 +13,49 @@ export default function ReaderSideNav({
       {/* Previous Chapter Left Arrow (ixdzs .read-pre) */}
       <button
         type="button"
-        disabled={!canNavigatePrev}
         onClick={(e) => {
           e.stopPropagation();
           onNavigatePrev && onNavigatePrev();
         }}
-        title="Previous Chapter (Press Left Arrow ←)"
-        className={`hidden md:flex fixed left-3 top-1/2 -translate-y-1/2 z-30 w-11 h-14 bg-card/90 hover:bg-card border border-border-subtle rounded-r-2xl shadow-md items-center justify-center text-text-muted hover:text-accent disabled:opacity-0 transition-all duration-300 group cursor-pointer ${
-          controlsVisible ? "opacity-95" : "opacity-25 hover:opacity-95"
+        aria-label="Previous Chapter"
+        title={
+          canNavigatePrev
+            ? "Previous Chapter (Press Left Arrow ←)"
+            : "First Chapter (You are on the first chapter)"
+        }
+        className={`flex fixed left-0 sm:left-2 md:left-3 top-1/2 -translate-y-1/2 z-30 w-8 sm:w-10 md:w-11 h-12 sm:h-13 md:h-14 bg-card/85 hover:bg-card border border-border-subtle rounded-r-xl md:rounded-r-2xl shadow-md items-center justify-center transition-all duration-300 ease-in-out group backdrop-blur-xs touch-manipulation active:scale-95 ${
+          !controlsVisible
+            ? "transform -translate-x-full opacity-0 pointer-events-none"
+            : !canNavigatePrev
+            ? "transform translate-x-0 opacity-40 hover:opacity-80 text-text-muted/60 hover:text-text-main cursor-pointer pointer-events-auto"
+            : "transform translate-x-0 opacity-95 text-text-muted hover:text-accent cursor-pointer pointer-events-auto"
         }`}
       >
-        <ChevronLeft className="w-6 h-6 group-hover:-translate-x-0.5 transition-transform" />
+        <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 group-hover:-translate-x-0.5 transition-transform" />
       </button>
 
       {/* Next Chapter Right Arrow (ixdzs .read-next) */}
       <button
         type="button"
-        disabled={!canNavigateNext}
         onClick={(e) => {
           e.stopPropagation();
           onNavigateNext && onNavigateNext();
         }}
-        title="Next Chapter (Press Right Arrow →)"
-        className={`hidden md:flex fixed right-3 top-1/2 -translate-y-1/2 z-30 w-11 h-14 bg-card/90 hover:bg-card border border-border-subtle rounded-l-2xl shadow-md items-center justify-center text-text-muted hover:text-accent disabled:opacity-0 transition-all duration-300 group cursor-pointer ${
-          controlsVisible ? "opacity-95" : "opacity-25 hover:opacity-95"
+        aria-label="Next Chapter"
+        title={
+          canNavigateNext
+            ? "Next Chapter (Press Right Arrow →)"
+            : "Final Chapter (Reached the latest chapter)"
+        }
+        className={`flex fixed right-0 sm:right-2 md:right-3 top-1/2 -translate-y-1/2 z-30 w-8 sm:w-10 md:w-11 h-12 sm:h-13 md:h-14 bg-card/85 hover:bg-card border border-border-subtle rounded-l-xl md:rounded-l-2xl shadow-md items-center justify-center transition-all duration-300 ease-in-out group backdrop-blur-xs touch-manipulation active:scale-95 ${
+          !controlsVisible
+            ? "transform translate-x-full opacity-0 pointer-events-none"
+            : !canNavigateNext
+            ? "transform translate-x-0 opacity-40 hover:opacity-80 text-text-muted/60 hover:text-text-main cursor-pointer pointer-events-auto"
+            : "transform translate-x-0 opacity-95 text-text-muted hover:text-accent cursor-pointer pointer-events-auto"
         }`}
       >
-        <ChevronRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />
+        <ChevronRight className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-0.5 transition-transform" />
       </button>
     </>
   );

@@ -104,15 +104,15 @@ export default function HomePage() {
     setCurrentPage(1);
   };
 
-  const featuredBook = featuredBooks.length > 0 ? featuredBooks[0] : books[0] || null;
+  const featuredList = featuredBooks.length > 0 ? featuredBooks : books.slice(0, 20);
 
   return (
     <div className="w-full flex flex-col space-y-8">
       {/* 1. Editorial Spotlight / Featured Serial Hero */}
       {loading ? (
         <HeroSpotlightSkeleton />
-      ) : featuredBook ? (
-        <HeroSpotlight book={featuredBook} loading={false} />
+      ) : featuredList.length > 0 ? (
+        <HeroSpotlight books={featuredList} loading={false} />
       ) : null}
 
       {/* 2. Discovery Canvas & Multi-facet Filter System */}

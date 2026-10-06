@@ -1,4 +1,5 @@
 import config from "../../config/config";
+import { fetchWithAuth } from "../apiClient";
 
 const BASE_URL = `${config.apiBaseUrl}/library`;
 
@@ -27,7 +28,7 @@ async function getBookshelf(folder = null) {
     ? `${BASE_URL}/shelf?folder=${encodeURIComponent(folder)}`
     : `${BASE_URL}/shelf`;
 
-  const response = await fetch(url, {
+  const response = await fetchWithAuth(url, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -46,7 +47,7 @@ async function getBookshelf(folder = null) {
  * Fetch library overview stats & active reading hero
  */
 async function getLibraryStats() {
-  const response = await fetch(`${BASE_URL}/stats`, {
+  const response = await fetchWithAuth(`${BASE_URL}/stats`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -65,7 +66,7 @@ async function getLibraryStats() {
  * Fetch recent reading history activity
  */
 async function getRecentHistory(limit = 20) {
-  const response = await fetch(`${BASE_URL}/history?limit=${limit}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/history?limit=${limit}`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -84,7 +85,7 @@ async function getRecentHistory(limit = 20) {
  * Clear reading history
  */
 async function clearHistory() {
-  const response = await fetch(`${BASE_URL}/history`, {
+  const response = await fetchWithAuth(`${BASE_URL}/history`, {
     method: "DELETE",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -109,7 +110,7 @@ async function syncProgress({
   scroll_percentage,
   words_count = 0,
 }) {
-  const response = await fetch(`${BASE_URL}/progress`, {
+  const response = await fetchWithAuth(`${BASE_URL}/progress`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -140,7 +141,7 @@ async function updateBookshelf({
   folder = "Reading",
   is_favorite = false,
 }) {
-  const response = await fetch(`${BASE_URL}/shelf`, {
+  const response = await fetchWithAuth(`${BASE_URL}/shelf`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -165,7 +166,7 @@ async function updateBookshelf({
  * Batch remove novels from shelf
  */
 async function batchRemove(bookIds = []) {
-  const response = await fetch(`${BASE_URL}/shelf/batch-remove`, {
+  const response = await fetchWithAuth(`${BASE_URL}/shelf/batch-remove`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -185,7 +186,7 @@ async function batchRemove(bookIds = []) {
  * Batch move novels to folder
  */
 async function batchMove(bookIds = [], folder) {
-  const response = await fetch(`${BASE_URL}/shelf/batch-move`, {
+  const response = await fetchWithAuth(`${BASE_URL}/shelf/batch-move`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -205,7 +206,7 @@ async function batchMove(bookIds = [], folder) {
  * Fetch 7-day weekly reading goal
  */
 async function getWeeklyReadingGoal() {
-  const response = await fetch(`${BASE_URL}/weekly-goal`, {
+  const response = await fetchWithAuth(`${BASE_URL}/weekly-goal`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -215,6 +216,29 @@ async function getWeeklyReadingGoal() {
 
   if (!response.ok) {
     throw new Error(data.message || "Failed to fetch weekly reading goal");
+  }
+
+  return data.data;
+}
+
+/**
+ * Check bookshelf bookmark status for a single novel
+ */
+async function getBookStatus(bookId) {
+  const token = localStorage.getItem("deckle_token") || localStorage.getItem("deckle-token");
+  if (!token || !bookId) {
+    return { is_bookmarked: false, folder: "Reading", is_favorite: false };
+  }
+
+  const response = await fetchWithAuth(`${BASE_URL}/status/${bookId}`, {
+    method: "GET",
+    headers: getAuthHeaders(true),
+    credentials: "include",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch book status");
   }
 
   return data.data;
@@ -230,6 +254,8 @@ const readingHistoryService = {
   batchRemove,
   batchMove,
   getWeeklyReadingGoal,
+  getBookStatus,
 };
 
 export default readingHistoryService;
+

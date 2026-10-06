@@ -22,12 +22,29 @@ export async function createChapterTable() {
       );
     `;
 
-    // Ensure volume_id & scheduled_at exist on existing tables (Migration helper)
+    // Ensure volume_id, scheduled_at, chapter_type & chapter_label exist on existing tables (Migration helper)
     await sql`
       ALTER TABLE chapters ADD COLUMN IF NOT EXISTS volume_id INTEGER REFERENCES volumes(id) ON DELETE SET NULL;
     `;
     await sql`
       ALTER TABLE chapters ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+    `;
+    await sql`
+      ALTER TABLE chapters ADD COLUMN IF NOT EXISTS chapter_type VARCHAR(30) DEFAULT 'regular';
+    `;
+    await sql`
+      ALTER TABLE chapters ADD COLUMN IF NOT EXISTS chapter_label VARCHAR(100) DEFAULT NULL;
+    `;
+    await sql`
+      ALTER TABLE chapters ALTER COLUMN chapter_number TYPE NUMERIC(8,2);
+    `;
+    await sql`
+      ALTER TABLE chapters DROP CONSTRAINT IF EXISTS chapters_book_id_chapter_number_key;
+    `;
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_chapters_book_type_num 
+      ON chapters(book_id, chapter_type, chapter_number) 
+      WHERE deleted_at IS NULL;
     `;
 
     await sql`
@@ -51,11 +68,13 @@ export async function createChapterTable() {
   }
 }
 
-// 2. CREATE A NEW CHAPTER (With Consecutive Chapter and Volume Sequencing + Scheduling)
+// 2. CREATE A NEW CHAPTER (Consecutive for Canon/Regular, Flexible/Non-consecutive for Side Stories/Extras/Interludes)
 export async function createChapter({
   book_id,
   volume_id = null,
   chapter_number,
+  chapter_type = "regular",
+  chapter_label = null,
   title,
   content,
   words_count,
@@ -63,71 +82,120 @@ export async function createChapter({
   scheduled_at = null,
 }) {
   try {
-    // A. Check highest chapter number in the novel for consecutive validation
-    const maxChRes = await sql`
-      SELECT MAX(chapter_number) as max_num FROM chapters WHERE book_id = ${book_id} AND deleted_at IS NULL;
-    `;
-    const currentMax = maxChRes[0]?.max_num !== null ? Number(maxChRes[0].max_num) : 0;
-    const nextExpected = currentMax + 1;
-    const targetChNum =
-      chapter_number !== undefined && chapter_number !== null
-        ? Number(chapter_number)
-        : nextExpected;
+    const VALID_TYPES = ["regular", "side_story", "extra", "interlude", "special", "prologue", "epilogue"];
+    const normalizedType = VALID_TYPES.includes(chapter_type) ? chapter_type : "regular";
+    const isRegular = normalizedType === "regular";
 
-    if (targetChNum <= 0) {
-      throw new ApiError(400, "Chapter number must be a positive integer (1, 2, 3...)");
-    }
+    let targetChNum;
 
-    // Chapters must be strictly consecutive (cannot skip from 2 to 10)
-    if (targetChNum > nextExpected) {
-      throw new ApiError(
-        400,
-        `Chapters must be consecutive! The next chapter must be Chapter ${nextExpected}.`
-      );
-    }
-
-    // B. Validate Volume consecutive chapter numbering
-    if (volume_id) {
-      const volRes = await sql`
-        SELECT * FROM volumes WHERE id = ${volume_id} AND book_id = ${book_id} AND deleted_at IS NULL;
+    if (isRegular) {
+      // A. Canon / Main story chapters MUST be strictly consecutive (1, 2, 3...)
+      const maxChRes = await sql`
+        SELECT MAX(chapter_number) as max_num 
+        FROM chapters 
+        WHERE book_id = ${book_id} 
+          AND (chapter_type = 'regular' OR chapter_type IS NULL) 
+          AND deleted_at IS NULL;
       `;
-      if (!volRes[0]) {
-        throw new ApiError(404, "Specified volume not found for this book.");
-      }
-      const currentVol = volRes[0];
+      const currentMax = maxChRes[0]?.max_num !== null ? Number(maxChRes[0].max_num) : 0;
+      const nextExpected = currentMax + 1;
+      targetChNum =
+        chapter_number !== undefined && chapter_number !== null && chapter_number !== ""
+          ? Number(chapter_number)
+          : nextExpected;
 
-      // If volume is > 1, verify its chapters are strictly greater than previous volumes
-      if (currentVol.volume_number > 1) {
-        const prevVolMaxRes = await sql`
-          SELECT MAX(c.chapter_number) as max_prev
+      if (targetChNum <= 0) {
+        throw new ApiError(400, "Main story chapter number must be a positive integer (1, 2, 3...)");
+      }
+
+      if (targetChNum > nextExpected) {
+        throw new ApiError(
+          400,
+          `Main story chapters must be consecutive! The next chapter must be Chapter ${nextExpected}.`
+        );
+      }
+
+      // B. Validate Volume consecutive chapter numbering for main story
+      if (volume_id) {
+        const volRes = await sql`
+          SELECT * FROM volumes WHERE id = ${volume_id} AND book_id = ${book_id} AND deleted_at IS NULL;
+        `;
+        if (!volRes[0]) {
+          throw new ApiError(404, "Specified volume not found for this book.");
+        }
+        const currentVol = volRes[0];
+
+        if (currentVol.volume_number > 1) {
+          const prevVolMaxRes = await sql`
+            SELECT MAX(c.chapter_number) as max_prev
+            FROM chapters c
+            JOIN volumes v ON c.volume_id = v.id
+            WHERE c.book_id = ${book_id} 
+              AND (c.chapter_type = 'regular' OR c.chapter_type IS NULL)
+              AND v.volume_number < ${currentVol.volume_number} 
+              AND c.deleted_at IS NULL;
+          `;
+          const prevMax =
+            prevVolMaxRes[0]?.max_prev !== null ? Number(prevVolMaxRes[0].max_prev) : 0;
+          if (prevMax > 0 && targetChNum <= prevMax) {
+            throw new ApiError(
+              400,
+              `Chapters in Volume ${currentVol.volume_number} must be consecutive after Volume ${currentVol.volume_number - 1} (after Chapter ${prevMax}).`
+            );
+          }
+        }
+
+        const nextVolMinRes = await sql`
+          SELECT MIN(c.chapter_number) as min_next
           FROM chapters c
           JOIN volumes v ON c.volume_id = v.id
-          WHERE c.book_id = ${book_id} AND v.volume_number < ${currentVol.volume_number} AND c.deleted_at IS NULL;
+          WHERE c.book_id = ${book_id} 
+            AND (c.chapter_type = 'regular' OR c.chapter_type IS NULL)
+            AND v.volume_number > ${currentVol.volume_number} 
+            AND c.deleted_at IS NULL;
         `;
-        const prevMax =
-          prevVolMaxRes[0]?.max_prev !== null ? Number(prevVolMaxRes[0].max_prev) : 0;
-        if (prevMax > 0 && targetChNum <= prevMax) {
+        const nextMin =
+          nextVolMinRes[0]?.min_next !== null ? Number(nextVolMinRes[0].min_next) : null;
+        if (nextMin !== null && targetChNum >= nextMin) {
           throw new ApiError(
             400,
-            `Chapters in Volume ${currentVol.volume_number} must be consecutive after Volume ${currentVol.volume_number - 1} (after Chapter ${prevMax}).`
+            `Chapter number ${targetChNum} cannot exceed the starting chapter (${nextMin}) of subsequent volumes.`
           );
         }
       }
+    } else {
+      // Non-consecutive chapters: Side stories, Extras, Interludes, Specials, Prologues, Epilogues
+      // Allows custom numbers, decimals (e.g. 1.5, 2.5, 0.5), or automatic sequential positioning
+      if (chapter_number !== undefined && chapter_number !== null && chapter_number !== "") {
+        targetChNum = Number(chapter_number);
+        if (isNaN(targetChNum) || targetChNum < 0) {
+          throw new ApiError(400, "Please provide a valid chapter number (e.g. 1, 1.5, 2).");
+        }
+      } else {
+        // Auto-assign next number for this specific chapter type
+        const maxTypeRes = await sql`
+          SELECT MAX(chapter_number) as max_num 
+          FROM chapters 
+          WHERE book_id = ${book_id} 
+            AND chapter_type = ${normalizedType} 
+            AND deleted_at IS NULL;
+        `;
+        const maxForType = maxTypeRes[0]?.max_num !== null ? Number(maxTypeRes[0].max_num) : null;
+        if (maxForType !== null) {
+          targetChNum = maxForType + 1;
+        } else {
+          // If first of its type, default to 0.5 for prologue, 1 for other non-consecutive types
+          targetChNum = normalizedType === "prologue" ? 0.5 : 1;
+        }
+      }
 
-      // Check subsequent volumes if any already exist
-      const nextVolMinRes = await sql`
-        SELECT MIN(c.chapter_number) as min_next
-        FROM chapters c
-        JOIN volumes v ON c.volume_id = v.id
-        WHERE c.book_id = ${book_id} AND v.volume_number > ${currentVol.volume_number} AND c.deleted_at IS NULL;
-      `;
-      const nextMin =
-        nextVolMinRes[0]?.min_next !== null ? Number(nextVolMinRes[0].min_next) : null;
-      if (nextMin !== null && targetChNum >= nextMin) {
-        throw new ApiError(
-          400,
-          `Chapter number ${targetChNum} cannot exceed the starting chapter (${nextMin}) of subsequent volumes.`
-        );
+      if (volume_id) {
+        const volRes = await sql`
+          SELECT id FROM volumes WHERE id = ${volume_id} AND book_id = ${book_id} AND deleted_at IS NULL;
+        `;
+        if (!volRes[0]) {
+          throw new ApiError(404, "Specified volume not found for this book.");
+        }
       }
     }
 
@@ -144,7 +212,6 @@ export async function createChapter({
         throw new ApiError(400, "A valid scheduled_at timestamp is required for scheduled publication.");
       }
       if (scheduledDate <= new Date()) {
-        // Scheduled in past or right now -> auto-publish immediately
         finalStatus = "published";
         publishedAt = sql`CURRENT_TIMESTAMP`;
         scheduledDate = null;
@@ -158,6 +225,8 @@ export async function createChapter({
         book_id,
         volume_id,
         chapter_number,
+        chapter_type,
+        chapter_label,
         title,
         content,
         words_count,
@@ -169,6 +238,8 @@ export async function createChapter({
         ${book_id},
         ${volume_id ? Number(volume_id) : null},
         ${targetChNum},
+        ${normalizedType},
+        ${chapter_label ? chapter_label.trim() : null},
         ${title},
         ${content},
         ${calculatedWords},
@@ -191,10 +262,11 @@ export async function createChapter({
 
     return result[0];
   } catch (error) {
-    if (error.code === "23505" || error.message.includes("unique constraint")) {
+    if (error.code === "23505" || error.message.includes("unique constraint") || error.message.includes("idx_chapters_book_type_num")) {
+      const typeLabel = chapter_type === "regular" ? "Chapter" : chapter_type.replace("_", " ");
       throw new ApiError(
         409,
-        `Chapter ${chapter_number} already exists for this book!`,
+        `${typeLabel} ${chapter_number || ""} already exists for this book!`,
       );
     }
     if (error instanceof ApiError) throw error;
@@ -212,6 +284,8 @@ export async function getTableOfContents(book_id, user_id = null) {
       SELECT 
         chapters.id, 
         chapters.chapter_number, 
+        chapters.chapter_type,
+        chapters.chapter_label,
         chapters.title, 
         chapters.words_count, 
         chapters.published_at,
@@ -253,7 +327,8 @@ export async function getChapterByNumber(book_id, chapter_number, user_id = null
         b.title AS book_title,
         b.slug AS book_slug,
         p.display_name AS author_name,
-        p.handle AS author_handle
+        p.handle AS author_handle,
+        p.avatar_url AS author_avatar
       FROM chapters
       JOIN books b ON chapters.book_id = b.id
       JOIN personas p ON b.persona_id = p.id
@@ -265,7 +340,9 @@ export async function getChapterByNumber(book_id, chapter_number, user_id = null
           OR (chapters.status = 'scheduled' AND chapters.scheduled_at <= CURRENT_TIMESTAMP)
           OR (p.user_id = ${user_id || null})
         )
-        AND chapters.deleted_at IS NULL;
+        AND chapters.deleted_at IS NULL
+      ORDER BY CASE WHEN chapters.chapter_type = 'regular' THEN 0 ELSE 1 END ASC
+      LIMIT 1;
     `;
 
     if (!result[0]) return null;
@@ -274,7 +351,7 @@ export async function getChapterByNumber(book_id, chapter_number, user_id = null
 
     // Find Previous Chapter
     const prev = await sql`
-      SELECT chapters.chapter_number, chapters.title FROM chapters
+      SELECT chapters.chapter_number, chapters.title, chapters.chapter_type, chapters.chapter_label FROM chapters
       JOIN books b ON chapters.book_id = b.id
       JOIN personas p ON b.persona_id = p.id
       WHERE chapters.book_id = ${book_id} AND chapters.chapter_number < ${chapter_number}
@@ -289,7 +366,7 @@ export async function getChapterByNumber(book_id, chapter_number, user_id = null
 
     // Find Next Chapter
     const next = await sql`
-      SELECT chapters.chapter_number, chapters.title FROM chapters
+      SELECT chapters.chapter_number, chapters.title, chapters.chapter_type, chapters.chapter_label FROM chapters
       JOIN books b ON chapters.book_id = b.id
       JOIN personas p ON b.persona_id = p.id
       WHERE chapters.book_id = ${book_id} AND chapters.chapter_number > ${chapter_number}
@@ -351,7 +428,8 @@ export async function findLivePulseChapters() {
         b.slug AS book_slug,
         b.cover_image,
         p.display_name AS author_name,
-        p.handle AS author_handle
+        p.handle AS author_handle,
+        p.avatar_url AS author_avatar
       FROM chapters c
       JOIN books b ON c.book_id = b.id
       JOIN personas p ON b.persona_id = p.id
@@ -406,6 +484,8 @@ export async function getAllChaptersForAuthor(book_id) {
         c.book_id,
         c.volume_id, 
         c.chapter_number, 
+        c.chapter_type,
+        c.chapter_label,
         c.title, 
         c.content,
         c.words_count, 
@@ -434,7 +514,7 @@ export async function getAllChaptersForAuthor(book_id) {
 export async function updateChapterById(
   chapter_id,
   book_id,
-  { title, content, status, volume_id, scheduled_at, chapter_number }
+  { title, content, status, volume_id, scheduled_at, chapter_number, chapter_type, chapter_label }
 ) {
   try {
     const existing = await sql`
@@ -446,9 +526,16 @@ export async function updateChapterById(
     const current = existing[0];
 
     let targetChNum =
-      chapter_number !== undefined && chapter_number !== null
+      chapter_number !== undefined && chapter_number !== null && chapter_number !== ""
         ? Number(chapter_number)
         : current.chapter_number;
+    let targetType = chapter_type !== undefined ? chapter_type : current.chapter_type || "regular";
+    let targetLabel =
+      chapter_label !== undefined
+        ? chapter_label
+          ? chapter_label.trim()
+          : null
+        : current.chapter_label;
     let targetVolId =
       volume_id !== undefined
         ? volume_id
@@ -500,6 +587,8 @@ export async function updateChapterById(
         status = ${finalStatus},
         volume_id = ${targetVolId},
         chapter_number = ${targetChNum},
+        chapter_type = ${targetType},
+        chapter_label = ${targetLabel},
         scheduled_at = ${scheduledDate ? scheduledDate.toISOString() : null},
         published_at = ${publishedAt},
         updated_at = CURRENT_TIMESTAMP
@@ -518,6 +607,12 @@ export async function updateChapterById(
 
     return result[0] || null;
   } catch (error) {
+    if (error.code === "23505" || error.message.includes("unique constraint") || error.message.includes("idx_chapters_book_type_num")) {
+      throw new ApiError(
+        409,
+        `A chapter with number ${chapter_number} already exists for this book!`,
+      );
+    }
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, `Database error updating chapter: ${error.message}`);
   }

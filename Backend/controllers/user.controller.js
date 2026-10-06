@@ -10,6 +10,7 @@ import {
   findUserById,
   updateUserRefreshToken,
   clearUserRefreshToken,
+  findUserWithRefreshTokenById,
   findUserWithPasswordById,
   updateUserProfile,
   updateUserPassword,
@@ -194,6 +195,66 @@ export const logoutUser = asyncHandler(async (req, res) => {
     .clearCookie("accessToken", cookieOptions)
     .clearCookie("refreshToken", cookieOptions)
     .json(new ApiResponse(200, {}, "User logged out successfully!"));
+});
+
+// 4b. REFRESH ACCESS TOKEN
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies?.refreshToken ||
+    req.cookies?.refresh_token ||
+    req.body?.refreshToken ||
+    req.body?.refresh_token ||
+    req.header("Authorization")?.replace("Bearer ", "");
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Unauthorized request: Refresh token is required");
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+  } catch (error) {
+    throw new ApiError(401, "Invalid or expired refresh token");
+  }
+
+  const user = await findUserWithRefreshTokenById(decoded.id);
+
+  if (!user) {
+    throw new ApiError(401, "Invalid refresh token: User no longer exists");
+  }
+
+  if (user.refresh_token !== incomingRefreshToken) {
+    throw new ApiError(401, "Refresh token is expired or has been invalidated");
+  }
+
+  const { access_token, refresh_token: new_refresh_token } =
+    await generateAccessAndRefreshTokens(user.id, user.email, user.role);
+
+  await updateUserRefreshToken(user.id, new_refresh_token);
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", access_token, cookieOptions)
+    .cookie("refreshToken", new_refresh_token, cookieOptions)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          accessToken: access_token,
+          refreshToken: new_refresh_token,
+        },
+        "Access token refreshed successfully!"
+      )
+    );
 });
 
 // 5. GET CURRENT USER

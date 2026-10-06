@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import communityService from "../services/communityService/communityService";
+import AuthorAvatar from "../components/common/AuthorAvatar";
 import { useSelector } from "react-redux";
 
 export default function CommunityPage() {
@@ -173,7 +174,15 @@ export default function CommunityPage() {
                           <span>•</span>
                         </>
                       )}
-                      <span>By {thread.author || "Reader"}</span>
+                      <div className="flex items-center gap-1.5">
+                        <AuthorAvatar
+                          name={thread.author || "Reader"}
+                          avatar={thread.authorAvatar || thread.author_avatar}
+                          handle={thread.authorHandle}
+                          size="xs"
+                        />
+                        <span>By {thread.author || "Reader"}</span>
+                      </div>
                       <span className="px-1.5 py-0.2 rounded bg-tag text-[10px] font-medium text-text-muted">
                         {thread.authorTier || "Tier 5 Scholar"}
                       </span>

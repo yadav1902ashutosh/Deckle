@@ -1,4 +1,5 @@
 import config from "../../config/config";
+import { fetchWithAuth } from "../apiClient";
 
 const BASE_URL = `${config.apiBaseUrl}/chapters`;
 
@@ -22,7 +23,7 @@ function getAuthHeaders() {
  */
 async function getNovelTOC(bookId) {
   if (!bookId) return [];
-  const response = await fetch(`${BASE_URL}/book/${bookId}/toc`, {
+  const response = await fetchWithAuth(`${BASE_URL}/book/${bookId}/toc`, {
     method: "GET",
     headers: getAuthHeaders(),
     credentials: "include",
@@ -45,7 +46,7 @@ async function readChapter(bookId, chapterNumber) {
     throw new Error("Book ID and chapter number are required");
   }
 
-  const response = await fetch(
+  const response = await fetchWithAuth(
     `${BASE_URL}/book/${bookId}/read/${chapterNumber}`,
     {
       method: "GET",
@@ -67,7 +68,7 @@ async function readChapter(bookId, chapterNumber) {
  * Fetch live pulse (4 most recently published chapters)
  */
 async function getLivePulse() {
-  const response = await fetch(`${BASE_URL}/live-pulse`, {
+  const response = await fetchWithAuth(`${BASE_URL}/live-pulse`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -84,7 +85,7 @@ async function getLivePulse() {
  * Fetch offline batch chapters for IndexedDB caching
  */
 async function getOfflineBatch(bookId, startChapter = 1, limit = 50) {
-  const response = await fetch(
+  const response = await fetchWithAuth(
     `${BASE_URL}/offline-batch/${bookId}?start_chapter=${startChapter}&limit=${limit}`,
     {
       method: "GET",
@@ -104,7 +105,7 @@ async function getOfflineBatch(bookId, startChapter = 1, limit = 50) {
  * Publish / create new chapter (Protected)
  */
 async function createChapter(chapterPayload) {
-  const response = await fetch(BASE_URL, {
+  const response = await fetchWithAuth(BASE_URL, {
     method: "POST",
     headers: getAuthHeaders(),
     credentials: "include",

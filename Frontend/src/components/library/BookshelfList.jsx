@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import AuthorAvatar from "../common/AuthorAvatar";
 import {
   Play,
   Bookmark,
@@ -184,9 +185,17 @@ export default function BookshelfList({
                       )}
                     </div>
 
-                    <p className="text-xs text-text-muted">
-                      {novel.author} · {novel.totalWords || "3.8M words"}
-                    </p>
+                    <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                      <AuthorAvatar
+                        name={novel.author}
+                        avatar={novel.authorAvatar || novel.author_avatar}
+                        handle={novel.authorHandle || novel.author_handle}
+                        size="xs"
+                      />
+                      <span>{novel.author}</span>
+                      <span>·</span>
+                      <span>{novel.totalWords || "3.8M words"}</span>
+                    </div>
 
                     <p className="text-xs text-text-main truncate font-sans">
                       Latest: Ch. {novel.latestChapterNumber}: {novel.latestChapterTitle}

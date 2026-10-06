@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import AuthorAvatar from "../common/AuthorAvatar";
 import {
   ArrowUpDown,
   Bookmark,
@@ -49,7 +50,10 @@ export default function RankingsList({
       <div className={`grid gap-3.5 ${isCompactMode ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4" : "grid-cols-1 md:grid-cols-2 2xl:grid-cols-3"}`}>
         {novels.map((novel, idx) => {
           const rank = idx + 1;
-          const isBookmarked = bookmarkedIds.includes(novel.id);
+          const isBookmarked =
+            bookmarkedIds instanceof Set
+              ? bookmarkedIds.has(novel.id)
+              : Array.isArray(bookmarkedIds) && bookmarkedIds.includes(novel.id);
 
           // Custom medal colors for top 3
           let rankBadgeBg = "bg-tag text-text-muted";
@@ -103,7 +107,13 @@ export default function RankingsList({
                       </button>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-text-muted mt-0.5">
+                    <div className="flex items-center gap-1.5 text-xs text-text-muted mt-0.5">
+                      <AuthorAvatar
+                        name={novel.author}
+                        avatar={novel.authorAvatar || novel.author_avatar}
+                        handle={novel.authorHandle || novel.author_handle}
+                        size="xs"
+                      />
                       <span className="hover:text-accent transition-colors">{novel.author}</span>
                       <span>•</span>
                       <span className="px-1.5 py-0.2 rounded bg-tag text-[10px] font-semibold uppercase tracking-wider text-text-muted">

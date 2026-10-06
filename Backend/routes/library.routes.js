@@ -9,6 +9,7 @@ import {
   recordProgress,
   clearReadingHistory,
   getWeeklyGoal,
+  getBookLibraryStatus,
 } from "../controllers/library.controller.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
@@ -21,6 +22,8 @@ router.use(verifyJWT);
 router.get("/", getBookshelf);
 router.get("/shelf", getBookshelf);
 router.post("/shelf", toggleBookshelf);
+router.get("/status/:bookId", getBookLibraryStatus);
+router.get("/book-status/:bookId", getBookLibraryStatus);
 router.post("/batch-remove", batchRemoveBooks);
 router.post("/shelf/batch-remove", batchRemoveBooks);
 router.post("/batch-move", batchMoveBooks);

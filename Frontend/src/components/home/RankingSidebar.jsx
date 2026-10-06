@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Trophy, TrendingUp, ChevronRight } from "lucide-react";
+import AuthorAvatar from "../common/AuthorAvatar";
 
 const SAMPLE_RANKINGS = [
   {
@@ -96,7 +97,11 @@ export default function RankingsSidebar({ rankings = SAMPLE_RANKINGS }) {
                 {item.title}
               </h4>
               <div className="flex items-center gap-1.5 text-[11px] text-text-muted truncate">
-                <span>{item.author}</span>
+                <AuthorAvatar
+                  name={item.author}
+                  size="xs"
+                />
+                <span className="truncate">{item.author}</span>
                 <span>•</span>
                 <span className="text-accent font-medium">{item.votes}</span>
               </div>

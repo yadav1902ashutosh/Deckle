@@ -11,9 +11,11 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import { useLibrary } from "../../context/LibraryContext";
+import AuthorAvatar from "../common/AuthorAvatar";
 
 export default function BookHero({ book }) {
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const { isBookmarked, toggleLibrary } = useLibrary();
   const [copiedShare, setCopiedShare] = useState(false);
 
   if (!book) return null;
@@ -131,9 +133,15 @@ export default function BookHero({ book }) {
                   <p className="font-serif text-lg tracking-wide text-white drop-shadow-md line-clamp-1">
                     {resolvedTitle}
                   </p>
-                  <p className="text-[11px] text-zinc-300 font-sans tracking-wide">
-                    By @{resolvedHandle}
-                  </p>
+                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-300 font-sans tracking-wide">
+                    <AuthorAvatar
+                      name={resolvedAuthor}
+                      avatar={book.author_avatar || book.authorAvatar}
+                      handle={resolvedHandle}
+                      size="xs"
+                    />
+                    <span>By @{resolvedHandle}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -165,20 +173,20 @@ export default function BookHero({ book }) {
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setIsBookmarked(!isBookmarked)}
+                onClick={() => toggleLibrary(book)}
                 className={`h-10 rounded-xl font-medium text-xs flex items-center justify-center gap-1.5 border border-border-subtle transition-colors cursor-pointer ${
-                  isBookmarked
-                    ? "bg-tag text-accent font-semibold"
+                  book?.id && isBookmarked(book.id)
+                    ? "bg-accent/15 text-accent font-semibold border-accent/30"
                     : "bg-card hover:bg-tag text-text-main"
                 }`}
-                title="Save to Library"
+                title={book?.id && isBookmarked(book.id) ? "In Library" : "Add to Library"}
               >
-                {isBookmarked ? (
+                {book?.id && isBookmarked(book.id) ? (
                   <BookmarkCheck className="w-4 h-4 text-accent" />
                 ) : (
                   <Bookmark className="w-4 h-4 text-text-muted" />
                 )}
-                <span>{isBookmarked ? "In Library" : "Add to Shelf"}</span>
+                <span>{book?.id && isBookmarked(book.id) ? "In Library" : "Add to Library"}</span>
               </button>
 
               <button
@@ -205,9 +213,13 @@ export default function BookHero({ book }) {
             {/* Author Attribution Line */}
             <div className="flex items-center flex-wrap gap-4 pt-1">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold text-sm shadow-2xs border border-accent/30">
-                  {resolvedInitials}
-                </div>
+                <AuthorAvatar
+                  name={resolvedAuthor}
+                  avatar={book.author_avatar || book.authorAvatar}
+                  handle={resolvedHandle}
+                  size="lg"
+                  clickable={true}
+                />
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
                     <Link

@@ -40,6 +40,7 @@ import {
   Cpu,
   Skull,
 } from "lucide-react";
+import AuthorAvatar from "../common/AuthorAvatar";
 import DeckleLogo from "../common/DeckleLogo";
 import { DECKLE_THEMES, getActiveTheme, applyTheme } from "../../utils/themeConfig";
 
@@ -340,6 +341,31 @@ export default function Header() {
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accent" />
                 </button>
 
+                {/* YouTube-Style Quick Persona Switcher Pill */}
+                {authState && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(true);
+                      setProfileSubmenu("personas");
+                    }}
+                    className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tag/80 hover:bg-tag border border-border-subtle/80 text-text-main text-xs font-medium transition-all hover:border-accent/40 cursor-pointer shadow-2xs group"
+                    title={`Active Persona: @${activePersona?.handle || currentUser?.username || "reader"}`}
+                    aria-label="Switch Persona"
+                  >
+                    <AuthorAvatar
+                      name={activePersona?.display_name || activePersona?.pen_name || currentUser?.username || "Reader"}
+                      avatar={avatarUrl}
+                      handle={activePersona?.handle || currentUser?.username}
+                      size="xs"
+                    />
+                    <span className="font-mono text-[11px] text-accent font-semibold truncate max-w-[110px]">
+                      @{activePersona?.handle || currentUser?.username || "persona"}
+                    </span>
+                    <ChevronDown className="w-3 h-3 text-text-muted group-hover:text-text-main transition-transform" />
+                  </button>
+                )}
+
                 {/* User Profile or Sign In */}
                 <div className="relative" ref={userMenuRef}>
                   {authState ? (
@@ -394,35 +420,40 @@ export default function Header() {
                       {/* VIEW 1: MAIN MENU */}
                       {profileSubmenu === "main" && (
                         <div>
-                          {/* Master Parent Account Dossier Card */}
+                          {/* Active Persona Dossier Card (YouTube Studio style) */}
                           <div className="p-3.5 border-b border-border-subtle/50 flex items-start gap-3 bg-tag/30">
                             <div className="w-10 h-10 rounded-full bg-accent overflow-hidden shrink-0 flex items-center justify-center text-accent-text font-semibold text-sm border border-border-subtle/40 shadow-xs">
                               {avatarUrl ? (
                                 <img
                                   src={avatarUrl}
-                                  alt={currentUser?.username || "Avatar"}
+                                  alt={activePersona?.display_name || currentUser?.username || "Avatar"}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     e.currentTarget.style.display = "none";
                                   }}
                                 />
-                              ) : currentUser?.username ? (
-                                currentUser.username.charAt(0).toUpperCase()
                               ) : (
-                                <User className="w-5 h-5" />
+                                <AuthorAvatar
+                                  name={activePersona?.display_name || currentUser?.username || "Reader"}
+                                  avatar={avatarUrl}
+                                  handle={activePersona?.handle || currentUser?.username}
+                                  size="md"
+                                />
                               )}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-semibold text-text-main text-sm truncate">
-                                  {currentUser?.full_name || currentUser?.username || "Account Holder"}
+                                  {activePersona?.display_name || currentUser?.full_name || currentUser?.username || "Account Holder"}
                                 </span>
-                                <span className="text-[9px] uppercase font-bold text-accent bg-accent/10 px-1.5 py-0.2 rounded border border-accent/20">
-                                  {currentUser?.role || "reader"}
-                                </span>
+                                {activePersona?.is_default && (
+                                  <span className="text-[9px] uppercase font-bold text-accent bg-accent/10 px-1.5 py-0.2 rounded border border-accent/20">
+                                    Default
+                                  </span>
+                                )}
                               </div>
-                              <div className="text-[11px] text-text-muted truncate font-mono">
-                                @{currentUser?.username || "user"}
+                              <div className="text-[11px] text-accent font-mono truncate">
+                                @{activePersona?.handle || currentUser?.username || "user"}
                               </div>
                               <div className="text-[11px] text-text-muted truncate mt-0.5">
                                 {currentUser?.email || "reader@decklenovel.com"}
@@ -433,7 +464,7 @@ export default function Header() {
                                   onClick={() => setUserMenuOpen(false)}
                                   className="text-[11px] text-accent hover:underline font-semibold"
                                 >
-                                  Reading Profile →
+                                  Channel Profile →
                                 </Link>
                                 <span className="text-text-muted text-[10px]">•</span>
                                 <Link
@@ -441,13 +472,31 @@ export default function Header() {
                                   onClick={() => setUserMenuOpen(false)}
                                   className="text-[11px] text-text-muted hover:text-text-main font-medium underline underline-offset-2"
                                 >
-                                  Manage Account
+                                  Account
                                 </Link>
                               </div>
                             </div>
                           </div>
 
                           <div className="py-1">
+                            {/* YouTube-Style Prominent "Switch Persona" Row */}
+                            <button
+                              type="button"
+                              onClick={() => setProfileSubmenu("personas")}
+                              className="w-full px-3.5 py-2.5 flex items-center justify-between text-text-main hover:bg-tag transition-colors text-xs font-medium cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <Users className="w-4 h-4 text-accent" />
+                                <span>Switch persona</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-text-muted">
+                                <span className="text-[10px] bg-accent/10 text-accent font-semibold px-2 py-0.5 rounded-full border border-accent/20">
+                                  {personaList.length} {personaList.length === 1 ? "persona" : "personas"}
+                                </span>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </div>
+                            </button>
+
                             {/* Author Studio Gateway (Creator Channel & Pen Names) */}
                             <Link
                               to="/studio"
@@ -501,7 +550,7 @@ export default function Header() {
                               </div>
                             </button>
 
-                            {/* Parent Account Settings (Google Account style) */}
+                            {/* Parent Account Settings */}
                             <Link
                               to="/account"
                               onClick={() => setUserMenuOpen(false)}
@@ -546,12 +595,12 @@ export default function Header() {
                             >
                               <ArrowLeft className="w-4 h-4" />
                             </button>
-                            <div>
+                            <div className="min-w-0">
                               <div className="font-semibold text-text-main text-xs">
-                                Personas &amp; Pen Names
+                                Switch Persona
                               </div>
-                              <div className="text-[10px] text-text-muted">
-                                Multiple identities under @{currentUser?.username}
+                              <div className="text-[10px] text-text-muted truncate">
+                                Account: @{currentUser?.username || "user"} • {personaList.length} identities
                               </div>
                             </div>
                           </div>
@@ -559,7 +608,9 @@ export default function Header() {
                           {/* Persona Cards List */}
                           <div className="max-h-64 overflow-y-auto py-1 divide-y divide-border-subtle/20">
                             {personaList.map((p) => {
-                              const isSelected = p.id === activePersona?.id;
+                              const isSelected = activePersona
+                                ? p.id === activePersona.id || p.handle === activePersona.handle
+                                : p.is_default;
                               return (
                                 <button
                                   key={p.id || p.handle}
@@ -568,35 +619,22 @@ export default function Header() {
                                     dispatch(setActivePersona(p));
                                     setUserMenuOpen(false);
                                   }}
-                                  className={`w-full px-3.5 py-2.5 flex items-center justify-between text-left transition-colors cursor-pointer ${
+                                  className={`w-full px-3.5 py-2.5 flex items-center justify-between text-left transition-colors cursor-pointer group ${
                                     isSelected
                                       ? "bg-accent/10 border-l-2 border-accent"
                                       : "hover:bg-tag"
                                   }`}
                                 >
                                   <div className="flex items-center gap-2.5 min-w-0">
-                                    <div className="w-8 h-8 rounded-full bg-accent overflow-hidden shrink-0 flex items-center justify-center text-accent-text text-xs font-bold border border-border-subtle/40 shadow-2xs">
-                                      {p.avatar_url ? (
-                                        <img
-                                          src={p.avatar_url}
-                                          alt=""
-                                          className="w-full h-full object-cover"
-                                          onError={(e) => {
-                                            e.currentTarget.style.display =
-                                              "none";
-                                          }}
-                                        />
-                                      ) : (
-                                        p.display_name
-                                          ?.charAt(0)
-                                          ?.toUpperCase() ||
-                                        p.handle?.charAt(0)?.toUpperCase() ||
-                                        "P"
-                                      )}
-                                    </div>
+                                    <AuthorAvatar
+                                      name={p.display_name || p.pen_name || p.handle}
+                                      avatar={p.avatar_url}
+                                      handle={p.handle}
+                                      size="sm"
+                                    />
                                     <div className="min-w-0">
                                       <div className="font-semibold text-text-main text-xs truncate flex items-center gap-1.5">
-                                        <span>{p.display_name}</span>
+                                        <span>{p.display_name || p.pen_name || p.handle}</span>
                                         {p.is_default && (
                                           <span className="text-[9px] uppercase font-bold text-accent bg-accent/10 px-1 py-0.2 rounded">
                                             Default
@@ -608,8 +646,15 @@ export default function Header() {
                                       </div>
                                     </div>
                                   </div>
-                                  {isSelected && (
-                                    <Check className="w-4 h-4 text-accent shrink-0 ml-2" />
+                                  {isSelected ? (
+                                    <span className="flex items-center gap-1 text-[11px] font-semibold text-accent shrink-0 ml-2">
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span className="hidden xs:inline">Active</span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] text-text-muted opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
+                                      Switch
+                                    </span>
                                   )}
                                 </button>
                               );

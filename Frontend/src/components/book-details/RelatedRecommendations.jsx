@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Star, ArrowRight, Users } from "lucide-react";
 import bookService from "../../services/bookService/bookService";
+import AuthorAvatar from "../common/AuthorAvatar";
 
 export default function RelatedRecommendations({ currentCategory, currentSlug }) {
   const [recommendations, setRecommendations] = useState([]);
@@ -91,9 +92,20 @@ export default function RelatedRecommendations({ currentCategory, currentSlug })
               >
                 {book.title}
               </Link>
-              <p className="text-[11px] text-text-muted mt-0.5 truncate">
-                Author: {book.author_name || "Author"}
-              </p>
+              <div className="flex items-center gap-1.5 mt-1 text-[11px] text-text-muted truncate">
+                <AuthorAvatar
+                  name={book.author_name || "Author"}
+                  avatar={book.author_avatar}
+                  handle={book.author_handle}
+                  size="xs"
+                />
+                <Link
+                  to={book.author_handle ? `/author/@${book.author_handle}` : "#"}
+                  className="hover:text-accent truncate transition-colors"
+                >
+                  {book.author_name || "Author"}
+                </Link>
+              </div>
               <p className="text-xs text-text-muted line-clamp-2 mt-2 leading-relaxed">
                 {book.description || "A masterfully serialized narrative with escalating stakes."}
               </p>

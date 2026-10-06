@@ -3,9 +3,10 @@ import RankingsFilters from "../components/rankings/RankingsFilters";
 import EditorialSpotlightCard from "../components/rankings/EditorialSpotlightCard";
 import RankingsList from "../components/rankings/RankingsList";
 import bookService from "../services/bookService/bookService";
-import readingHistoryService from "../services/readingHistoryService/readingHistoryService";
+import { useLibrary } from "../context/LibraryContext";
 
 export default function RankingsPage() {
+  const { isBookmarked, toggleLibrary, bookmarkedIds } = useLibrary();
   const [novels, setNovels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -13,18 +14,14 @@ export default function RankingsPage() {
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [isCompactMode, setIsCompactMode] = useState(false);
   const [sortBy, setSortBy] = useState("popular");
-  const [bookmarkedIds, setBookmarkedIds] = useState([]);
-  const [toastMessage, setToastMessage] = useState("");
 
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
 
-    Promise.all([
-      bookService.getRankings({ limit: 50 }),
-      readingHistoryService.getBookshelf("all").catch(() => []),
-    ])
-      .then(([rankingsData, shelfData]) => {
+    bookService
+      .getRankings({ limit: 50 })
+      .then((rankingsData) => {
         if (!isMounted) return;
         const normalized = (Array.isArray(rankingsData) ? rankingsData : []).map((b, idx) => ({
           id: b.id,
@@ -32,6 +29,8 @@ export default function RankingsPage() {
           title: b.title,
           slug: b.slug,
           author: b.author_name || "Unknown Author",
+          authorHandle: b.author_handle || "",
+          authorAvatar: b.author_avatar || null,
           status: b.status || "Ongoing",
           coverImage: b.cover_image,
           totalWords: b.total_words ? `${(b.total_words / 1000).toFixed(0)}k words` : "150k words",
@@ -45,8 +44,6 @@ export default function RankingsPage() {
         }));
 
         setNovels(normalized);
-        const bookmarked = Array.isArray(shelfData) ? shelfData.map((item) => item.book_id) : [];
-        setBookmarkedIds(bookmarked);
         setLoading(false);
       })
       .catch((err) => {
@@ -59,27 +56,11 @@ export default function RankingsPage() {
     };
   }, []);
 
-  const handleToggleBookmark = async (id) => {
-    const isBookmarked = bookmarkedIds.includes(id);
-    const next = isBookmarked ? bookmarkedIds.filter((i) => i !== id) : [...bookmarkedIds, id];
-    setBookmarkedIds(next);
-    showToast(isBookmarked ? "Removed from shelf" : "Added to shelf");
-
-    try {
-      await readingHistoryService.updateBookshelf({
-        book_id: id,
-        is_bookmarked: !isBookmarked,
-        folder: "Reading",
-      });
-    } catch {
-      // Rollback on network failure
-      setBookmarkedIds(bookmarkedIds);
+  const handleToggleBookmark = (id) => {
+    const novel = novels.find((n) => n.id === id);
+    if (novel) {
+      toggleLibrary(novel);
     }
-  };
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(""), 2200);
   };
 
   const filteredNovels = novels.filter((novel) => {
@@ -142,7 +123,7 @@ export default function RankingsPage() {
           sortBy={sortBy}
           onSortChange={setSortBy}
           onToggleBookmark={handleToggleBookmark}
-          bookmarkedIds={bookmarkedIds}
+          bookmarkedIds={Array.from(bookmarkedIds)}
         />
       </div>
     </div>

@@ -1,4 +1,5 @@
 import config from "../../config/config";
+import { fetchWithAuth } from "../apiClient";
 
 const BASE_URL = `${config.apiBaseUrl}/books`;
 
@@ -51,7 +52,7 @@ async function getBooks(params = {}) {
   const queryString = query.toString();
   const url = queryString ? `${BASE_URL}?${queryString}` : BASE_URL;
 
-  const response = await fetch(url, {
+  const response = await fetchWithAuth(url, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -71,8 +72,8 @@ async function getBooks(params = {}) {
 /**
  * 2. Fetch featured editorial spotlight books
  */
-async function getFeaturedBooks() {
-  const response = await fetch(`${BASE_URL}/featured`, {
+async function getFeaturedBooks(limit = 20) {
+  const response = await fetchWithAuth(`${BASE_URL}/featured?limit=${limit}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -94,7 +95,7 @@ async function getRankings(params = {}) {
   const queryString = query.toString();
   const url = queryString ? `${BASE_URL}/rankings?${queryString}` : `${BASE_URL}/rankings`;
 
-  const response = await fetch(url, {
+  const response = await fetchWithAuth(url, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -109,7 +110,7 @@ async function getRankings(params = {}) {
  * 4. Fetch trending tags / motifs
  */
 async function getTrendingTags() {
-  const response = await fetch(`${BASE_URL}/trending-tags`, {
+  const response = await fetchWithAuth(`${BASE_URL}/trending-tags`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -124,7 +125,7 @@ async function getTrendingTags() {
  * 5. Fetch active genres with novel counts
  */
 async function getGenres() {
-  const response = await fetch(`${BASE_URL}/genres`, {
+  const response = await fetchWithAuth(`${BASE_URL}/genres`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -140,7 +141,7 @@ async function getGenres() {
  */
 async function searchBooks(query) {
   if (!query || !query.trim()) return [];
-  const response = await fetch(`${BASE_URL}/search?q=${encodeURIComponent(query.trim())}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/search?q=${encodeURIComponent(query.trim())}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -160,7 +161,7 @@ async function getBookBySlug(slug) {
   }
 
   const cleanSlug = encodeURIComponent(slug.trim().toLowerCase());
-  const response = await fetch(`${BASE_URL}/${cleanSlug}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/${cleanSlug}`, {
     method: "GET",
     headers: getAuthHeaders(),
     credentials: "include",
@@ -181,7 +182,7 @@ async function getBookBySlug(slug) {
 async function getRecommendations(slug) {
   if (!slug) return [];
   const cleanSlug = encodeURIComponent(slug.trim().toLowerCase());
-  const response = await fetch(`${BASE_URL}/${cleanSlug}/recommendations`, {
+  const response = await fetchWithAuth(`${BASE_URL}/${cleanSlug}/recommendations`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -198,7 +199,7 @@ async function getRecommendations(slug) {
 async function votePowerStone(slug) {
   if (!slug) throw new Error("Slug is required");
   const cleanSlug = encodeURIComponent(slug.trim().toLowerCase());
-  const response = await fetch(`${BASE_URL}/${cleanSlug}/power-stones`, {
+  const response = await fetchWithAuth(`${BASE_URL}/${cleanSlug}/power-stones`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -216,7 +217,7 @@ async function votePowerStone(slug) {
 async function createBook(payload) {
   const isFormData = payload instanceof FormData;
 
-  const response = await fetch(BASE_URL, {
+  const response = await fetchWithAuth(BASE_URL, {
     method: "POST",
     headers: getAuthHeaders(!isFormData),
     credentials: "include",
@@ -236,7 +237,7 @@ async function createBook(payload) {
  * 11. Soft delete a novel (Protected - persona owner required)
  */
 async function deleteBook(id, personaId) {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/${id}`, {
     method: "DELETE",
     headers: getAuthHeaders(true),
     credentials: "include",

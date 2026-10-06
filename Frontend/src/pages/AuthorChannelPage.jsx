@@ -19,6 +19,7 @@ import {
   Home,
 } from "lucide-react";
 import BookCard from "../components/books/BookCard";
+import AuthorAvatar from "../components/common/AuthorAvatar";
 import { AuthorChannelSkeleton } from "../components/common/Skeletons";
 import personaService from "../services/personaService/personaService";
 
@@ -509,10 +510,11 @@ export default function AuthorChannelPage() {
                 ]).map((ann) => (
                   <div key={ann.id} className="bg-card border border-border-subtle/60 rounded-2xl p-5 shadow-xs space-y-3">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={authorAvatar}
-                        alt=""
-                        className="w-10 h-10 rounded-full object-cover border border-border-subtle"
+                      <AuthorAvatar
+                        name={authorName}
+                        avatar={authorAvatar}
+                        handle={persona.handle}
+                        size="md"
                       />
                       <div>
                         <div className="font-semibold text-xs text-text-main">

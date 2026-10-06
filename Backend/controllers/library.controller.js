@@ -11,8 +11,14 @@ import {
   clearPersonaReadingHistory,
   getWeeklyReadingGoal,
   upsertReadingProgress,
+  getBookProgress,
 } from "../model/readingHistory.model.js";
-import { findPersonaById, findPersonasByUserId } from "../model/personas.model.js";
+import {
+  findPersonaById,
+  findPersonasByUserId,
+  createPersona,
+} from "../model/personas.model.js";
+import { getFallbackAvatar } from "../utils/imageReference.js";
 
 // Helper to determine active persona ID for the logged-in user
 async function resolveUserPersonaId(req) {
@@ -27,7 +33,16 @@ async function resolveUserPersonaId(req) {
   if (userPersonas.length > 0) {
     return userPersonas[0].id;
   }
-  throw new ApiError(400, "No author or reader persona found for this user account!");
+  const cleanUsername = (req.user.username || `reader_${req.user.id}`).replace(/^@/, "").toLowerCase().trim();
+  const fallbackPersona = await createPersona({
+    user_id: req.user.id,
+    display_name: req.user.full_name || req.user.username || "Reader",
+    handle: cleanUsername,
+    bio: "Welcome to my reading sanctum.",
+    avatar_url: req.user.avatar_url || getFallbackAvatar(cleanUsername),
+    is_default: true,
+  });
+  return fallbackPersona.id;
 }
 
 // 1. GET BOOKSHELF
@@ -150,4 +165,25 @@ export const getWeeklyGoal = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, goal, "Weekly reading goal fetched successfully!"));
+});
+
+// 10. CHECK BOOKSHELF STATUS FOR A SINGLE BOOK
+export const getBookLibraryStatus = asyncHandler(async (req, res) => {
+  const personaId = await resolveUserPersonaId(req);
+  const { bookId } = req.params;
+  const progress = await getBookProgress(personaId, Number(bookId));
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        book_id: Number(bookId),
+        is_bookmarked: Boolean(progress?.is_bookmarked),
+        folder: progress?.folder || "Reading",
+        is_favorite: Boolean(progress?.is_favorite),
+        last_chapter_number: progress?.last_chapter_number || 1,
+        scroll_percentage: progress?.scroll_percentage || 0,
+      },
+      "Book library status fetched successfully!"
+    )
+  );
 });

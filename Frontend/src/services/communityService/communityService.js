@@ -1,4 +1,5 @@
 import config from "../../config/config";
+import { fetchWithAuth } from "../apiClient";
 
 const BASE_URL = `${config.apiBaseUrl}/community`;
 
@@ -31,7 +32,7 @@ async function getThreads(params = {}) {
   const queryString = query.toString();
   const url = queryString ? `${BASE_URL}/threads?${queryString}` : `${BASE_URL}/threads`;
 
-  const response = await fetch(url, {
+  const response = await fetchWithAuth(url, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -48,7 +49,7 @@ async function getThreads(params = {}) {
  * Start new discourse thread (Protected)
  */
 async function createThread(payload) {
-  const response = await fetch(`${BASE_URL}/threads`, {
+  const response = await fetchWithAuth(`${BASE_URL}/threads`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -67,7 +68,7 @@ async function createThread(payload) {
  * Upvote a thread (Protected)
  */
 async function upvoteThread(threadId) {
-  const response = await fetch(`${BASE_URL}/threads/${threadId}/upvote`, {
+  const response = await fetchWithAuth(`${BASE_URL}/threads/${threadId}/upvote`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -85,7 +86,7 @@ async function upvoteThread(threadId) {
  * Fetch top scholars leaderboard
  */
 async function getTopScholars() {
-  const response = await fetch(`${BASE_URL}/top-scholars`, {
+  const response = await fetchWithAuth(`${BASE_URL}/top-scholars`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -102,7 +103,7 @@ async function getTopScholars() {
  * Fetch a single discussion thread by ID
  */
 async function getThreadById(threadId) {
-  const response = await fetch(`${BASE_URL}/threads/${threadId}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/threads/${threadId}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -119,7 +120,7 @@ async function getThreadById(threadId) {
  * Fetch thread replies
  */
 async function getThreadReplies(threadId) {
-  const response = await fetch(`${BASE_URL}/threads/${threadId}/replies`, {
+  const response = await fetchWithAuth(`${BASE_URL}/threads/${threadId}/replies`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -136,7 +137,7 @@ async function getThreadReplies(threadId) {
  * Post a reply to a thread (Protected)
  */
 async function postReply(threadId, payload) {
-  const response = await fetch(`${BASE_URL}/threads/${threadId}/replies`, {
+  const response = await fetchWithAuth(`${BASE_URL}/threads/${threadId}/replies`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",

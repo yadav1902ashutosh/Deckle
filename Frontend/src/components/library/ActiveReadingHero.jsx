@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import AuthorAvatar from "../common/AuthorAvatar";
 import { Play, BookOpen, Clock } from "lucide-react";
 
 export default function ActiveReadingHero({
@@ -64,6 +65,18 @@ export default function ActiveReadingHero({
               >
                 {book.title}
               </Link>
+
+              {book.author && (
+                <div className="flex items-center gap-1.5 text-xs text-text-muted mt-0.5">
+                  <AuthorAvatar
+                    name={book.author}
+                    avatar={book.authorAvatar || book.author_avatar}
+                    handle={book.authorHandle || book.author_handle}
+                    size="xs"
+                  />
+                  <span className="font-medium">{book.author}</span>
+                </div>
+              )}
 
               <p className="text-xs sm:text-sm font-medium text-text-muted mt-0.5 truncate">
                 Ch. {book.currentChapterNumber}: {book.currentChapterTitle}

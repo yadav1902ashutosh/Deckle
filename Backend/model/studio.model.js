@@ -57,6 +57,7 @@ export async function getAuthorSerials(userId) {
         p.id AS persona_id,
         p.display_name AS author_name,
         p.handle AS author_handle,
+        p.avatar_url AS author_avatar,
         g.name AS genre_name,
         (
           SELECT COUNT(c.id)::int 

@@ -1,4 +1,5 @@
 import config from "../../config/config";
+import { fetchWithAuth } from "../apiClient";
 
 // BASE_URL = "http://localhost:8000/api/v1/personas"
 const BASE_URL = `${config.apiBaseUrl}/personas`;
@@ -24,7 +25,7 @@ function getAuthHeaders(isJson = true) {
  * 1. Fetch all personas owned by the logged-in user
  */
 async function getMyPersonas() {
-  const response = await fetch(`${BASE_URL}/my`, {
+  const response = await fetchWithAuth(`${BASE_URL}/my`, {
     method: "GET",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -44,7 +45,7 @@ async function getMyPersonas() {
  */
 async function getPublicPersonaProfile(handle) {
   const cleanHandle = handle.replace(/^@/, "");
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent(cleanHandle)}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/${encodeURIComponent(cleanHandle)}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -68,7 +69,7 @@ async function updatePreferences(personaId, preferences) {
     throw new Error("Persona ID is required to update preferences");
   }
 
-  const response = await fetch(`${BASE_URL}/${personaId}/preferences`, {
+  const response = await fetchWithAuth(`${BASE_URL}/${personaId}/preferences`, {
     method: "PATCH",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -92,7 +93,7 @@ async function incrementStats(personaId, wordsCount = 0) {
     throw new Error("Persona ID is required to increment stats");
   }
 
-  const response = await fetch(`${BASE_URL}/${personaId}/stats/increment`, {
+  const response = await fetchWithAuth(`${BASE_URL}/${personaId}/stats/increment`, {
     method: "POST",
     headers: getAuthHeaders(true),
     credentials: "include",
@@ -114,7 +115,7 @@ async function incrementStats(personaId, wordsCount = 0) {
 async function createPersona(personaPayload) {
   const isFormData = personaPayload instanceof FormData;
 
-  const response = await fetch(BASE_URL, {
+  const response = await fetchWithAuth(BASE_URL, {
     method: "POST",
     headers: getAuthHeaders(!isFormData),
     credentials: "include",
@@ -134,7 +135,7 @@ async function createPersona(personaPayload) {
  * 6. Soft-delete a persona (cannot delete default primary persona)
  */
 async function deletePersona(personaId) {
-  const response = await fetch(`${BASE_URL}/${personaId}`, {
+  const response = await fetchWithAuth(`${BASE_URL}/${personaId}`, {
     method: "DELETE",
     headers: getAuthHeaders(true),
     credentials: "include",

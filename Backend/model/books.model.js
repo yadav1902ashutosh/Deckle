@@ -271,9 +271,10 @@ export async function findActiveBooks() {
 }
 
 // 5. FIND FEATURED BOOKS (Editorial hero spotlights)
-export async function findFeaturedBooks() {
+export async function findFeaturedBooks(limit = 20) {
   try {
-    // Return books flagged is_featured, falling back to top viewed books
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
+    // Return books flagged is_featured, falling back to top viewed & rated books
     const result = await sql`
       SELECT 
         b.*,
@@ -298,8 +299,8 @@ export async function findFeaturedBooks() {
       JOIN personas p ON b.persona_id = p.id
       LEFT JOIN genres g ON b.genre_id = g.id
       WHERE b.deleted_at IS NULL AND p.deleted_at IS NULL
-      ORDER BY b.is_featured DESC, b.views_count DESC
-      LIMIT 5;
+      ORDER BY b.is_featured DESC, b.views_count DESC, b.rating DESC, b.created_at DESC
+      LIMIT ${limitNum};
     `;
     return result;
   } catch (error) {
@@ -479,6 +480,7 @@ export async function findBookRecommendations(slug) {
         COALESCE(b.total_words, 0) AS total_words,
         p.display_name AS author_name,
         p.handle AS author_handle,
+        p.avatar_url AS author_avatar,
         g.name AS genre_name
       FROM books b
       JOIN personas p ON b.persona_id = p.id
@@ -554,6 +556,7 @@ export async function searchBooks(query) {
         b.status,
         p.display_name AS author_name,
         p.handle AS author_handle,
+        p.avatar_url AS author_avatar,
         g.name AS genre_name
       FROM books b
       JOIN personas p ON b.persona_id = p.id

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { setActivePersona } from "../store/authSlice";
 import {
   PenTool,
   BookOpen,
@@ -25,15 +26,21 @@ import {
   Filter,
   Check,
   ChevronRight,
+  ChevronDown,
   ArrowRight,
 } from "lucide-react";
 import ImageFramingModal from "../components/common/ImageFramingModal";
 import PersonasHubTab from "../components/profile/PersonasHubTab";
+import StoryEditor from "../components/studio/StoryEditor";
+import AuthorAvatar from "../components/common/AuthorAvatar";
 import bookService from "../services/bookService/bookService";
 import studioService from "../services/studioService/studioService";
 
 export default function AuthorStudioPage() {
+  const dispatch = useDispatch();
   const activePersona = useSelector((state) => state.auth?.activePersona);
+  const personas = useSelector((state) => state.auth?.personas);
+  const [personaPickerOpen, setPersonaPickerOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const initialTab = searchParams.get("tab") || "desk";
@@ -44,7 +51,9 @@ export default function AuthorStudioPage() {
   const [loadingSerials, setLoadingSerials] = useState(true);
 
   // Chapters & Volumes Management State
-  const [selectedBookId, setSelectedBookId] = useState("");
+  const [selectedBookId, setSelectedBookId] = useState(
+    searchParams.get("bookId") ? Number(searchParams.get("bookId")) : ""
+  );
   const [bookChapters, setBookChapters] = useState([]);
   const [volumes, setVolumes] = useState([]);
   const [loadingChapters, setLoadingChapters] = useState(false);
@@ -53,6 +62,8 @@ export default function AuthorStudioPage() {
   // Editor states
   const [editingChapterId, setEditingChapterId] = useState(null);
   const [draftChapterNum, setDraftChapterNum] = useState(1);
+  const [chapterType, setChapterType] = useState("regular"); // 'regular' | 'side_story' | 'extra' | 'interlude' | 'special' | 'prologue' | 'epilogue'
+  const [chapterLabel, setChapterLabel] = useState("");
   const [draftTitle, setDraftTitle] = useState("");
   const [draftContent, setDraftContent] = useState("");
   const [selectedVolumeId, setSelectedVolumeId] = useState("");
@@ -88,14 +99,23 @@ export default function AuthorStudioPage() {
     setTimeout(() => setToastMsg(""), 2800);
   };
 
-  const fetchSerials = async () => {
+  const fetchSerials = async (preferredBookId = null) => {
     try {
       setLoadingSerials(true);
       const data = await studioService.getMySerials();
       const list = Array.isArray(data) ? data : [];
       setSerials(list);
-      if (list.length > 0 && !selectedBookId) {
+
+      // Auto-resolve selected novel
+      const candidateId = preferredBookId || selectedBookId || searchParams.get("bookId");
+      const matched = list.find((b) => String(b.id) === String(candidateId));
+
+      if (matched) {
+        setSelectedBookId(matched.id);
+      } else if (list.length > 0) {
         setSelectedBookId(list[0].id);
+      } else {
+        setSelectedBookId("");
       }
     } catch (err) {
       console.warn("Failed to fetch author serials:", err);
@@ -112,6 +132,10 @@ export default function AuthorStudioPage() {
     const tabParam = searchParams.get("tab");
     if (tabParam && ["desk", "editor", "customization", "analytics"].includes(tabParam)) {
       setActiveTab(tabParam);
+    }
+    const bookIdParam = searchParams.get("bookId");
+    if (bookIdParam) {
+      setSelectedBookId(Number(bookIdParam));
     }
   }, [searchParams]);
 
@@ -139,11 +163,10 @@ export default function AuthorStudioPage() {
     }
   }, [selectedBookId]);
 
-  // Auto-calculate next consecutive chapter number when starting fresh draft
-  const maxExistingChapterNum = bookChapters.reduce(
-    (max, ch) => Math.max(max, Number(ch.chapter_number) || 0),
-    0
-  );
+  // Auto-calculate next consecutive chapter number when starting fresh draft (canon chapters only)
+  const maxExistingChapterNum = bookChapters
+    .filter((ch) => !ch.chapter_type || ch.chapter_type === "regular")
+    .reduce((max, ch) => Math.max(max, Number(ch.chapter_number) || 0), 0);
   const nextConsecutiveChapter = maxExistingChapterNum + 1;
 
   // Maximum existing volume number
@@ -156,15 +179,25 @@ export default function AuthorStudioPage() {
   // Update default chapter number if not editing
   useEffect(() => {
     if (!editingChapterId) {
-      setDraftChapterNum(nextConsecutiveChapter);
+      if (chapterType === "regular") {
+        setDraftChapterNum(nextConsecutiveChapter);
+      }
     }
-  }, [bookChapters, editingChapterId]);
+  }, [bookChapters, editingChapterId, chapterType, nextConsecutiveChapter]);
 
-  const wordCount = draftContent.trim().split(/\s+/).filter(Boolean).length;
+  const [liveWordCount, setLiveWordCount] = useState(0);
+  const cleanDraftText = draftContent.replace(/<[^>]*>/g, " ").trim();
+  const wordCount = liveWordCount || (cleanDraftText ? cleanDraftText.split(/\s+/).filter(Boolean).length : 0);
 
   // Reset editor to new draft
-  const handleResetToNewDraft = () => {
+  const handleResetToNewDraft = (specificBookId = null) => {
+    const targetBookId = specificBookId || selectedBookId || serials[0]?.id || "";
+    if (targetBookId && String(targetBookId) !== String(selectedBookId)) {
+      setSelectedBookId(Number(targetBookId));
+    }
     setEditingChapterId(null);
+    setChapterType("regular");
+    setChapterLabel("");
     setDraftChapterNum(nextConsecutiveChapter);
     setDraftTitle("");
     setDraftContent("");
@@ -178,6 +211,8 @@ export default function AuthorStudioPage() {
     setEditingChapterId(chapter.id);
     setSelectedBookId(chapter.book_id || selectedBookId);
     setDraftChapterNum(chapter.chapter_number);
+    setChapterType(chapter.chapter_type || "regular");
+    setChapterLabel(chapter.chapter_label || "");
     setDraftTitle(chapter.title || "");
     setDraftContent(chapter.content || "");
     setSelectedVolumeId(chapter.volume_id || "");
@@ -192,7 +227,11 @@ export default function AuthorStudioPage() {
       setScheduledAt("");
     }
 
-    setSavedStatus(`Editing Chapter ${chapter.chapter_number}`);
+    const typeDesc =
+      chapter.chapter_type && chapter.chapter_type !== "regular"
+        ? `${chapter.chapter_type.replace("_", " ")} #${chapter.chapter_number}`
+        : `Chapter ${chapter.chapter_number}`;
+    setSavedStatus(`Editing ${typeDesc}`);
     setActiveTab("editor");
     setSearchParams({ tab: "editor" });
   };
@@ -244,10 +283,13 @@ export default function AuthorStudioPage() {
 
     try {
       setIsSaving(true);
+      const parsedNum = parseFloat(draftChapterNum);
       const payload = {
         book_id: Number(selectedBookId),
         volume_id: selectedVolumeId ? Number(selectedVolumeId) : null,
-        chapter_number: Number(draftChapterNum),
+        chapter_number: isNaN(parsedNum) ? Number(draftChapterNum) : parsedNum,
+        chapter_type: chapterType,
+        chapter_label: chapterLabel.trim() || null,
         title: draftTitle.trim(),
         content: draftContent.trim(),
         status: targetStatus,
@@ -390,8 +432,10 @@ export default function AuthorStudioPage() {
       alertToast(`Novel "${newBookData.title}" initialized with 0 chapters!`);
       if (created?.id) {
         setSelectedBookId(created.id);
+        await fetchSerials(created.id);
+      } else {
+        await fetchSerials();
       }
-      fetchSerials();
     } catch (err) {
       console.error(err);
       setNewBookError(err.message || "Failed to publish novel.");
@@ -420,11 +464,98 @@ export default function AuthorStudioPage() {
         {/* Author Desk Header */}
         <div className="bg-card border border-border-subtle/50 rounded-2xl p-6 sm:p-7 relative overflow-hidden shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2 text-accent font-semibold text-xs tracking-wider uppercase">
-              <PenTool className="w-4 h-4" />
-              <span>
-                Creator Sanctuary • {activePersona ? `@${activePersona.handle}` : "Manuscript Desk"}
+            <div className="flex items-center gap-2 text-accent font-semibold text-xs tracking-wider uppercase relative flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <PenTool className="w-3.5 h-3.5" />
+                <span>Creator Sanctuary</span>
               </span>
+              <span>•</span>
+              {/* YouTube Studio Style Pen Name Quick Switcher */}
+              <div className="relative inline-block">
+                <button
+                  type="button"
+                  onClick={() => setPersonaPickerOpen((prev) => !prev)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 hover:bg-accent/20 border border-accent/20 text-accent font-semibold text-xs transition-colors cursor-pointer"
+                  title="Switch Pen Name"
+                >
+                  {activePersona ? (
+                    <AuthorAvatar
+                      name={activePersona.pen_name || activePersona.handle}
+                      avatar={activePersona.avatar_url}
+                      handle={activePersona.handle}
+                      size="xs"
+                    />
+                  ) : (
+                    <Users className="w-3.5 h-3.5" />
+                  )}
+                  <span className="font-mono lowercase">
+                    @{activePersona?.handle || "author"}
+                  </span>
+                  {personas && personas.length > 1 && (
+                    <ChevronDown
+                      className={`w-3 h-3 transition-transform ${
+                        personaPickerOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  )}
+                </button>
+
+                {personaPickerOpen && personas && personas.length > 1 && (
+                  <div className="absolute left-0 mt-1.5 w-60 bg-card border border-border-subtle rounded-xl shadow-xl py-1.5 z-40 animate-fadeIn text-xs">
+                    <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-text-muted border-b border-border-subtle/50 mb-1 flex items-center justify-between">
+                      <span>Switch Pen Name</span>
+                      <span className="text-[9px] text-accent font-mono">
+                        {personas.length} identities
+                      </span>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                      {personas.map((p) => {
+                        const isSelected =
+                          activePersona?.id === p.id ||
+                          activePersona?.handle === p.handle;
+                        return (
+                          <button
+                            key={p.id || p.handle}
+                            type="button"
+                            onClick={() => {
+                              dispatch(setActivePersona(p));
+                              setPersonaPickerOpen(false);
+                              alertToast(
+                                `Active pen name switched to @${p.handle}`
+                              );
+                            }}
+                            className={`w-full px-3 py-2 flex items-center justify-between text-left hover:bg-tag transition-colors cursor-pointer ${
+                              isSelected
+                                ? "bg-accent/10 text-accent font-medium"
+                                : "text-text-main"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <AuthorAvatar
+                                name={p.display_name || p.pen_name || p.handle}
+                                avatar={p.avatar_url}
+                                handle={p.handle}
+                                size="xs"
+                              />
+                              <div className="min-w-0">
+                                <div className="truncate font-semibold text-xs">
+                                  {p.display_name || p.pen_name || p.handle}
+                                </div>
+                                <div className="text-[10px] text-text-muted font-mono truncate">
+                                  @{p.handle}
+                                </div>
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 text-accent shrink-0 ml-1.5" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-text-main">
@@ -447,9 +578,10 @@ export default function AuthorStudioPage() {
 
             <button
               onClick={() => {
-                handleResetToNewDraft();
+                const targetId = selectedBookId || serials[0]?.id;
+                handleResetToNewDraft(targetId);
                 setActiveTab("editor");
-                setSearchParams({ tab: "editor" });
+                setSearchParams({ tab: "editor", ...(targetId ? { bookId: targetId } : {}) });
               }}
               className="px-4 py-2.5 rounded-xl bg-tag hover:bg-card border border-border-subtle text-text-main text-xs font-semibold shadow-xs flex items-center gap-2 transition-colors cursor-pointer"
             >
@@ -632,9 +764,9 @@ export default function AuthorStudioPage() {
 
                     <button
                       onClick={() => {
-                        handleResetToNewDraft();
+                        handleResetToNewDraft(selectedBookId);
                         setActiveTab("editor");
-                        setSearchParams({ tab: "editor" });
+                        setSearchParams({ tab: "editor", ...(selectedBookId ? { bookId: selectedBookId } : {}) });
                       }}
                       className="px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-accent-text text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
                     >
@@ -709,11 +841,25 @@ export default function AuthorStudioPage() {
 
                           return (
                             <tr key={ch.id} className="hover:bg-tag/30 transition-colors">
-                              <td className="py-3 px-3 font-bold text-accent">
+                              <td className="py-3 px-3 font-bold text-accent whitespace-nowrap">
                                 #{ch.chapter_number}
+                                {ch.chapter_type && ch.chapter_type !== "regular" && (
+                                  <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30">
+                                    {ch.chapter_type.replace("_", " ")}
+                                  </span>
+                                )}
                               </td>
                               <td className="py-3 px-3 font-medium text-text-main max-w-[200px] truncate">
-                                {ch.title}
+                                {ch.chapter_label ? (
+                                  <div>
+                                    <span className="text-[10px] font-semibold text-text-muted block truncate">
+                                      {ch.chapter_label}
+                                    </span>
+                                    <span className="truncate">{ch.title}</span>
+                                  </div>
+                                ) : (
+                                  ch.title
+                                )}
                               </td>
                               <td className="py-3 px-3 text-text-muted">
                                 {ch.volume_number
@@ -857,24 +1003,134 @@ export default function AuthorStudioPage() {
               </div>
             </div>
 
-            {/* Novel, Volume, and Chapter Sequence Configuration */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Warning if no serial works exist yet */}
+            {serials.length === 0 && !loadingSerials && (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>
+                    You haven't launched any serial novels yet. Launch a novel before composing chapter manuscripts.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsNewBookModalOpen(true)}
+                  className="px-3.5 py-1.5 rounded-lg bg-accent text-accent-text font-semibold hover:bg-accent-hover transition-colors shrink-0 cursor-pointer text-xs shadow-2xs"
+                >
+                  + Launch New Serial
+                </button>
+              </div>
+            )}
+
+            {/* Chapter Classification Selector: Main Story vs Side Story / Extra / Interlude / Special / Prologue / Epilogue */}
+            <div className="p-4 rounded-xl bg-tag/40 border border-border-subtle/40 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <div>
+                  <span className="text-xs font-bold text-text-main block">Chapter Classification</span>
+                  <span className="text-[11px] text-text-muted">
+                    Choose canonical story progression or non-consecutive side arcs (Side Story, Extra, Interlude, etc.).
+                  </span>
+                </div>
+                <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full w-fit ${
+                  chapterType === "regular"
+                    ? "bg-accent/15 text-accent border border-accent/30"
+                    : "bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30"
+                }`}>
+                  {chapterType === "regular" ? "Strictly Consecutive" : "Non-consecutive • Decimals Allowed"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { id: "regular", label: "📖 Main Story", desc: "Canon consecutive progression" },
+                  { id: "side_story", label: "🌟 Side Story", desc: "Spin-off or character focus" },
+                  { id: "extra", label: "🎁 Extra / Bonus", desc: "Bonus chapter or side event" },
+                  { id: "interlude", label: "⏳ Interlude", desc: "Mid-arc pause or viewpoint switch" },
+                  { id: "special", label: "📜 Special / Lore", desc: "Worldbuilding lore or special" },
+                  { id: "prologue", label: "🌅 Prologue", desc: "Introductory backstory" },
+                  { id: "epilogue", label: "🌄 Epilogue", desc: "Concluding aftermath" },
+                ].map((type) => {
+                  const isSelected = chapterType === type.id;
+                  return (
+                    <button
+                      key={type.id}
+                      type="button"
+                      onClick={() => {
+                        setChapterType(type.id);
+                        if (type.id === "regular") {
+                          setDraftChapterNum(nextConsecutiveChapter);
+                        } else if (!editingChapterId && (draftChapterNum === nextConsecutiveChapter || draftChapterNum === 1)) {
+                          setDraftChapterNum(type.id === "prologue" ? 0.5 : Number((maxExistingChapterNum + 0.5).toFixed(2)));
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border ${
+                        isSelected
+                          ? "bg-accent text-accent-text border-accent shadow-xs scale-[1.02]"
+                          : "bg-card hover:bg-page text-text-muted hover:text-text-main border-border-subtle/60"
+                      }`}
+                      title={type.desc}
+                    >
+                      {type.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Novel, Volume, Chapter Sequence and Label Configuration */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Novel Selector */}
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">
-                  Target Serial Work
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-text-muted">
+                    Target Serial Work
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsNewBookModalOpen(true)}
+                    className="text-[11px] text-accent font-semibold hover:underline cursor-pointer"
+                  >
+                    + New Serial
+                  </button>
+                </div>
                 <select
-                  value={selectedBookId}
-                  onChange={(e) => setSelectedBookId(e.target.value)}
+                  value={selectedBookId ? String(selectedBookId) : ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedBookId(val ? Number(val) : "");
+                  }}
                   className="w-full h-10 px-3 bg-tag border border-border-subtle/50 rounded-xl text-xs text-text-main focus:outline-none focus:border-accent"
                 >
-                  {serials.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.title}
+                  {serials.length === 0 ? (
+                    <option value="" disabled>
+                      {loadingSerials ? "Loading your novels..." : "No novels found — Click '+ New Serial' above"}
                     </option>
-                  ))}
+                  ) : (
+                    <>
+                      <option value="" disabled>
+                        Select a Target Serial...
+                      </option>
+                      {serials.map((s) => (
+                        <option key={s.id} value={String(s.id)}>
+                          {s.title} ({s.status || "ongoing"})
+                        </option>
+                      ))}
+                    </>
+                  )}
                 </select>
+                {selectedNovelObj && (
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <AuthorAvatar
+                      name={selectedNovelObj.author_name || selectedNovelObj.author_handle}
+                      avatar={selectedNovelObj.author_avatar}
+                      handle={selectedNovelObj.author_handle}
+                      size="xs"
+                    />
+                    <span className="text-[10px] text-text-muted block truncate">
+                      Pen Name: @{selectedNovelObj.author_handle || selectedNovelObj.author_name} • {selectedNovelObj.published_chapters_count || 0} published chs
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Story Volume (Arc) Selector */}
@@ -903,19 +1159,52 @@ export default function AuthorStudioPage() {
                 </select>
               </div>
 
-              {/* Consecutive Chapter Number */}
+              {/* Chapter Number Input */}
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-semibold text-text-muted">
-                    Chapter Number (Consecutive)
+                    {chapterType === "regular" ? "Chapter Number (Consecutive)" : "Chapter # (Decimals / Custom)"}
                   </label>
-                  <span className="text-[11px] text-text-muted">Next: #{nextConsecutiveChapter}</span>
+                  <span className="text-[11px] text-text-muted">
+                    {chapterType === "regular" ? `Next: #${nextConsecutiveChapter}` : "e.g. 1.5, 2.5, 0.5"}
+                  </span>
                 </div>
                 <input
                   type="number"
-                  min="1"
+                  step="any"
+                  min={chapterType === "regular" ? "1" : "0"}
                   value={draftChapterNum}
-                  onChange={(e) => setDraftChapterNum(parseInt(e.target.value, 10) || 1)}
+                  onChange={(e) => setDraftChapterNum(e.target.value)}
+                  placeholder={chapterType === "regular" ? String(nextConsecutiveChapter) : "e.g. 1.5"}
+                  className="w-full h-10 px-3 bg-tag border border-border-subtle/50 rounded-xl text-xs text-text-main focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              {/* Chapter Display Label (Optional) */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-text-muted">
+                    Display Label (Optional)
+                  </label>
+                  <span className="text-[11px] text-text-muted">Custom Prefix</span>
+                </div>
+                <input
+                  type="text"
+                  value={chapterLabel}
+                  onChange={(e) => setChapterLabel(e.target.value)}
+                  placeholder={
+                    chapterType === "side_story"
+                      ? "e.g. Side Story 1"
+                      : chapterType === "interlude"
+                      ? "e.g. Interlude: Frost Peaks"
+                      : chapterType === "extra"
+                      ? "e.g. Extra 1: Summer Shore"
+                      : chapterType === "prologue"
+                      ? "e.g. Prologue"
+                      : chapterType === "epilogue"
+                      ? "e.g. Epilogue"
+                      : "e.g. Ch. 1 (Custom prefix)"
+                  }
                   className="w-full h-10 px-3 bg-tag border border-border-subtle/50 rounded-xl text-xs text-text-main focus:outline-none focus:border-accent"
                 />
               </div>
@@ -952,13 +1241,15 @@ export default function AuthorStudioPage() {
               className="w-full text-xl sm:text-2xl font-serif font-bold text-text-main bg-transparent focus:outline-none border-b border-border-subtle/30 pb-2"
             />
 
-            {/* Manuscript Textarea */}
-            <textarea
-              value={draftContent}
-              onChange={(e) => setDraftContent(e.target.value)}
-              rows={14}
-              placeholder="Begin composing your chapter manuscript..."
-              className="w-full bg-tag/40 border border-border-subtle/30 rounded-xl p-4 font-serif text-base text-text-main leading-relaxed focus:outline-none focus:border-accent transition-colors resize-y"
+            {/* Tiptap Manuscript Story Editor */}
+            <StoryEditor
+              content={draftContent}
+              onChange={(newHtml) => setDraftContent(newHtml)}
+              onWordCountChange={(count) => setLiveWordCount(count)}
+              placeholder="Begin composing your chapter manuscript... Use H2 for scene breaks, blockquotes for letters/scrolls, and divider for scene shifts."
+              novelTitle={selectedNovelObj?.title}
+              chapterNumber={draftChapterNum}
+              chapterTitle={draftTitle}
             />
           </div>
         )}
